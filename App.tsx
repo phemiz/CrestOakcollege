@@ -35,6 +35,7 @@ import ELearningPage from './pages/ELearningPage';
 import FeePaymentPage from './pages/FeePaymentPage';
 import VisitationsPage from './pages/VisitationsPage';
 import JobApplicationFormPage from './pages/JobApplicationFormPage';
+import PortalPage from './pages/PortalPage';
 
 const AppContent: React.FC = () => {
   const { theme, isReaderMode } = useTheme();
@@ -43,10 +44,10 @@ const AppContent: React.FC = () => {
   const [transitionStage, setTransitionStage] = useState("page-fade-in");
 
   useEffect(() => {
-    if (location !== displayLocation) {
+    if (location !== displayLocation && transitionStage !== "page-fade-out") {
         setTransitionStage("page-fade-out");
     }
-  }, [location, displayLocation]);
+  }, [location, displayLocation, transitionStage]);
 
 
   useEffect(() => {
@@ -104,6 +105,7 @@ const AppContent: React.FC = () => {
             <Route path="donate" element={<DonationPage />} />
             <Route path="admin" element={<AdminDashboardPage />} />
             <Route path="student-dashboard" element={<StudentDashboardPage />} />
+            <Route path="portal" element={<PortalPage />} />
             <Route path="e-learning" element={<ELearningPage />} />
             <Route path="fee-payment" element={<FeePaymentPage />} />
             <Route path="visitations" element={<VisitationsPage />} />

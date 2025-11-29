@@ -1,4 +1,4 @@
-const CACHE_NAME = 'crestview-college-cache-v1';
+const CACHE_NAME = 'crestoak-college-cache-v1';
 const urlsToCache = [
   '/',
   '/index.html',

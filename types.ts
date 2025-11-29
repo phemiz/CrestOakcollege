@@ -1,7 +1,4 @@
 
-
-
-
 export interface Department {
   id: string;
   name: string;
@@ -19,6 +16,9 @@ export interface Course {
   departmentId: string;
   programType: 'Degree' | 'Diploma';
   lecturerId?: string;
+  prerequisites?: string;
+  learningOutcomes?: string;
+  recommendedTextbooks?: string;
 }
 
 export interface ContactMessage {
@@ -227,6 +227,14 @@ export interface Payment {
     description: string;
 }
 
+export interface FeeStructureItem {
+    id: string;
+    category: 'General' | 'Administrative';
+    item: string;
+    amount: string;
+    note: string;
+}
+
 // --- Suggestion 3: Events Calendar ---
 export interface CalendarEvent {
     id: string;
@@ -235,6 +243,7 @@ export interface CalendarEvent {
     description: string;
     category: 'Academic' | 'Campus Life' | 'Holiday';
     rsvps: number;
+    attendees?: string[]; // List of names
 }
 
 // --- Suggestion 4: E-Learning Hub ---
