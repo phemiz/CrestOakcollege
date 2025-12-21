@@ -1,7 +1,6 @@
-
 import React, { useState, useEffect, useRef } from 'react';
 import { Link, NavLink } from 'react-router-dom';
-import { NAV_LINKS, COMMUNITY_SUB_LINKS, NEWS_AND_EVENTS_SUB_LINKS, ACADEMICS_SUB_LINKS } from '../constants';
+import { NAV_LINKS, COMMUNITY_SUB_LINKS, ACADEMICS_SUB_LINKS } from '../constants';
 import { useTheme } from '../hooks/useTheme';
 import SiteSearch from './SiteSearch';
 import { getCurrentStudent } from '../hooks/useApi';
@@ -29,9 +28,6 @@ const DesktopNav: React.FC<{ isStudent: boolean; }> = ({ isStudent }) => {
     
     const [isCommunityMenuOpen, setIsCommunityMenuOpen] = useState(false);
     const communityRef = useRef<HTMLDivElement>(null);
-    
-    const [isNewsMenuOpen, setIsNewsMenuOpen] = useState(false);
-    const newsRef = useRef<HTMLDivElement>(null);
 
 
     useEffect(() => {
@@ -58,18 +54,6 @@ const DesktopNav: React.FC<{ isStudent: boolean; }> = ({ isStudent }) => {
         return () => document.removeEventListener('keydown', handleKeyDown);
     }, [isCommunityMenuOpen]);
 
-    useEffect(() => {
-        const handleKeyDown = (e: KeyboardEvent) => {
-            if (e.key === 'Escape' && isNewsMenuOpen) {
-                setIsNewsMenuOpen(false);
-                const trigger = newsRef.current?.querySelector('button');
-                trigger?.focus();
-            }
-        };
-        document.addEventListener('keydown', handleKeyDown);
-        return () => document.removeEventListener('keydown', handleKeyDown);
-    }, [isNewsMenuOpen]);
-
     const linkBaseClasses = `${theme.header.text} hover:${theme.header.accent} transition-all duration-300 font-medium p-1 rounded-sm ${theme.header.ringOffsetColor} focus:outline-none focus:ring-2 focus:ring-offset-2 focus:${ringColorClass} active:scale-95 transform`;
 
     return (
@@ -93,62 +77,21 @@ const DesktopNav: React.FC<{ isStudent: boolean; }> = ({ isStudent }) => {
                             >
                                 {link.name}
                             </button>
-                            <div className={`absolute top-full left-1/2 -translate-x-1/2 pt-3 transition-all duration-300 ${isAcademicsMenuOpen ? 'opacity-100 visible' : 'opacity-0 invisible'}`}>
-                                <div className={`${theme.card.background} rounded-xl shadow-2xl border ${theme.card.border} p-2 w-64`}>
-                                    <ul className="space-y-1">
+                            <div className={`absolute top-full left-1/2 -translate-x-1/2 pt-3 transition-all duration-300 ${isAcademicsMenuOpen ? 'opacity-100 visible translate-y-0' : 'opacity-0 invisible -translate-y-2'}`}>
+                                <div className={`${theme.card.background} rounded-xl shadow-2xl border ${theme.card.border} p-4 w-[480px]`}>
+                                    <div className="grid grid-cols-2 gap-4">
                                         {ACADEMICS_SUB_LINKS.map(subLink => (
-                                            <li key={subLink.name}>
-                                                <Link 
-                                                    to={subLink.path} 
-                                                    onClick={() => setIsAcademicsMenuOpen(false)} 
-                                                    className={`block p-3 rounded-lg text-sm group ${theme.text} hover:bg-gray-100 dark:hover:bg-white/10`}
-                                                >
-                                                    <span className="font-semibold block">{subLink.name}</span>
-                                                    <span className={`text-xs ${theme.textMuted}`}>{subLink.description}</span>
-                                                </Link>
-                                            </li>
+                                            <Link 
+                                                key={subLink.name}
+                                                to={subLink.path} 
+                                                onClick={() => setIsAcademicsMenuOpen(false)} 
+                                                className={`block p-3 rounded-lg text-sm group ${theme.text} hover:bg-gray-100 dark:hover:bg-white/10 transition-colors`}
+                                            >
+                                                <span className="font-semibold block">{subLink.name}</span>
+                                                <span className={`text-xs ${theme.textMuted}`}>{subLink.description}</span>
+                                            </Link>
                                         ))}
-                                    </ul>
-                                </div>
-                            </div>
-                        </div>
-                    );
-                }
-
-                if (link.name === 'News & Events') {
-                    return (
-                        <div
-                            key={link.name}
-                            className="relative"
-                            ref={newsRef}
-                            onMouseEnter={() => setIsNewsMenuOpen(true)}
-                            onMouseLeave={() => setIsNewsMenuOpen(false)}
-                            onFocus={() => setIsNewsMenuOpen(true)}
-                            onBlur={(e) => { if (!e.currentTarget.contains(e.relatedTarget)) setIsNewsMenuOpen(false); }}
-                        >
-                            <button
-                                aria-haspopup="true"
-                                aria-expanded={isNewsMenuOpen}
-                                className={`${linkBaseClasses} px-3 py-2 ${isNewsMenuOpen ? theme.header.accent : ''}`}
-                            >
-                                {link.name}
-                            </button>
-                            <div className={`absolute top-full left-1/2 -translate-x-1/2 pt-3 transition-all duration-300 ${isNewsMenuOpen ? 'opacity-100 visible' : 'opacity-0 invisible'}`}>
-                                <div className={`${theme.card.background} rounded-xl shadow-2xl border ${theme.card.border} p-2 w-64`}>
-                                    <ul className="space-y-1">
-                                        {NEWS_AND_EVENTS_SUB_LINKS.map(subLink => (
-                                            <li key={subLink.name}>
-                                                <Link 
-                                                    to={subLink.path} 
-                                                    onClick={() => setIsNewsMenuOpen(false)} 
-                                                    className={`block p-3 rounded-lg text-sm group ${theme.text} hover:bg-gray-100 dark:hover:bg-white/10`}
-                                                >
-                                                    <span className="font-semibold block">{subLink.name}</span>
-                                                    <span className={`text-xs ${theme.textMuted}`}>{subLink.description}</span>
-                                                </Link>
-                                            </li>
-                                        ))}
-                                    </ul>
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -173,22 +116,21 @@ const DesktopNav: React.FC<{ isStudent: boolean; }> = ({ isStudent }) => {
                             >
                                 {link.name}
                             </button>
-                            <div className={`absolute top-full left-1/2 -translate-x-1/2 pt-3 transition-all duration-300 ${isCommunityMenuOpen ? 'opacity-100 visible' : 'opacity-0 invisible'}`}>
-                                <div className={`${theme.card.background} rounded-xl shadow-2xl border ${theme.card.border} p-2 w-64`}>
-                                    <ul className="space-y-1">
+                            <div className={`absolute top-full left-1/2 -translate-x-1/2 pt-3 transition-all duration-300 ${isCommunityMenuOpen ? 'opacity-100 visible translate-y-0' : 'opacity-0 invisible -translate-y-2'}`}>
+                                <div className={`${theme.card.background} rounded-xl shadow-2xl border ${theme.card.border} p-4 w-[600px]`}>
+                                    <div className="grid grid-cols-2 gap-4">
                                         {COMMUNITY_SUB_LINKS.map(subLink => (
-                                            <li key={subLink.name}>
-                                                <Link 
-                                                    to={subLink.path} 
-                                                    onClick={() => setIsCommunityMenuOpen(false)} 
-                                                    className={`block p-3 rounded-lg text-sm group ${theme.text} hover:bg-gray-100 dark:hover:bg-white/10`}
-                                                >
-                                                    <span className="font-semibold block">{subLink.name}</span>
-                                                    <span className={`text-xs ${theme.textMuted}`}>{subLink.description}</span>
-                                                </Link>
-                                            </li>
+                                            <Link 
+                                                key={subLink.name}
+                                                to={subLink.path} 
+                                                onClick={() => setIsCommunityMenuOpen(false)} 
+                                                className={`block p-3 rounded-lg text-sm group ${theme.text} hover:bg-gray-100 dark:hover:bg-white/10 transition-colors`}
+                                            >
+                                                <span className="font-semibold block">{subLink.name}</span>
+                                                <span className={`text-xs ${theme.textMuted}`}>{subLink.description}</span>
+                                            </Link>
                                         ))}
-                                    </ul>
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -302,26 +244,6 @@ const MobileNav: React.FC<{ isOpen: boolean; setIsOpen: React.Dispatch<React.Set
                                 {isAccordionOpen && (
                                     <div className="mt-2 space-y-2 bg-black/5 dark:bg-white/5 py-2 rounded-lg">
                                         {ACADEMICS_SUB_LINKS.map(subLink => (
-                                            <NavLink key={subLink.name} to={subLink.path} onClick={() => setIsOpen(false)} className={subLinkClasses}>
-                                                {subLink.name}
-                                            </NavLink>
-                                        ))}
-                                    </div>
-                                )}
-                            </div>
-                        );
-                    }
-                    if (link.name === 'News & Events') {
-                        const isAccordionOpen = openAccordion === link.name;
-                        return (
-                            <div key={link.name} className="w-full text-center">
-                                <button onClick={() => toggleAccordion(link.name)} aria-expanded={isAccordionOpen} className={accordionButtonClasses}>
-                                    <span>{link.name}</span>
-                                    <ChevronDownIcon className={`w-5 h-5 ml-2 transform transition-transform duration-300 ${isAccordionOpen ? 'rotate-180' : ''}`} />
-                                </button>
-                                {isAccordionOpen && (
-                                    <div className="mt-2 space-y-2 bg-black/5 dark:bg-white/5 py-2 rounded-lg">
-                                        {NEWS_AND_EVENTS_SUB_LINKS.map(subLink => (
                                             <NavLink key={subLink.name} to={subLink.path} onClick={() => setIsOpen(false)} className={subLinkClasses}>
                                                 {subLink.name}
                                             </NavLink>

@@ -1,4 +1,3 @@
-
 import { SearchResultItem } from './types';
 
 export const NAV_LINKS = [
@@ -6,7 +5,6 @@ export const NAV_LINKS = [
   { name: 'About', path: '/about' },
   { name: 'Academics', path: '#' },
   { name: 'Admissions', path: '/admissions' },
-  { name: 'News & Events', path: '#' },
   { name: 'Community', path: '#' },
   { name: 'Contact', path: '/contact' },
   { name: 'Portals', path: '/portal' },
@@ -15,6 +13,7 @@ export const NAV_LINKS = [
 export const ACADEMICS_SUB_LINKS = [
   { name: 'Departments', path: '/departments', description: "Explore our faculties and programs." },
   { name: 'Courses', path: '/courses', description: "Browse our degree and diploma courses." },
+  { name: 'Events Calendar', path: '/events', description: "View upcoming academic and campus events." },
 ];
 
 export const STUDENT_HUB_LINKS = [
@@ -23,12 +22,8 @@ export const STUDENT_HUB_LINKS = [
   { name: 'Fee Payment', path: '/fee-payment', description: "View and pay your school fees." },
 ];
 
-export const NEWS_AND_EVENTS_SUB_LINKS = [
-  { name: 'Latest News', path: '/news', description: "Stay updated with the latest announcements." },
-  { name: 'Events Calendar', path: '/events', description: "View upcoming academic and campus events." },
-];
-
 export const COMMUNITY_SUB_LINKS = [
+  { name: 'Latest News', path: '/news', description: "Stay updated with the latest announcements." },
   { name: 'Library', path: '/library', description: "Explore our vast collection of books and resources." },
   { name: 'Student Clubs', path: '/clubs', description: "Find your passion and connect with peers." },
   { name: 'Visitations & Excursions', path: '/visitations', description: "Explore educational and recreational trips." },
