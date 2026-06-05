@@ -234,11 +234,8 @@ export default function Home() {
               
               {/* Academic Partnership Card */}
               <div className="bg-slate-50 border border-slate-100 rounded-2xl p-4 sm:p-5 flex flex-col sm:flex-row items-start sm:items-center gap-4 mt-1">
-                <div className="flex shrink-0 -space-x-3">
-                  <div className="w-12 h-12 rounded-full border-2 border-white bg-white p-0.5 shadow-sm overflow-hidden flex items-center justify-center">
-                    <img src="/crestoak-logo.png" alt="CrestOak Seal" className="w-full h-full object-contain rounded-full" />
-                  </div>
-                  <div className="w-12 h-12 rounded-full border-2 border-white bg-white p-0.5 shadow-sm overflow-hidden flex items-center justify-center">
+                <div className="flex shrink-0">
+                  <div className="w-12 h-12 rounded-full border border-slate-100 bg-white p-0.5 shadow-sm overflow-hidden flex items-center justify-center">
                     <img src="/atiba-logo.png" alt="Atiba Seal" className="w-full h-full object-contain rounded-full" />
                   </div>
                 </div>
@@ -246,7 +243,7 @@ export default function Home() {
                   <h4 className="font-display text-xs font-bold text-brand-blue-dark uppercase tracking-wider">
                     Official Academic Affiliation
                   </h4>
-                  <p className="text-xs text-slate-500 mt-1 leading-relaxed">
+                  <p className="text-xs text-slate-500 mt-1 leading-relaxed font-semibold">
                     Under the direct academic supervision and affiliation of <strong>Atiba University, Oyo, Nigeria</strong>.
                   </p>
                 </div>
@@ -288,8 +285,8 @@ export default function Home() {
               <div className="absolute inset-0 bg-gradient-to-tr from-brand-blue-light to-brand-blue rounded-3xl opacity-10 blur-xl -rotate-3 translate-x-2 translate-y-2" />
               <div className="relative border border-slate-100 bg-slate-50 p-8 rounded-3xl flex flex-col gap-6 shadow-md">
                 <div className="flex items-center gap-4 border-b border-slate-200/60 pb-4">
-                  <div className="w-12 h-12 rounded-full bg-brand-blue text-white flex items-center justify-center font-display font-bold text-lg shrink-0">
-                    CO
+                  <div className="w-12 h-12 rounded-full bg-white p-0.5 shadow-sm border border-slate-100 flex items-center justify-center overflow-hidden shrink-0">
+                    <img src="/crestoak-logo.png" alt="CrestOak College Seal" className="w-full h-full object-contain rounded-full" />
                   </div>
                   <div>
                     <h4 className="font-display font-bold text-brand-blue-dark text-lg">CrestOak Philosophy</h4>

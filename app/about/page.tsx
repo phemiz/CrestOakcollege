@@ -48,6 +48,10 @@ export default function About() {
                   {/* Visual placeholder for provost */}
                   <span className="font-display font-black text-brand-blue-dark text-6xl">P</span>
                 </div>
+                <div className="flex items-center gap-2 -mt-2">
+                  <img src="/crestoak-logo.png" alt="CrestOak College Seal" className="w-8 h-8 rounded-full object-contain shrink-0" />
+                  <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Official College Seal</span>
+                </div>
                 <div className="text-center">
                   <h3 className="font-display text-brand-blue-dark text-lg font-bold">Prof. O. A. Adelaja</h3>
                   <p className="text-xs font-semibold text-brand-red uppercase tracking-wider mt-1">Provost / Rector</p>
@@ -169,14 +173,12 @@ export default function About() {
                 viewport={{ once: true }}
                 className="relative bg-slate-50 border border-slate-100 p-8 rounded-3xl w-full max-w-md flex flex-col items-center gap-6 shadow-md"
               >
-                <div className="flex items-center gap-6">
-                  <div className="w-20 h-20 rounded-full bg-white p-1 shadow-md border border-slate-100 flex items-center justify-center overflow-hidden shrink-0">
-                    <img src="/crestoak-logo.png" alt="CrestOak Logo" className="object-contain w-full h-full rounded-full" />
-                  </div>
-                  <span className="text-slate-400 font-display text-2xl font-black">&amp;</span>
-                  <div className="w-20 h-20 rounded-full bg-white p-1 shadow-md border border-slate-100 flex items-center justify-center overflow-hidden shrink-0">
-                    <img src="/atiba-logo.png" alt="Atiba University Logo" className="object-contain w-full h-full rounded-full" />
-                  </div>
+                <div className="w-full flex items-center justify-center py-4 bg-white rounded-2xl border border-slate-150 p-2 shadow-inner">
+                  <img 
+                    src="/atiba-university-banner.png" 
+                    alt="Atiba University Logo Banner" 
+                    className="object-contain max-h-24 w-auto rounded" 
+                  />
                 </div>
                 
                 <div className="text-center w-full border-t border-slate-200/60 pt-4">
