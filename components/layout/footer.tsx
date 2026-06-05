@@ -12,13 +12,13 @@ export const Footer: React.FC = () => {
         {/* About & Slogan */}
         <div className="flex flex-col gap-6">
           <Link href="/">
-            <Logo size={80} showText={true} className="brightness-0 invert" />
+            <Logo size={68} showText={true} className="brightness-0 invert" />
           </Link>
           <p className="text-sm text-slate-400 leading-relaxed font-medium">
-            Empowering next-generation professionals in Health Sciences, Management, and Applied Technologies with a commitment to academic excellence and moral integrity.
+            Empowering next-generation professionals in Health Sciences, Management, Law, and Applied Technologies in academic partnership with <strong>Atiba University, Oyo</strong>.
           </p>
-          <div className="border-l-2 border-brand-red pl-4 italic text-sm text-white/90">
-            "Igniting Changes Through Knowledge"
+          <div className="border-l-2 border-brand-red pl-4 italic text-xs text-white/90">
+            "Under the academic supervision of Atiba University"
           </div>
         </div>
 

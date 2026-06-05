@@ -65,15 +65,15 @@ const facultiesData = [
     dean: "Dr. E. O. Johnson",
     requirements: "Five O'Level Credit passes including English Language, Mathematics, Chemistry, Physics, and Biology or Computer Studies.",
     duration: "4 Years",
-    outcomes: "Software Engineer, Microbiologist, Quality Control Officer, Clinical Biochemist, Research Analyst.",
+    outcomes: "Software Engineer, Biochemist, Chemical Analyst, Microbiologist, Systems Specialist.",
     courses: [
-      "Microbiology",
       "Biochemistry",
       "Chemistry",
-      "Computer Science",
-      "Mathematics",
-      "Physics",
-      "Physics with Electronics"
+      "Microbiology",
+      "Computer Science (Dept. of Physical & Computer Sciences)",
+      "Mathematics (Dept. of Physical & Computer Sciences)",
+      "Physics (Dept. of Physical & Computer Sciences)",
+      "Physics with Electronics (Dept. of Physical & Computer Sciences)"
     ],
   },
   {
@@ -85,7 +85,7 @@ const facultiesData = [
     duration: "5 Years (LL.B pathway)",
     outcomes: "Legal Advocate, Solicitor, Corporate Legal Adviser, Judicial Officer, Legal Consultant.",
     courses: [
-      "Law (LL.B)"
+      "Law"
     ],
   },
   {
@@ -150,8 +150,8 @@ const AcademicsContent: React.FC = () => {
                   onClick={() => setActiveTab(fac.id)}
                   className={`w-full flex items-center gap-4 p-4 rounded-2xl border text-left transition-all cursor-pointer ${
                     isActive
-                      ? "border-brand-red bg-brand-red-light/10 text-brand-blue-dark shadow-sm font-semibold"
-                      : "border-slate-100 bg-slate-50 hover:bg-slate-100 text-slate-700 hover:text-brand-blue-dark"
+                       ? "border-brand-red bg-brand-red-light/10 text-brand-blue-dark shadow-sm font-semibold"
+                       : "border-slate-100 bg-slate-50 hover:bg-slate-100 text-slate-700 hover:text-brand-blue-dark"
                   }`}
                 >
                   <div className={`p-2.5 rounded-xl shrink-0 ${isActive ? "bg-brand-red text-white" : "bg-slate-200 text-slate-600"}`}>
@@ -176,6 +176,23 @@ const AcademicsContent: React.FC = () => {
               </div>
               <div className="bg-white border border-slate-100 px-4 py-2 rounded-xl text-xs font-semibold text-slate-500 shadow-sm shrink-0 w-fit">
                 Dean: <span className="text-brand-blue-dark font-bold">{currentFaculty.dean}</span>
+              </div>
+            </div>
+
+            {/* University Affiliation Alert Banner */}
+            <div className="bg-white border border-slate-200/50 rounded-2xl p-4 flex items-center gap-3.5 shadow-sm">
+              <div className="w-10 h-10 rounded-full bg-white p-0.5 border border-slate-100 overflow-hidden flex items-center justify-center shrink-0">
+                <img
+                  src="/atiba-logo.png"
+                  alt="Atiba University Logo"
+                  className="object-contain w-full h-full rounded-full"
+                />
+              </div>
+              <div className="text-xs">
+                <p className="font-bold text-brand-blue-dark">Academic Partnership & Affiliation</p>
+                <p className="text-slate-500 mt-0.5 leading-relaxed font-semibold">
+                  This programme is hosted under the academic affiliation and supervision of <strong>Atiba University, Oyo</strong>.
+                </p>
               </div>
             </div>
 

@@ -86,10 +86,29 @@ export const Header: React.FC = () => {
             : "relative bg-white border-b border-slate-100"
         }`}
       >
-        {/* Logo */}
-        <Link href="/" className="flex items-center">
-          <Logo size={scrolled ? 50 : 65} showText={true} />
-        </Link>
+        {/* Logo & Affiliation */}
+        <div className="flex items-center gap-2.5 sm:gap-3.5">
+          <Link href="/" className="flex items-center">
+            <Logo size={scrolled ? 46 : 58} showText={true} />
+          </Link>
+          <div className="hidden sm:flex items-center h-8 border-l border-slate-200 pl-2.5 sm:pl-3.5 gap-2">
+            <div className="relative w-8 h-8 rounded-full bg-white p-0.5 border border-slate-100 flex items-center justify-center overflow-hidden shrink-0">
+              <img
+                src="/atiba-logo.png"
+                alt="Atiba University Logo"
+                className="object-contain w-full h-full rounded-full"
+              />
+            </div>
+            <div className="flex flex-col">
+              <span className="text-[7px] tracking-wider text-slate-400 font-semibold uppercase leading-none">
+                Affiliated with
+              </span>
+              <span className="text-[10px] font-bold text-brand-blue-dark leading-none mt-0.5">
+                Atiba University
+              </span>
+            </div>
+          </div>
+        </div>
 
         {/* Desktop Navigation */}
         <div className="hidden lg:flex items-center gap-8">
@@ -202,10 +221,23 @@ export const Header: React.FC = () => {
             >
               <div>
                 <div className="flex justify-between items-center border-b border-slate-100 pb-4 mb-6">
-                  <Logo size={45} showText={true} />
+                  <div className="flex flex-col gap-1.5">
+                    <Logo size={40} showText={true} />
+                    <div className="flex items-center gap-1.5 mt-1 border-t border-slate-50 pt-1">
+                      <img
+                        src="/atiba-logo.png"
+                        alt="Atiba University Logo"
+                        className="w-5 h-5 rounded-full object-contain"
+                      />
+                      <span className="text-[9px] font-semibold text-slate-500">
+                        Affiliated with Atiba University
+                      </span>
+                    </div>
+                  </div>
                   <button
                     onClick={() => setMobileMenuOpen(false)}
                     className="p-2 text-slate-500 hover:bg-slate-100 rounded-lg cursor-pointer"
+                    aria-label="Close menu"
                   >
                     <X size={22} />
                   </button>

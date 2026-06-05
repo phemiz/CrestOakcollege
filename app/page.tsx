@@ -102,15 +102,30 @@ export default function Home() {
           <div className="max-w-7xl mx-auto px-4 sm:px-6 md:px-8 relative z-10 w-full grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
             {/* Left Content */}
             <div className="lg:col-span-7 text-center lg:text-left flex flex-col gap-6">
-              <motion.div
-                initial={{ opacity: 0, y: -20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.5 }}
-                className="inline-flex items-center gap-2 bg-brand-red-light/10 border border-brand-red/30 px-4 py-1.5 rounded-full text-brand-red font-semibold text-xs uppercase tracking-wider mx-auto lg:mx-0 w-fit"
-              >
-                <span className="w-2 h-2 rounded-full bg-brand-red animate-ping" />
-                Admission Open for 2025/2026 Session
-              </motion.div>
+              <div className="flex flex-wrap items-center justify-center lg:justify-start gap-2.5">
+                <motion.div
+                  initial={{ opacity: 0, y: -20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.5 }}
+                  className="inline-flex items-center gap-2 bg-brand-red-light/10 border border-brand-red/30 px-3.5 py-1.5 rounded-full text-brand-red font-semibold text-[10px] sm:text-xs uppercase tracking-wider w-fit"
+                >
+                  <span className="w-1.5 h-1.5 rounded-full bg-brand-red animate-ping" />
+                  Admissions Open 2025/2026
+                </motion.div>
+                <motion.div
+                  initial={{ opacity: 0, y: -20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.5, delay: 0.15 }}
+                  className="inline-flex items-center gap-1.5 bg-brand-blue-light/10 border border-brand-blue-light/30 px-3.5 py-1.5 rounded-full text-brand-blue-light font-semibold text-[10px] sm:text-xs uppercase tracking-wider w-fit"
+                >
+                  <img
+                    src="/atiba-logo.png"
+                    alt="Atiba University Logo"
+                    className="w-4 h-4 rounded-full object-contain"
+                  />
+                  <span>Affiliated with Atiba University</span>
+                </motion.div>
+              </div>
 
               <motion.h1
                 initial={{ opacity: 0, y: 25 }}
@@ -131,14 +146,14 @@ export default function Home() {
                 transition={{ duration: 0.6, delay: 0.2 }}
                 className="text-slate-300 text-base sm:text-lg leading-relaxed max-w-xl mx-auto lg:mx-0 font-medium"
               >
-                Igniting Changes Through Knowledge. Discover a world of comprehensive academic programs designed to equip you with clinical expertise and technical capacity.
+                Igniting Changes Through Knowledge. Under the academic affiliation and supervision of Atiba University, Oyo, discover comprehensive professional programs to build your clinical and technical expertise.
               </motion.p>
 
               <motion.div
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.6, delay: 0.3 }}
-                className="flex flex-wrap items-center justify-center lg:justify-start gap-4 mt-2"
+                className="flex flex-wrap items-center justify-center lg:justify-start gap-4 mt-1"
               >
                 <Link href="/admissions">
                   <button className="bg-brand-red hover:bg-brand-red/90 text-white font-display font-bold px-8 py-3.5 rounded-full shadow-lg shadow-brand-red/30 transition-all cursor-pointer">
@@ -211,20 +226,40 @@ export default function Home() {
                 Igniting Changes Through Innovation and Knowledge
               </h2>
               <p className="text-slate-600 leading-relaxed font-medium">
-                CrestOak College of Health Sciences, Management and Technology (CCHSMT) stands as a beacon of academic excellence in Lagos. Strategically located in the historic town of Badagry, our institution is dedicated to raising healthcare technicians, technological pioneers, and business administrators.
+                CrestOak College of Health Sciences, Management and Technology (CCHSMT) stands as a beacon of academic excellence in Lagos. Strategically located in the historic town of Badagry, our institution is dedicated to raising qualified healthcare practitioners, managers, legal practitioners, and technologists.
               </p>
               <p className="text-slate-600 leading-relaxed font-medium">
-                We believe in standard hands-on clinical laboratories, digital workshops, and active mentoring. We provide academic paths which align with regulatory licenses, assuring that our students graduate ready to qualify and excel in licensing examinations globally.
+                Our academic programmes are run under the **academic affiliation and supervision of Atiba University, Oyo**, ensuring that all curricula meet rigorous national standards and degrees are widely recognized. We believe in standard hands-on clinical laboratories, digital workshops, and active mentoring.
               </p>
               
+              {/* Academic Partnership Card */}
+              <div className="bg-slate-50 border border-slate-100 rounded-2xl p-4 sm:p-5 flex flex-col sm:flex-row items-start sm:items-center gap-4 mt-1">
+                <div className="flex shrink-0 -space-x-3">
+                  <div className="w-12 h-12 rounded-full border-2 border-white bg-white p-0.5 shadow-sm overflow-hidden flex items-center justify-center">
+                    <img src="/crestoak-logo.png" alt="CrestOak Seal" className="w-full h-full object-contain rounded-full" />
+                  </div>
+                  <div className="w-12 h-12 rounded-full border-2 border-white bg-white p-0.5 shadow-sm overflow-hidden flex items-center justify-center">
+                    <img src="/atiba-logo.png" alt="Atiba Seal" className="w-full h-full object-contain rounded-full" />
+                  </div>
+                </div>
+                <div>
+                  <h4 className="font-display text-xs font-bold text-brand-blue-dark uppercase tracking-wider">
+                    Official Academic Affiliation
+                  </h4>
+                  <p className="text-xs text-slate-500 mt-1 leading-relaxed">
+                    Under the direct academic supervision and affiliation of <strong>Atiba University, Oyo, Nigeria</strong>.
+                  </p>
+                </div>
+              </div>
+
               <div className="flex flex-col gap-4 mt-2">
                 <div className="flex gap-3.5 items-start">
                   <div className="p-1.5 bg-emerald-50 text-emerald-600 rounded-full shrink-0 mt-0.5">
                     <ShieldCheck size={18} />
                   </div>
                   <div>
-                    <h4 className="font-display font-bold text-brand-blue-dark">Full Accreditation</h4>
-                    <p className="text-slate-500 text-sm mt-0.5">Our curriculum is fully validated and accredited by relevant academic regulatory bodies in Nigeria.</p>
+                    <h4 className="font-display font-bold text-brand-blue-dark">University Affiliation</h4>
+                    <p className="text-slate-500 text-sm mt-0.5">Formal affiliation ensures transfer paths, academic oversight, and standard degree awarding frameworks.</p>
                   </div>
                 </div>
                 <div className="flex gap-3.5 items-start">
@@ -238,7 +273,7 @@ export default function Home() {
                 </div>
               </div>
 
-              <div className="mt-4">
+              <div className="mt-2">
                 <Link href="/about">
                   <button className="inline-flex items-center gap-2 text-brand-red hover:text-brand-red/80 font-display font-bold text-base transition-colors group cursor-pointer">
                     <span>Read Provost Message</span>

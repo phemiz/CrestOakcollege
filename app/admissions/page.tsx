@@ -98,16 +98,39 @@ export default function Admissions() {
           <div className="max-w-7xl mx-auto px-4 sm:px-6 md:px-8 grid grid-cols-1 lg:grid-cols-12 gap-16">
             
             {/* Guide & Requirements (Left Side) */}
-            <div className="lg:col-span-6 flex flex-col gap-10">
-              {/* Core Alert */}
-              <div className="bg-white border border-slate-100 p-6 rounded-2xl shadow-sm flex gap-4 items-start">
+            <div className="lg:col-span-6 flex flex-col gap-8">
+              {/* Guide & Requirements (Left Side) */}
+              <div className="bg-white border border-slate-150 p-6 rounded-2xl shadow-sm flex gap-4 items-start">
                 <div className="p-3 bg-brand-red-light text-brand-red rounded-xl shrink-0">
                   <AlertCircle size={24} />
                 </div>
                 <div>
                   <h3 className="font-display font-bold text-brand-blue-dark text-base">Admission Guidelines</h3>
                   <p className="text-slate-500 text-xs sm:text-sm mt-1.5 leading-relaxed font-semibold">
-                    The general JAMB cut-off mark for the 2025/2026 academic calendar is <span className="text-brand-red font-black">140</span>. Candidates must possess credit level passes in at least 5 subjects at O'level (WAEC, NECO, or NABTEB) including English Language and Mathematics.
+                    All academic programmes are offered under the academic affiliation and supervision of <strong>Atiba University, Oyo</strong>. The general JAMB cut-off mark for the 2025/2026 academic calendar is <span className="text-brand-red font-black">140</span>. Candidates must possess credit level passes in at least 5 subjects at O'level (WAEC, NECO, or NABTEB) including English Language and Mathematics.
+                  </p>
+                </div>
+              </div>
+
+              {/* Atiba University Partnership Officers Card */}
+              <div className="bg-white border border-slate-150 p-6 rounded-2xl shadow-sm flex gap-4 items-start">
+                <div className="w-12 h-12 rounded-full bg-white p-0.5 border border-slate-100 flex items-center justify-center overflow-hidden shrink-0">
+                  <img
+                    src="/atiba-logo.png"
+                    alt="Atiba University Logo"
+                    className="w-full h-full object-contain rounded-full"
+                  />
+                </div>
+                <div className="text-xs">
+                  <h4 className="font-display font-bold text-brand-blue-dark text-sm">Atiba University Partnership Officers</h4>
+                  <p className="text-slate-500 mt-1.5 leading-relaxed font-semibold">
+                    For affiliation inquiries and partnership confirmations:
+                  </p>
+                  <p className="text-brand-blue-dark font-extrabold text-sm mt-1">
+                    📞 08169382815, 09058448903, 09055794403
+                  </p>
+                  <p className="text-slate-400 mt-2 font-semibold">
+                    Email: <a href="mailto:admissionsofficer@atibauniversity.edu.ng" className="text-brand-red hover:underline">admissionsofficer@atibauniversity.edu.ng</a>
                   </p>
                 </div>
               </div>
