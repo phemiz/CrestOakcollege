@@ -349,7 +349,7 @@ const AdminDashboardPage: React.FC = () => {
                                                     {app.status}
                                                 </span>
                                             </td>
-                                            <td className={`p-4 ${theme.textMuted}`}>{new Date(app.createdAt).toLocaleDateString()}</p>
+                                            <td className={`p-4 ${theme.textMuted}`}>{new Date(app.createdAt).toLocaleDateString()}</td>
                                         </tr>
                                     ))}
                                 </tbody>
