@@ -44,9 +44,12 @@ export default function About() {
                 viewport={{ once: true }}
                 className="relative bg-slate-50 border border-slate-100 p-6 rounded-3xl w-full max-w-sm flex flex-col items-center gap-6 shadow-md"
               >
-                <div className="w-48 h-48 rounded-full bg-slate-200 border-4 border-white shadow-inner flex items-center justify-center overflow-hidden relative">
-                  {/* Visual placeholder for rector */}
-                  <span className="font-display font-black text-brand-blue-dark text-6xl">R</span>
+                <div className="w-48 h-48 rounded-full bg-slate-200 border-4 border-white shadow-lg flex items-center justify-center overflow-hidden relative">
+                  <img
+                    src="/rector-enhanced.png"
+                    alt="Dr. Ajisefinni E.O. - Rector"
+                    className="w-full h-full object-cover"
+                  />
                 </div>
                 <div className="flex items-center gap-2 -mt-2">
                   <img src="/crestoak-logo.png" alt="CrestOak College Seal" className="w-8 h-8 rounded-full object-contain shrink-0" />
