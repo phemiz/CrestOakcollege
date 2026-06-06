@@ -35,7 +35,7 @@ const stats = [
 const faculties = [
   {
     id: "health",
-    name: "Faculty of Allied Health Sciences",
+    name: "Faculty of Applied Health Sciences",
     desc: "Nursing Science, Medical Laboratory Science, Public Health, Physiology.",
     icon: HeartPulse,
     color: "from-blue-500/10 to-emerald-500/10 hover:border-emerald-500",
@@ -119,9 +119,9 @@ export default function Home() {
                   className="inline-flex items-center gap-1.5 bg-brand-blue-light/10 border border-brand-blue-light/30 px-3.5 py-1.5 rounded-full text-brand-blue-light font-semibold text-[10px] sm:text-xs uppercase tracking-wider w-fit"
                 >
                   <img
-                    src="/atiba-logo.png"
+                    src="/atiba-university-banner.png"
                     alt="Atiba University Logo"
-                    className="w-4 h-4 rounded-full object-contain"
+                    className="w-4 h-4 rounded-full object-cover object-left"
                   />
                   <span>Affiliated with Atiba University</span>
                 </motion.div>
@@ -229,22 +229,35 @@ export default function Home() {
                 CrestOak College of Health Sciences, Management and Technology (CCHSMT) stands as a beacon of academic excellence in Lagos. Strategically located in the historic town of Badagry, our institution is dedicated to raising qualified healthcare practitioners, managers, legal practitioners, and technologists.
               </p>
               <p className="text-slate-600 leading-relaxed font-medium">
-                Our academic programmes are run under the **academic affiliation and supervision of Atiba University, Oyo**, ensuring that all curricula meet rigorous national standards and degrees are widely recognized. We believe in standard hands-on clinical laboratories, digital workshops, and active mentoring.
+                Our academic programmes are run under the <span className="font-display font-bold text-brand-blue-dark">academic affiliation and supervision of Atiba University, Oyo</span>, ensuring that all curricula meet rigorous national standards and degrees are widely recognized. We believe in standard hands-on clinical laboratories, digital workshops, and active mentoring.
               </p>
               
               {/* Academic Partnership Card */}
-              <div className="bg-slate-50 border border-slate-100 rounded-2xl p-4 sm:p-5 flex flex-col sm:flex-row items-start sm:items-center gap-4 mt-1">
+              <div className="relative overflow-hidden bg-gradient-to-r from-emerald-50/50 via-slate-50 to-slate-50/30 border border-emerald-500/10 rounded-2xl p-5 sm:p-6 flex flex-col md:flex-row items-start md:items-center gap-6 mt-2 shadow-sm hover:shadow-md transition-all duration-300">
+                {/* Decorative side accent line */}
+                <div className="absolute left-0 top-0 bottom-0 w-1 bg-emerald-500 rounded-l-2xl" />
+                
+                {/* Logo Badge Container */}
                 <div className="flex shrink-0">
-                  <div className="w-12 h-12 rounded-full border border-slate-100 bg-white p-0.5 shadow-sm overflow-hidden flex items-center justify-center">
-                    <img src="/atiba-logo.png" alt="Atiba Seal" className="w-full h-full object-contain rounded-full" />
+                  <div className="bg-white px-4 py-2.5 rounded-xl border border-slate-100 shadow-sm flex items-center justify-center hover:scale-[1.02] transition-transform duration-200">
+                    <img 
+                      src="/atiba-university-banner.png" 
+                      alt="Atiba University Banner" 
+                      className="h-10 sm:h-12 w-auto object-contain" 
+                    />
                   </div>
                 </div>
-                <div>
-                  <h4 className="font-display text-xs font-bold text-brand-blue-dark uppercase tracking-wider">
-                    Official Academic Affiliation
-                  </h4>
-                  <p className="text-xs text-slate-500 mt-1 leading-relaxed font-semibold">
-                    Under the direct academic supervision and affiliation of <strong>Atiba University, Oyo, Nigeria</strong>.
+                
+                {/* Text Content */}
+                <div className="flex-grow">
+                  <div className="flex items-center gap-2">
+                    <span className="inline-block w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                    <h4 className="font-display text-xs font-extrabold text-brand-blue-dark uppercase tracking-wider">
+                      Official Academic Affiliation
+                    </h4>
+                  </div>
+                  <p className="text-xs sm:text-[13px] text-slate-600 mt-2 leading-relaxed font-semibold">
+                    Under the direct academic supervision and affiliation of <strong className="text-brand-blue-dark font-bold">Atiba University, Oyo, Nigeria</strong>.
                   </p>
                 </div>
               </div>
@@ -273,7 +286,7 @@ export default function Home() {
               <div className="mt-2">
                 <Link href="/about">
                   <button className="inline-flex items-center gap-2 text-brand-red hover:text-brand-red/80 font-display font-bold text-base transition-colors group cursor-pointer">
-                    <span>Read Provost Message</span>
+                    <span>Read Rector Message</span>
                     <ChevronRight size={18} className="group-hover:translate-x-1 transition-transform" />
                   </button>
                 </Link>

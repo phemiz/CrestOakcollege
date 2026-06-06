@@ -113,23 +113,24 @@ export default function Admissions() {
               </div>
 
               {/* Atiba University Partnership Officers Card */}
-              <div className="bg-white border border-slate-150 p-6 rounded-2xl shadow-sm flex gap-4 items-start">
-                <div className="w-12 h-12 rounded-full bg-white p-0.5 border border-slate-100 flex items-center justify-center overflow-hidden shrink-0">
+              <div className="bg-white border border-slate-200/80 p-6 rounded-2xl shadow-sm flex flex-col sm:flex-row gap-5 items-start sm:items-center relative overflow-hidden">
+                <div className="absolute left-0 top-0 bottom-0 w-1 bg-emerald-500" />
+                <div className="bg-white px-3.5 py-2 rounded-xl border border-slate-100 shadow-sm flex items-center justify-center shrink-0">
                   <img
-                    src="/atiba-logo.png"
+                    src="/atiba-university-banner.png"
                     alt="Atiba University Logo"
-                    className="w-full h-full object-contain rounded-full"
+                    className="h-10 w-auto object-contain"
                   />
                 </div>
-                <div className="text-xs">
+                <div className="text-xs flex-grow">
                   <h4 className="font-display font-bold text-brand-blue-dark text-sm">Atiba University Partnership Officers</h4>
-                  <p className="text-slate-500 mt-1.5 leading-relaxed font-semibold">
+                  <p className="text-slate-500 mt-1 leading-relaxed font-semibold">
                     For affiliation inquiries and partnership confirmations:
                   </p>
                   <p className="text-brand-blue-dark font-extrabold text-sm mt-1">
                     📞 08169382815, 09058448903, 09055794403
                   </p>
-                  <p className="text-slate-400 mt-2 font-semibold">
+                  <p className="text-slate-400 mt-1.5 font-semibold">
                     Email: <a href="mailto:admissionsofficer@atibauniversity.edu.ng" className="text-brand-red hover:underline">admissionsofficer@atibauniversity.edu.ng</a>
                   </p>
                 </div>
@@ -283,7 +284,7 @@ export default function Admissions() {
                           onChange={handleChange}
                           className="w-full p-3.5 bg-slate-50 rounded-xl border border-slate-200 text-sm font-bold text-brand-blue-dark focus:outline-none focus:border-brand-blue"
                         >
-                          <option value="health">Allied Health Sciences</option>
+                          <option value="health">Applied Health Sciences</option>
                           <option value="social">Social & Management Sciences</option>
                           <option value="natural">Natural & Applied Sciences</option>
                           <option value="law">Faculty of Law</option>

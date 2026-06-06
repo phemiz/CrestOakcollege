@@ -19,13 +19,13 @@ export const metadata: Metadata = {
     default: "CrestOak College | Health Sciences, Management & Technology",
     template: "%s | CrestOak College (CCHSMT)"
   },
-  description: "CrestOak College of Health Sciences, Management and Technology (Badagry, Lagos) offers top-tier programs in Allied Health Sciences, Law, Social & Management Sciences, Agriculture, and Applied Sciences. Igniting changes through knowledge.",
+  description: "CrestOak College of Health Sciences, Management and Technology (Badagry, Lagos) offers top-tier programs in Applied Health Sciences, Law, Social & Management Sciences, Agriculture, and Applied Sciences. Igniting changes through knowledge.",
   keywords: [
     "CrestOak College", 
     "Health Science College Nigeria", 
     "Management and Technology College", 
     "CrestOak College Badagry", 
-    "Allied Health Sciences Lagos", 
+    "Applied Health Sciences Lagos", 
     "Nursing Science Badagry", 
     "Criminology and Security Studies Nigeria",
     "Computer Science College Lagos",
@@ -42,7 +42,7 @@ export const metadata: Metadata = {
   twitter: {
     card: "summary_large_image",
     title: "CrestOak College of Health Sciences, Management and Technology",
-    description: "Igniting changes through knowledge. Admissions open for Allied Health, Law, Management, and Applied Sciences.",
+    description: "Igniting changes through knowledge. Admissions open for Applied Health, Law, Management, and Applied Sciences.",
   }
 };
 

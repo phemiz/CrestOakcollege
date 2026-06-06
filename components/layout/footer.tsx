@@ -12,7 +12,7 @@ export const Footer: React.FC = () => {
         {/* About & Slogan */}
         <div className="flex flex-col gap-6">
           <Link href="/">
-            <Logo size={68} showText={true} className="brightness-0 invert" />
+            <Logo size={68} showText={true} lightText={true} />
           </Link>
           <p className="text-sm text-slate-400 leading-relaxed font-medium">
             Empowering next-generation professionals in Health Sciences, Management, Law, and Applied Technologies in academic partnership with <strong>Atiba University, Oyo</strong>.
@@ -56,7 +56,7 @@ export const Footer: React.FC = () => {
           <ul className="flex flex-col gap-3.5 text-sm font-medium">
             <li>
               <Link href="/academics?faculty=health" className="hover:text-white transition-colors">
-                Allied Health Sciences
+                Applied Health Sciences
               </Link>
             </li>
             <li>

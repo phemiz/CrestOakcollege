@@ -45,17 +45,17 @@ export default function About() {
                 className="relative bg-slate-50 border border-slate-100 p-6 rounded-3xl w-full max-w-sm flex flex-col items-center gap-6 shadow-md"
               >
                 <div className="w-48 h-48 rounded-full bg-slate-200 border-4 border-white shadow-inner flex items-center justify-center overflow-hidden relative">
-                  {/* Visual placeholder for provost */}
-                  <span className="font-display font-black text-brand-blue-dark text-6xl">P</span>
+                  {/* Visual placeholder for rector */}
+                  <span className="font-display font-black text-brand-blue-dark text-6xl">R</span>
                 </div>
                 <div className="flex items-center gap-2 -mt-2">
                   <img src="/crestoak-logo.png" alt="CrestOak College Seal" className="w-8 h-8 rounded-full object-contain shrink-0" />
                   <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Official College Seal</span>
                 </div>
                 <div className="text-center">
-                  <h3 className="font-display text-brand-blue-dark text-lg font-bold">Prof. O. A. Adelaja</h3>
-                  <p className="text-xs font-semibold text-brand-red uppercase tracking-wider mt-1">Provost / Rector</p>
-                  <p className="text-slate-400 text-[10px] mt-0.5">PhD, FNMCN, FOSHA</p>
+                  <h3 className="font-display text-brand-blue-dark text-lg font-bold">Dr. Ajisefinni E.O.</h3>
+                  <p className="text-xs font-semibold text-brand-red uppercase tracking-wider mt-1">Rector</p>
+                  <p className="text-slate-400 text-[10px] mt-0.5">PhD</p>
                 </div>
                 <div className="w-full border-t border-slate-100 pt-4 text-center">
                   <p className="italic text-slate-500 text-xs leading-relaxed">
@@ -82,8 +82,8 @@ export default function About() {
                   We are deeply committed to ensuring that our graduates are fully qualified to take and excel in local and international licensing examinations, making them immediate assets to institutions worldwide.
                 </p>
                 <p className="font-semibold text-brand-blue-dark mt-2">
-                  Prof. O. A. Adelaja <br />
-                  <span className="text-xs text-slate-500">Provost, CCHSMT</span>
+                  Dr. Ajisefinni E.O. <br />
+                  <span className="text-xs text-slate-500">Rector, CCHSMT</span>
                 </p>
               </div>
             </div>
@@ -154,13 +154,13 @@ export default function About() {
               </h2>
               <div className="text-slate-600 leading-relaxed font-medium flex flex-col gap-4 text-sm sm:text-base">
                 <p>
-                  CrestOak College of Health Sciences, Management and Technology operates under the **academic affiliation and supervision of Atiba University, Oyo, Nigeria**. 
+                  CrestOak College of Health Sciences, Management and Technology operates under the <span className="font-display font-bold text-brand-blue-dark">academic affiliation and supervision of Atiba University, Oyo, Nigeria</span>. 
                 </p>
                 <p>
                   This strategic academic partnership ensures that our course curricula are designed in direct alignment with university-level standards. Our students benefit from collaborative resources, standard examinations, transfer pathways, and certificates/degrees awarded with the endorsement and supervision of Atiba University.
                 </p>
                 <p>
-                  Through this affiliation, we maintain rigorous oversight of all our departments across Allied Health, Arts, Law, Social & Management Sciences, Agriculture, and Applied Sciences.
+                  Through this affiliation, we maintain rigorous oversight of all our departments across Applied Health, Arts, Law, Social & Management Sciences, Agriculture, and Applied Sciences.
                 </p>
               </div>
             </div>

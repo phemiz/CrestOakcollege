@@ -14,7 +14,7 @@ const navigationItems = [
     name: "Academics",
     href: "/academics",
     dropdown: [
-      { name: "Faculty of Allied Health Sciences", href: "/academics?faculty=health" },
+      { name: "Faculty of Applied Health Sciences", href: "/academics?faculty=health" },
       { name: "Faculty of Social & Management Sciences", href: "/academics?faculty=social" },
       { name: "Faculty of Natural & Applied Sciences", href: "/academics?faculty=natural" },
       { name: "Faculty of Law", href: "/academics?faculty=law" },
