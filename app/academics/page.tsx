@@ -15,25 +15,35 @@ import {
   Clock, 
   CheckCircle2, 
   ChevronRight, 
-  GraduationCap 
+  GraduationCap,
+  Wallet,
+  Coins
 } from "lucide-react";
 
-// Academics Data Structure
+// Academics Data Structure with Fee Schedules
 const facultiesData = [
   {
     id: "health",
     name: "Faculty of Applied Health Sciences",
     icon: HeartPulse,
     dean: "Dr. Mrs. A. O. Williams",
-    requirements: "Five O'Level Credit passes in WAEC/NECO/NABTEB including English Language, Mathematics, Biology, Chemistry, and Physics in not more than two sittings.",
-    duration: "3 - 5 Years (depending on Certificate, Diploma, or Degree path)",
-    outcomes: "Registered Nurse, Clinical Lab Assistant, Public Health Administrator, Community Health Officer.",
+    requirements: "Five O'Level Credit passes in WAEC/NECO/NABTEB including English Language, Mathematics, Biology, Chemistry, and Physics in not more than two sittings. Candidates with JAMB must satisfy the cut-off thresholds.",
+    duration: "3 - 5 Years (ND, HND, and Diploma pathways available)",
+    outcomes: "Licensed Nurse, Medical Lab Scientist, Public Health Administrator, Community Health Inspector.",
     courses: [
-      "Nursing Science",
-      "Medical Laboratory Science",
-      "Public Health",
-      "Physiology"
+      "Nursing Science (ND/HND)",
+      "Medical Laboratory Science (ND/HND)",
+      "Public Health Technology (ND/HND)",
+      "Community Health (Diploma)",
+      "Physiology & Anatomy Studies (Diploma)"
     ],
+    fees: {
+      application: 10000,
+      acceptance: 20000,
+      tuition: 135000,
+      examination: 15000,
+      hostel: 50000
+    }
   },
   {
     id: "social",
@@ -41,22 +51,25 @@ const facultiesData = [
     icon: Briefcase,
     dean: "Prof. S. J. Balogun",
     requirements: "Five O'Level Credit passes in WAEC/NECO including English Language, Mathematics, Economics, and any other two Social Science/Commercial subjects.",
-    duration: "4 Years (for Bachelor's degree pathways)",
-    outcomes: "Financial Analyst, Business Administrator, Intelligence & Security Analyst, Hotel Manager, diplomat, Public Administrator.",
+    duration: "4 Years (ND/HND and Bachelor's pathways)",
+    outcomes: "Financial Analyst, Business Manager, Criminology Investigator, Hotel Executive, Diplomat.",
     courses: [
+      "Business Administration & Management",
       "Banking and Finance",
-      "Business Administration",
       "Criminology and Security Studies",
-      "Entrepreneurship",
+      "Entrepreneurship & Innovation",
       "Hospitality and Tourism Management",
       "International Relations",
-      "Marketing",
-      "Political Science",
-      "Public Administration",
-      "Psychology",
-      "Sociology",
-      "Transport Management"
+      "Marketing & Digital Sales",
+      "Public Administration"
     ],
+    fees: {
+      application: 7500,
+      acceptance: 15000,
+      tuition: 95000,
+      examination: 10000,
+      hostel: 40000
+    }
   },
   {
     id: "natural",
@@ -64,17 +77,22 @@ const facultiesData = [
     icon: Atom,
     dean: "Dr. E. O. Johnson",
     requirements: "Five O'Level Credit passes including English Language, Mathematics, Chemistry, Physics, and Biology or Computer Studies.",
-    duration: "4 Years",
-    outcomes: "Software Engineer, Biochemist, Chemical Analyst, Microbiologist, Systems Specialist.",
+    duration: "2 - 4 Years (ND/HND options)",
+    outcomes: "Software developer, Lab Biochemist, Industrial Chemist, Systems Administrator, Microbiologist.",
     courses: [
-      "Biochemistry",
-      "Chemistry",
-      "Microbiology",
-      "Computer Science (Dept. of Physical & Computer Sciences)",
-      "Mathematics (Dept. of Physical & Computer Sciences)",
-      "Physics (Dept. of Physical & Computer Sciences)",
-      "Physics with Electronics (Dept. of Physical & Computer Sciences)"
+      "Computer Science (ND/HND)",
+      "Microbiology (ND/HND)",
+      "Biochemistry (ND/HND)",
+      "Mathematics & Statistics",
+      "Physics with Electronics"
     ],
+    fees: {
+      application: 8500,
+      acceptance: 15000,
+      tuition: 105000,
+      examination: 12000,
+      hostel: 45000
+    }
   },
   {
     id: "law",
@@ -83,10 +101,18 @@ const facultiesData = [
     dean: "Barr. A. O. Coker (LL.M)",
     requirements: "Five O'Level Credit passes in WAEC/NECO including English Language, Literature in English, Mathematics, and any two Arts/Social Science subjects.",
     duration: "5 Years (LL.B pathway)",
-    outcomes: "Legal Advocate, Solicitor, Corporate Legal Adviser, Judicial Officer, Legal Consultant.",
+    outcomes: "Legal Advocate, Solicitor, Corporate Counsel, Legal Consultant, Jurist.",
     courses: [
-      "Law"
+      "Civil & Common Law (LL.B)",
+      "Legal Practice Diploma"
     ],
+    fees: {
+      application: 15000,
+      acceptance: 30000,
+      tuition: 180000,
+      examination: 20000,
+      hostel: 50000
+    }
   },
   {
     id: "arts",
@@ -95,11 +121,18 @@ const facultiesData = [
     dean: "Mrs. F. A. Ayodele",
     requirements: "Five O'Level Credit passes in English Language, Mathematics, Literature in English, and any other two Arts/Social Science subjects.",
     duration: "4 Years",
-    outcomes: "Academic Instructor, Theater Director, Copywriter, Media Producer, Communications Specialist.",
+    outcomes: "Public Speaker, Media Presenter, Copywriter, Theatre Producer, Translator.",
     courses: [
-      "English Language",
-      "Theatre Arts"
+      "English Language & Communications",
+      "Theatre & Creative Arts"
     ],
+    fees: {
+      application: 7500,
+      acceptance: 15000,
+      tuition: 90000,
+      examination: 10000,
+      hostel: 40000
+    }
   },
   {
     id: "agriculture",
@@ -107,11 +140,19 @@ const facultiesData = [
     icon: Leaf,
     dean: "Prof. I. A. Ogundele",
     requirements: "Five O'Level Credit passes in English Language, Mathematics, Agricultural Science or Biology, Chemistry, and Geography or Physics.",
-    duration: "4 - 5 Years",
-    outcomes: "Extension Specialist, Agricultural Project Manager, Farm Consultant, Agronomist.",
+    duration: "4 - 5 Years (Degree & Diploma structures)",
+    outcomes: "Agronomist, Farm Manager, Extension Officer, Agricultural Entrepreneur.",
     courses: [
-      "Agricultural Extension and Rural Development"
+      "Agricultural Extension and Rural Development",
+      "Animal Science & Crop Tech"
     ],
+    fees: {
+      application: 7500,
+      acceptance: 15000,
+      tuition: 85000,
+      examination: 10000,
+      hostel: 40000
+    }
   },
 ];
 
@@ -120,6 +161,7 @@ const AcademicsContent: React.FC = () => {
   const searchParams = useSearchParams();
   const initialFaculty = searchParams.get("faculty") || "health";
   const [activeTab, setActiveTab] = useState(initialFaculty);
+  const [showFees, setShowFees] = useState(false);
 
   // Set active tab if query parameter changes
   useEffect(() => {
@@ -130,6 +172,14 @@ const AcademicsContent: React.FC = () => {
   }, [searchParams]);
 
   const currentFaculty = facultiesData.find((f) => f.id === activeTab) || facultiesData[0];
+
+  const formatNaira = (amount: number) => {
+    return new Intl.NumberFormat("en-NG", {
+      style: "currency",
+      currency: "NGN",
+      minimumFractionDigits: 0
+    }).format(amount);
+  };
 
   return (
     <section className="py-20 bg-white">
@@ -147,7 +197,10 @@ const AcademicsContent: React.FC = () => {
               return (
                 <button
                   key={fac.id}
-                  onClick={() => setActiveTab(fac.id)}
+                  onClick={() => {
+                    setActiveTab(fac.id);
+                    setShowFees(false); // Reset fees view
+                  }}
                   className={`w-full flex items-center gap-4 p-4 rounded-2xl border text-left transition-all cursor-pointer ${
                     isActive
                        ? "border-brand-red bg-brand-red-light/10 text-brand-blue-dark shadow-sm font-semibold"
@@ -166,7 +219,7 @@ const AcademicsContent: React.FC = () => {
           </div>
 
           {/* Main Faculty Details View */}
-          <div className="lg:col-span-8 bg-brand-bg-light border border-slate-100 p-8 rounded-3xl flex flex-col gap-8">
+          <div className="lg:col-span-8 bg-brand-bg-light border border-slate-100 p-6 sm:p-8 rounded-3xl flex flex-col gap-8">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-200/60 pb-6">
               <div>
                 <span className="text-brand-red font-bold text-xs uppercase tracking-widest">Faculty Details</span>
@@ -248,6 +301,90 @@ const AcademicsContent: React.FC = () => {
                   </p>
                 </div>
               </div>
+            </div>
+
+            <hr className="border-slate-200/60" />
+
+            {/* Structured Tuition Fee Section */}
+            <div className="bg-white rounded-2xl border border-slate-150 p-6 flex flex-col gap-4">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <Wallet size={20} className="text-brand-red" />
+                  <h5 className="font-display font-bold text-brand-blue-dark text-base">
+                    Naira (₦) Fees & Funding
+                  </h5>
+                </div>
+                <button
+                  onClick={() => setShowFees(!showFees)}
+                  className="bg-brand-blue-light/10 text-brand-blue-light hover:bg-brand-blue-light hover:text-white px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center gap-1"
+                >
+                  <span>{showFees ? "Hide Fees Breakdown" : "View Fees Breakdown"}</span>
+                  <ChevronRight size={14} className={`transition-transform duration-200 ${showFees ? "rotate-90" : ""}`} />
+                </button>
+              </div>
+
+              <p className="text-xs text-slate-500 font-semibold leading-relaxed">
+                CCHSMT runs a student-focused affordable tuition structure. Invoices are generated in Naira (₦) and can be paid securely online via Paystack or bank transfer.
+              </p>
+
+              {showFees && (
+                <div className="mt-2 border-t border-slate-100 pt-4 flex flex-col gap-4">
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-xs text-left border-collapse">
+                      <thead>
+                        <tr className="border-b border-slate-200 text-slate-400 font-bold uppercase tracking-wider">
+                          <th className="py-2.5 pb-2">Fee Category</th>
+                          <th className="py-2.5 pb-2 text-right">Amount (₦)</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-slate-100 font-semibold text-slate-700">
+                        <tr>
+                          <td className="py-2.5">Application Form Fee</td>
+                          <td className="py-2.5 text-right font-display text-brand-blue-dark">{formatNaira(currentFaculty.fees.application)}</td>
+                        </tr>
+                        <tr>
+                          <td className="py-2.5">Acceptance Fee (One-Time)</td>
+                          <td className="py-2.5 text-right font-display text-brand-blue-dark">{formatNaira(currentFaculty.fees.acceptance)}</td>
+                        </tr>
+                        <tr>
+                          <td className="py-2.5">Academic Tuition Fee (Per Session)</td>
+                          <td className="py-2.5 text-right font-display text-brand-blue-dark">{formatNaira(currentFaculty.fees.tuition)}</td>
+                        </tr>
+                        <tr>
+                          <td className="py-2.5">Examination & Practical Assessment Fee</td>
+                          <td className="py-2.5 text-right font-display text-brand-blue-dark">{formatNaira(currentFaculty.fees.examination)}</td>
+                        </tr>
+                        <tr>
+                          <td className="py-2.5">Hostel Accommodation Fee (Optional)</td>
+                          <td className="py-2.5 text-right font-display text-brand-blue-dark">{formatNaira(currentFaculty.fees.hostel)}</td>
+                        </tr>
+                        <tr className="bg-slate-50 font-black text-brand-blue-dark">
+                          <td className="py-3 px-2 rounded-l-lg">Total Session Fee (with Hostel)</td>
+                          <td className="py-3 px-2 text-right rounded-r-lg font-display text-brand-red">
+                            {formatNaira(
+                              currentFaculty.fees.acceptance +
+                              currentFaculty.fees.tuition +
+                              currentFaculty.fees.examination +
+                              currentFaculty.fees.hostel
+                            )}
+                          </td>
+                        </tr>
+                      </tbody>
+                    </table>
+                  </div>
+
+                  {/* Payment install notice */}
+                  <div className="bg-emerald-50 text-emerald-800 p-4 rounded-xl text-xs flex gap-2 items-start font-semibold">
+                    <Coins size={16} className="shrink-0 text-emerald-600 mt-0.5" />
+                    <div>
+                      <p className="font-bold text-brand-blue-dark">Flexible Payment Plan Options</p>
+                      <p className="mt-1 leading-relaxed text-slate-600 font-semibold">
+                        Students can pay academic fees in two installments: a minimum of <strong className="text-emerald-700">60%</strong> before first-semester registration, and the balance <strong className="text-emerald-700">40%</strong> before secondary examination clearances.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
 
             {/* Application Quick Link Banner */}

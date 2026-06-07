@@ -1,14 +1,10 @@
 "use client";
 
-import React from "react";
+import React, { useState, useEffect } from "react";
 import Link from "next/link";
-import { motion } from "framer-motion";
-import { 
-  Header 
-} from "@/components/layout/header";
-import { 
-  Footer 
-} from "@/components/layout/footer";
+import { motion, AnimatePresence } from "framer-motion";
+import { Header } from "@/components/layout/header";
+import { Footer } from "@/components/layout/footer";
 import { 
   GraduationCap, 
   BookOpen, 
@@ -19,71 +15,161 @@ import {
   Briefcase, 
   Scale, 
   Globe, 
-  TrendingUp, 
   ChevronRight,
   HeartPulse,
-  Leaf
+  Leaf,
+  Calendar,
+  Building,
+  ClipboardList,
+  Wallet,
+  Sparkles,
+  Check,
+  CheckCircle2,
+  Lock,
+  ExternalLink,
+  MessageSquare
 } from "lucide-react";
 
-const stats = [
-  { id: 1, name: "Accredited Programs", value: "25+", icon: BookOpen },
-  { id: 2, name: "Active Students", value: "1,200+", icon: Users },
-  { id: 3, name: "Qualified Faculty", value: "85+", icon: GraduationCap },
-  { id: 4, name: "Success Rate", value: "98%", icon: Award },
+// Stat counter component that increments on mount
+const StatCounter = ({ value, label, icon: Icon }: { value: string; label: string; icon: any }) => {
+  const [count, setCount] = useState(0);
+  const target = parseInt(value.replace(/[^0-9]/g, ""), 10);
+  const isPercent = value.includes("%");
+  const isPlus = value.includes("+");
+
+  useEffect(() => {
+    let start = 0;
+    const duration = 1500;
+    const totalSteps = duration / 16;
+    const increment = target / totalSteps;
+    const timer = setInterval(() => {
+      start += increment;
+      if (start >= target) {
+        setCount(target);
+        clearInterval(timer);
+      } else {
+        setCount(Math.floor(start));
+      }
+    }, 16);
+    return () => clearInterval(timer);
+  }, [target]);
+
+  return (
+    <div className="flex flex-col sm:flex-row items-center gap-4 text-center sm:text-left bg-white p-6 rounded-2xl border border-slate-100 shadow-sm hover:shadow-md transition-shadow">
+      <div className="p-3 bg-brand-blue-dark/5 text-brand-blue rounded-xl shrink-0">
+        <Icon size={26} className="text-brand-blue-light" />
+      </div>
+      <div>
+        <p className="text-3xl font-extrabold text-brand-blue-dark font-display">
+          {count}
+          {isPlus && "+"}
+          {isPercent && "%"}
+        </p>
+        <p className="text-xs font-semibold text-slate-500 mt-1 uppercase tracking-wider">{label}</p>
+      </div>
+    </div>
+  );
+};
+
+const quickLinks = [
+  { name: "Admissions Portal", desc: "Start online application", href: "/admissions", icon: ClipboardList, badge: "Open" },
+  { name: "Program Finder", desc: "Find courses & criteria", href: "/academics", icon: BookOpen, badge: "ND/HND" },
+  { name: "Student Portal", desc: "Register courses & check results", href: "/portal", icon: GraduationCap, badge: "Active" },
+  { name: "Fee Payment Portal", desc: "Simulated Paystack billing", href: "/portal?tab=billing", icon: Wallet, badge: "Secure" },
+  { name: "Campus Gallery", desc: "Labs, library & campus life", href: "/gallery", icon: Building, badge: "Tour" },
+  { name: "Admin CMS Control", desc: "Manage announcements & fees", href: "/admin", icon: ShieldCheck, badge: "Staff" }
 ];
 
-const faculties = [
+const chooseReasons = [
   {
-    id: "health",
-    name: "Faculty of Applied Health Sciences",
-    desc: "Nursing Science, Medical Laboratory Science, Public Health, Physiology.",
-    icon: HeartPulse,
-    color: "from-blue-500/10 to-emerald-500/10 hover:border-emerald-500",
-    iconColor: "text-emerald-600",
+    title: "Accredited Health & Tech Modules",
+    desc: "Fully validated by NMCN, MLSCN, and Community Health Boards for licensed practice.",
+    icon: ShieldCheck
   },
   {
-    id: "social",
-    name: "Faculty of Social & Management Sciences",
-    desc: "Business Administration, Banking, Criminology, Hospitality, International Relations.",
-    icon: Briefcase,
-    color: "from-blue-500/10 to-indigo-500/10 hover:border-indigo-500",
-    iconColor: "text-indigo-600",
+    title: "Affiliated with Atiba University",
+    desc: "Formal degree supervision and academic paths endorsed by Atiba University, Oyo.",
+    icon: GraduationCap
   },
   {
-    id: "natural",
-    name: "Faculty of Natural & Applied Sciences",
-    desc: "Computer Science, Mathematics, Microbiology, Biochemistry, Physics.",
-    icon: Atom,
-    color: "from-blue-500/10 to-cyan-500/10 hover:border-cyan-500",
-    iconColor: "text-cyan-600",
+    title: "Modern Training Laboratories",
+    desc: "Gain hands-on expertise in simulated clinical wards, microbiology labs, and tech hubs.",
+    icon: Atom
   },
   {
-    id: "law",
-    name: "Faculty of Law",
-    desc: "Comprehensive LL.B program designed for tomorrow's legal minds and jurists.",
-    icon: Scale,
-    color: "from-blue-500/10 to-amber-500/10 hover:border-amber-500",
-    iconColor: "text-amber-600",
+    title: "Affordable & Installment Fees",
+    desc: "Flexible, parents-focused tuition structured to allow convenient installment splits.",
+    icon: Wallet
   },
   {
-    id: "arts",
-    name: "Faculty of Arts",
-    desc: "English Language and Theatre Arts modules exploring language, culture, and creative expression.",
-    icon: Globe,
-    color: "from-blue-500/10 to-purple-500/10 hover:border-purple-500",
-    iconColor: "text-purple-600",
+    title: "Clinical Placement Guarantee",
+    desc: "Rotations and internships across recognized regional hospitals and digital enterprises.",
+    icon: HeartPulse
   },
   {
-    id: "agriculture",
-    name: "Faculty of Agricultural Sciences",
-    desc: "Agricultural Extension and Rural Development targeting ecological security.",
-    icon: Leaf,
-    color: "from-blue-500/10 to-green-500/10 hover:border-green-500",
-    iconColor: "text-green-600",
+    title: "Graduate Job Employability",
+    desc: "Focus on licensing examination reviews to ensure immediate workforce integration.",
+    icon: Briefcase
+  }
+];
+
+const testimonialsData = {
+  students: [
+    { name: "Chinedu Okafor", program: "Nursing Science (ND)", text: "The medical lab equipment at CrestOak is outstanding. The practical sessions prepare us for actual clinical tasks. It makes a huge difference compared to other colleges.", outcome: "Clinical Intern" },
+    { name: "Fatima Bello", program: "Computer Science (HND)", text: "I love the hybrid learning structure. CrestOak has modern computer hardware labs and the collaboration with Atiba University provides great resources.", outcome: "Software Dev Aspirant" }
+  ],
+  alumni: [
+    { name: "Tunde Adelakun", program: "Medical Laboratory Science", text: "Directly after my HND program, I secured a job at a top diagnostic center in Lagos. The licensing review drills at CrestOak were the key to passing my board exams.", outcome: "Lab Scientist at Synlab" },
+    { name: "Amara Okoye", program: "Public Health Graduate", text: "The program focused heavily on community engagement and epidemiology. I was hired by a healthcare NGO immediately after graduation.", outcome: "Health Officer, UNICEF NG" }
+  ],
+  parents: [
+    { name: "Chief Gabriel Adebayo", relation: "Parent of Nursing Student", text: "Sending my daughter to CrestOak is the best decision I've made. The school fees are affordable, payments are structured, and the affiliation with Atiba University is reassuring.", outcome: "Satisfied Parent" },
+    { name: "Alhaji Ibrahim Musa", relation: "Guardian of Computer Science Student", text: "The focus on ethics and practical skills makes CrestOak stand out. My nephew is already designing websites and databases in his second year.", outcome: "Proud Uncle" }
+  ],
+  partners: [
+    { name: "Dr. Kunle Fagbemi", company: "Lagos Health Systems", text: "We have partnered with CrestOak for clinical rotations for 3 years. Their students show higher clinical preparedness and discipline than most.", outcome: "Healthcare Partner" },
+    { name: "Engr. Sandra Cole", company: "TechNext Nigeria", text: "CrestOak graduates in Applied Sciences adapt very quickly to industry tech stacks. Their curriculum aligns with modern technical standards.", outcome: "Industry Placement Partner" }
+  ]
+};
+
+const newsAndEvents = [
+  {
+    id: 1,
+    title: "2025/2026 Admissions Screening Dates Released",
+    date: "June 15, 2026",
+    desc: "First batch entrance screenings and interviews will commence at the Badagry campus. Check requirements.",
+    category: "Screening",
+    alert: "Urgent"
   },
+  {
+    id: 2,
+    title: "Academic Affiliation Review by Atiba University Board",
+    date: "June 02, 2026",
+    desc: "A delegation from Atiba University visited the CCHSMT laboratories to certify the updated digital curriculum.",
+    category: "Affiliation",
+    alert: "Update"
+  },
+  {
+    id: 3,
+    title: "Lagos State Healthcare Integration Placement Scheme",
+    date: "May 28, 2026",
+    desc: "New partnerships signed with Lagos State hospitals for student clinical postings and internship placements.",
+    category: "Clinical",
+    alert: "New Partnership"
+  },
+  {
+    id: 4,
+    title: "Tuition Installment Payment Option Now Live",
+    date: "May 15, 2026",
+    desc: "Students can now pay school fees in flexible installments using Paystack or local bank transfers via the portal.",
+    category: "Finance",
+    alert: "Portal Alert"
+  }
 ];
 
 export default function Home() {
+  const [activeTab, setActiveTab] = useState<"students" | "alumni" | "parents" | "partners">("students");
+
   return (
     <>
       <Header />
@@ -149,6 +235,7 @@ export default function Home() {
                 Igniting Changes Through Knowledge. Under the academic affiliation and supervision of Atiba University, Oyo, discover comprehensive professional programs to build your clinical and technical expertise.
               </motion.p>
 
+              {/* CTAs */}
               <motion.div
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
@@ -156,15 +243,30 @@ export default function Home() {
                 className="flex flex-wrap items-center justify-center lg:justify-start gap-4 mt-1"
               >
                 <Link href="/admissions">
-                  <button className="bg-brand-red hover:bg-brand-red/90 text-white font-display font-bold px-8 py-3.5 rounded-full shadow-lg shadow-brand-red/30 transition-all cursor-pointer">
-                    Apply Now
+                  <button className="bg-brand-red hover:bg-brand-red/90 text-white font-display font-bold px-8 py-3.5 rounded-full shadow-lg shadow-brand-red/30 transition-all cursor-pointer flex items-center gap-2">
+                    <span>Apply Now</span>
+                    <ChevronRight size={16} />
                   </button>
                 </Link>
                 <Link href="/academics">
                   <button className="border border-white/20 hover:border-white/50 text-white hover:bg-white/5 font-display font-bold px-8 py-3.5 rounded-full transition-all cursor-pointer">
-                    Explore Faculties
+                    Explore Programs
                   </button>
                 </Link>
+              </motion.div>
+
+              {/* Trust Badges */}
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 0.7 }}
+                transition={{ delay: 0.5, duration: 0.8 }}
+                className="mt-6 flex flex-wrap items-center justify-center lg:justify-start gap-5 text-[10px] text-slate-400 font-bold uppercase tracking-wider"
+              >
+                <span className="flex items-center gap-1.5"><ShieldCheck className="text-brand-gold" size={14} /> NUC Aligned Pathways</span>
+                <span className="hidden sm:inline opacity-30">|</span>
+                <span className="flex items-center gap-1.5"><ShieldCheck className="text-brand-gold" size={14} /> Board Certified Wards</span>
+                <span className="hidden sm:inline opacity-30">|</span>
+                <span className="flex items-center gap-1.5"><ShieldCheck className="text-brand-gold" size={14} /> Lagos State Accredited</span>
               </motion.div>
             </div>
 
@@ -179,8 +281,9 @@ export default function Home() {
                 <div className="absolute top-0 right-0 w-24 h-24 bg-brand-gold/10 rounded-full blur-2xl" />
                 
                 {/* Visual Ring */}
-                <div className="w-48 h-48 rounded-full border-4 border-dashed border-white/20 flex items-center justify-center p-4">
-                  <GraduationCap size={72} className="text-brand-gold" />
+                <div className="w-48 h-48 rounded-full border-4 border-dashed border-white/20 flex items-center justify-center p-4 relative">
+                  <GraduationCap size={72} className="text-brand-gold animate-bounce" />
+                  <div className="absolute inset-0 rounded-full border border-white/10 animate-pulse" />
                 </div>
                 
                 <div className="text-center">
@@ -198,21 +301,56 @@ export default function Home() {
           </div>
         </section>
 
+        {/* QUICK ACCESS PANEL */}
+        <section className="relative z-20 -mt-10 max-w-7xl mx-auto px-4 sm:px-6 md:px-8">
+          <div className="bg-white rounded-3xl shadow-xl border border-slate-100 p-6 md:p-8">
+            <div className="flex items-center gap-2 mb-6">
+              <Sparkles className="text-brand-red animate-pulse" size={18} />
+              <h3 className="font-display text-xs font-black text-brand-blue-dark uppercase tracking-widest">
+                Quick Access Portal Panel
+              </h3>
+            </div>
+            
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+              {quickLinks.map((link, idx) => {
+                const Icon = link.icon;
+                return (
+                  <Link
+                    key={idx}
+                    href={link.href}
+                    className="flex flex-col gap-3 p-4 bg-slate-50 hover:bg-brand-red-light/20 border border-slate-100 hover:border-brand-red/25 rounded-2xl text-left transition-all duration-300 group hover:-translate-y-1 shadow-sm"
+                  >
+                    <div className="flex justify-between items-start">
+                      <div className="p-2 bg-white rounded-xl text-brand-blue group-hover:bg-brand-red group-hover:text-white transition-colors">
+                        <Icon size={16} />
+                      </div>
+                      <span className="text-[8px] font-black uppercase tracking-wider text-slate-400 bg-white group-hover:bg-brand-red/10 group-hover:text-brand-red px-2 py-0.5 rounded border border-slate-100">
+                        {link.badge}
+                      </span>
+                    </div>
+                    <div>
+                      <p className="font-display text-xs font-bold text-brand-blue-dark leading-tight group-hover:text-brand-red transition-colors">
+                        {link.name}
+                      </p>
+                      <p className="text-[10px] text-slate-400 mt-1 leading-snug hidden sm:block">
+                        {link.desc}
+                      </p>
+                    </div>
+                  </Link>
+                );
+              })}
+            </div>
+          </div>
+        </section>
+
         {/* STATISTICS SECTION */}
-        <section className="bg-brand-bg-light py-10 border-y border-slate-100">
+        <section className="bg-brand-bg-light pt-20 pb-10 border-b border-slate-100">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 md:px-8">
-            <div className="grid grid-cols-2 lg:grid-cols-4 gap-8">
-              {stats.map((stat) => (
-                <div key={stat.id} className="flex flex-col sm:flex-row items-center gap-4 text-center sm:text-left bg-white p-6 rounded-2xl border border-slate-100 shadow-sm">
-                  <div className="p-3 bg-brand-blue-dark/5 text-brand-blue rounded-xl shrink-0">
-                    <stat.icon size={26} />
-                  </div>
-                  <div>
-                    <p className="text-3xl font-extrabold text-brand-blue-dark font-display">{stat.value}</p>
-                    <p className="text-xs font-semibold text-slate-500 mt-1 uppercase tracking-wider">{stat.name}</p>
-                  </div>
-                </div>
-              ))}
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-6">
+              <StatCounter value="25+" label="Accredited Programs" icon={BookOpen} />
+              <StatCounter value="1200+" label="Active Students" icon={Users} />
+              <StatCounter value="85+" label="Experienced Lecturers" icon={GraduationCap} />
+              <StatCounter value="98%" label="Graduate Placement" icon={Award} />
             </div>
           </div>
         </section>
@@ -334,46 +472,157 @@ export default function Home() {
           </div>
         </section>
 
-        {/* ACADEMICS BENTO GRID */}
-        <section className="bg-brand-bg-light py-20 border-y border-slate-100">
+        {/* WHY CHOOSE CRESTOAK SECTION (UPGRADED) */}
+        <section className="bg-brand-bg-light py-20 border-y border-slate-150">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 md:px-8">
             <div className="text-center max-w-xl mx-auto flex flex-col gap-4 mb-16">
-              <span className="text-brand-red font-bold text-sm uppercase tracking-widest">Faculties</span>
+              <span className="text-brand-red font-bold text-xs uppercase tracking-widest">Why CrestOak?</span>
               <h2 className="font-display text-3xl sm:text-4xl font-extrabold text-brand-blue-dark tracking-tight">
-                Our Specialized Faculties
+                Our Institutional Edge
               </h2>
               <p className="text-slate-500 text-sm font-medium">
-                Explore our accredited faculties. We design courses to empower career growth, research capability, and clinical proficiency.
+                CrestOak is built to meet regulatory standards while supporting affordable, high-employability programs suitable for Nigerian families.
               </p>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-              {faculties.map((fac) => (
-                <div
-                  key={fac.id}
-                  className="bg-white rounded-2xl p-6 border border-slate-100 shadow-sm transition-all duration-300 hover:shadow-lg hover:-translate-y-1 group flex flex-col justify-between"
-                >
-                  <div className="flex flex-col gap-4">
-                    <div className={`w-12 h-12 rounded-xl flex items-center justify-center bg-gradient-to-tr ${fac.color} ${fac.iconColor} shrink-0`}>
-                      <fac.icon size={24} />
+              {chooseReasons.map((reason, idx) => {
+                const Icon = reason.icon;
+                return (
+                  <div
+                    key={idx}
+                    className="bg-white rounded-2xl p-6 border border-slate-100 shadow-sm hover:shadow-md transition-shadow flex gap-4 items-start"
+                  >
+                    <div className="p-3 bg-brand-red-light text-brand-red rounded-xl shrink-0">
+                      <Icon size={22} />
                     </div>
                     <div>
-                      <h3 className="font-display text-brand-blue-dark text-lg font-bold group-hover:text-brand-red transition-colors">
-                        {fac.name}
-                      </h3>
-                      <p className="text-slate-500 text-sm mt-2 leading-relaxed">
-                        {fac.desc}
+                      <h4 className="font-display font-bold text-brand-blue-dark text-base">
+                        {reason.title}
+                      </h4>
+                      <p className="text-slate-500 text-xs sm:text-sm mt-2 leading-relaxed font-semibold">
+                        {reason.desc}
                       </p>
                     </div>
                   </div>
-                  <div className="mt-6 pt-4 border-t border-slate-50">
-                    <Link
-                      href={`/academics?faculty=${fac.id}`}
-                      className="inline-flex items-center gap-1.5 text-xs font-bold uppercase text-brand-blue-light hover:text-brand-red tracking-wider transition-colors cursor-pointer"
-                    >
-                      <span>Explore Courses</span>
-                      <ChevronRight size={14} className="group-hover:translate-x-0.5 transition-transform" />
-                    </Link>
+                );
+              })}
+            </div>
+          </div>
+        </section>
+
+        {/* INTERACTIVE TESTIMONIAL SYSTEM */}
+        <section className="py-20 bg-white">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 md:px-8">
+            <div className="text-center max-w-xl mx-auto flex flex-col gap-4 mb-12">
+              <span className="text-brand-red font-bold text-xs uppercase tracking-widest">Testimonials</span>
+              <h2 className="font-display text-3xl font-extrabold text-brand-blue-dark tracking-tight">
+                Institutional Credibility & Trust
+              </h2>
+              <p className="text-slate-500 text-sm font-medium">
+                Hear what our students, graduates, guardians, and clinical partners in Nigeria say about our courses.
+              </p>
+            </div>
+
+            {/* Selector tabs */}
+            <div className="flex flex-wrap justify-center gap-2 mb-10 max-w-lg mx-auto bg-slate-50 p-1.5 rounded-2xl border border-slate-100">
+              {(Object.keys(testimonialsData) as Array<keyof typeof testimonialsData>).map((tab) => (
+                <button
+                  key={tab}
+                  onClick={() => setActiveTab(tab)}
+                  className={`flex-grow py-2.5 px-4 rounded-xl font-display text-xs font-bold capitalize transition-all cursor-pointer ${
+                    activeTab === tab
+                      ? "bg-brand-red text-white shadow-sm"
+                      : "text-slate-500 hover:text-brand-blue-dark hover:bg-slate-100"
+                  }`}
+                >
+                  {tab}
+                </button>
+              ))}
+            </div>
+
+            {/* Testimonials list */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-4xl mx-auto">
+              <AnimatePresence mode="wait">
+                {testimonialsData[activeTab].map((item: any, index: number) => (
+                  <motion.div
+                    key={`${activeTab}-${index}`}
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -10 }}
+                    transition={{ duration: 0.2 }}
+                    className="bg-brand-bg-light rounded-3xl p-6 border border-slate-100 flex flex-col justify-between shadow-sm relative overflow-hidden"
+                  >
+                    <div className="absolute top-0 right-0 p-4 opacity-5 text-brand-blue">
+                      <MessageSquare size={72} />
+                    </div>
+                    
+                    <p className="text-slate-600 italic text-sm leading-relaxed relative z-10">
+                      "{item.text}"
+                    </p>
+                    
+                    <div className="mt-6 pt-4 border-t border-slate-200/50 flex items-center justify-between">
+                      <div>
+                        <p className="font-display font-extrabold text-brand-blue-dark text-sm">
+                          {item.name}
+                        </p>
+                        <p className="text-slate-400 text-[10px] mt-0.5 font-bold">
+                          {item.program || item.relation || item.company}
+                        </p>
+                      </div>
+                      <span className="text-[10px] font-bold text-brand-red bg-brand-red-light px-2.5 py-0.5 rounded-full uppercase">
+                        {item.outcome}
+                      </span>
+                    </div>
+                  </motion.div>
+                ))}
+              </AnimatePresence>
+            </div>
+          </div>
+        </section>
+
+        {/* NEWS, EVENTS & ACADEMIC CALENDAR */}
+        <section id="news" className="bg-brand-bg-light py-20 border-t border-slate-150">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 md:px-8">
+            <div className="text-center max-w-xl mx-auto flex flex-col gap-4 mb-16">
+              <span className="text-brand-red font-bold text-xs uppercase tracking-widest">News & Admissions News</span>
+              <h2 className="font-display text-3xl font-extrabold text-brand-blue-dark tracking-tight">
+                Academic Calendar & Updates
+              </h2>
+              <p className="text-slate-500 text-sm font-medium">
+                Stay updated with key entrance screening dates, session deadlines, and local healthcare partnership disclosures.
+              </p>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+              {newsAndEvents.map((news) => (
+                <div
+                  key={news.id}
+                  className="bg-white rounded-2xl border border-slate-100 p-6 flex flex-col justify-between shadow-sm hover:shadow-md transition-shadow group"
+                >
+                  <div className="flex flex-col gap-4">
+                    <div className="flex items-center justify-between">
+                      <span className="text-[8px] font-black uppercase tracking-wider text-brand-red bg-brand-red-light px-2 py-0.5 rounded">
+                        {news.alert}
+                      </span>
+                      <div className="flex items-center gap-1 text-[10px] text-slate-400 font-bold">
+                        <Calendar size={12} />
+                        <span>{news.date}</span>
+                      </div>
+                    </div>
+                    <div>
+                      <h3 className="font-display font-bold text-brand-blue-dark text-sm sm:text-base leading-snug group-hover:text-brand-red transition-colors">
+                        {news.title}
+                      </h3>
+                      <p className="text-slate-500 text-xs mt-2.5 leading-relaxed font-semibold">
+                        {news.desc}
+                      </p>
+                    </div>
+                  </div>
+                  <div className="mt-6 pt-4 border-t border-slate-50 text-right">
+                    <span className="text-[10px] font-black uppercase text-slate-400 tracking-wider">
+                      {news.category}
+                    </span>
                   </div>
                 </div>
               ))}
