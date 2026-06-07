@@ -870,7 +870,8 @@ export default function Admissions() {
                       </div>
                       <div>
                         <span className="text-slate-400 block uppercase mb-0.5">Program assigned</span>
-                        <span className="text-brand-blue-dark font-extrabold uppercase">Nursing Science (ND/HND Path)</span>
+                        <span className="text-brand-blue-dark font-extrabold uppercase">Nursing Science (B.Sc. / B.N.Sc. Degree)</span>
+
                       </div>
                       <div>
                         <span className="text-slate-400 block uppercase mb-0.5">Registration Number</span>

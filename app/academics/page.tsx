@@ -28,14 +28,14 @@ const facultiesData = [
     icon: HeartPulse,
     dean: "Dr. Mrs. A. O. Williams",
     requirements: "Five O'Level Credit passes in WAEC/NECO/NABTEB including English Language, Mathematics, Biology, Chemistry, and Physics in not more than two sittings. Candidates with JAMB must satisfy the cut-off thresholds.",
-    duration: "3 - 5 Years (ND, HND, and Diploma pathways available)",
+    duration: "4 - 5 Years (Bachelor of Science / Professional Degree pathways)",
     outcomes: "Licensed Nurse, Medical Lab Scientist, Public Health Administrator, Community Health Inspector.",
     courses: [
-      "Nursing Science (ND/HND)",
-      "Medical Laboratory Science (ND/HND)",
-      "Public Health Technology (ND/HND)",
-      "Community Health (Diploma)",
-      "Physiology & Anatomy Studies (Diploma)"
+      "Nursing Science (B.N.Sc.)",
+      "Medical Laboratory Science (B.MLS)",
+      "Public Health Technology (B.Sc.)",
+      "Community Health (B.Sc.)",
+      "Physiology & Anatomy Studies (B.Sc.)"
     ],
     fees: {
       application: 10000,
@@ -51,17 +51,17 @@ const facultiesData = [
     icon: Briefcase,
     dean: "Prof. S. J. Balogun",
     requirements: "Five O'Level Credit passes in WAEC/NECO including English Language, Mathematics, Economics, and any other two Social Science/Commercial subjects.",
-    duration: "4 Years (ND/HND and Bachelor's pathways)",
+    duration: "4 Years (Bachelor of Science - B.Sc. pathways)",
     outcomes: "Financial Analyst, Business Manager, Criminology Investigator, Hotel Executive, Diplomat.",
     courses: [
-      "Business Administration & Management",
-      "Banking and Finance",
-      "Criminology and Security Studies",
-      "Entrepreneurship & Innovation",
-      "Hospitality and Tourism Management",
-      "International Relations",
-      "Marketing & Digital Sales",
-      "Public Administration"
+      "Business Administration & Management (B.Sc.)",
+      "Banking and Finance (B.Sc.)",
+      "Criminology and Security Studies (B.Sc.)",
+      "Entrepreneurship & Innovation (B.Sc.)",
+      "Hospitality and Tourism Management (B.Sc.)",
+      "International Relations (B.Sc.)",
+      "Marketing & Digital Sales (B.Sc.)",
+      "Public Administration (B.Sc.)"
     ],
     fees: {
       application: 7500,
@@ -77,14 +77,14 @@ const facultiesData = [
     icon: Atom,
     dean: "Dr. E. O. Johnson",
     requirements: "Five O'Level Credit passes including English Language, Mathematics, Chemistry, Physics, and Biology or Computer Studies.",
-    duration: "2 - 4 Years (ND/HND options)",
+    duration: "4 Years (Bachelor of Science - B.Sc. degree pathways)",
     outcomes: "Software developer, Lab Biochemist, Industrial Chemist, Systems Administrator, Microbiologist.",
     courses: [
-      "Computer Science (ND/HND)",
-      "Microbiology (ND/HND)",
-      "Biochemistry (ND/HND)",
-      "Mathematics & Statistics",
-      "Physics with Electronics"
+      "Computer Science (B.Sc.)",
+      "Microbiology (B.Sc.)",
+      "Biochemistry (B.Sc.)",
+      "Mathematics & Statistics (B.Sc.)",
+      "Physics with Electronics (B.Sc.)"
     ],
     fees: {
       application: 8500,
@@ -120,11 +120,11 @@ const facultiesData = [
     icon: Globe,
     dean: "Mrs. F. A. Ayodele",
     requirements: "Five O'Level Credit passes in English Language, Mathematics, Literature in English, and any other two Arts/Social Science subjects.",
-    duration: "4 Years",
+    duration: "4 Years (Bachelor of Arts - B.A. degree)",
     outcomes: "Public Speaker, Media Presenter, Copywriter, Theatre Producer, Translator.",
     courses: [
-      "English Language & Communications",
-      "Theatre & Creative Arts"
+      "English Language & Communications (B.A.)",
+      "Theatre & Creative Arts (B.A.)"
     ],
     fees: {
       application: 7500,
@@ -140,11 +140,11 @@ const facultiesData = [
     icon: Leaf,
     dean: "Prof. I. A. Ogundele",
     requirements: "Five O'Level Credit passes in English Language, Mathematics, Agricultural Science or Biology, Chemistry, and Geography or Physics.",
-    duration: "4 - 5 Years (Degree & Diploma structures)",
+    duration: "5 Years (Bachelor of Agriculture - B.Agric. pathways)",
     outcomes: "Agronomist, Farm Manager, Extension Officer, Agricultural Entrepreneur.",
     courses: [
-      "Agricultural Extension and Rural Development",
-      "Animal Science & Crop Tech"
+      "Agricultural Extension and Rural Development (B.Agric.)",
+      "Animal Science & Crop Tech (B.Agric.)"
     ],
     fees: {
       application: 7500,
@@ -155,6 +155,7 @@ const facultiesData = [
     }
   },
 ];
+
 
 // Inner component to handle search params
 const AcademicsContent: React.FC = () => {

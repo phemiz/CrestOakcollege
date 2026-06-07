@@ -163,7 +163,8 @@ export default function StudentPortal() {
       phone: "+234 815 588 4804",
       faculty: matchedFaculty,
       semester: "1st Semester, 2025/2026",
-      level: "ND I",
+      level: "Year 1 / 100 Level",
+
       gpa: "3.82"
     };
 

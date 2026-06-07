@@ -73,7 +73,7 @@ const StatCounter = ({ value, label, icon: Icon }: { value: string; label: strin
 
 const quickLinks = [
   { name: "Admissions Portal", desc: "Start online application", href: "/admissions", icon: ClipboardList, badge: "Open" },
-  { name: "Program Finder", desc: "Find courses & criteria", href: "/academics", icon: BookOpen, badge: "ND/HND" },
+  { name: "Program Finder", desc: "Find courses & criteria", href: "/academics", icon: BookOpen, badge: "B.Sc./Degree" },
   { name: "Student Portal", desc: "Register courses & check results", href: "/portal", icon: GraduationCap, badge: "Active" },
   { name: "Fee Payment Portal", desc: "Simulated Paystack billing", href: "/portal?tab=billing", icon: Wallet, badge: "Secure" },
   { name: "Campus Gallery", desc: "Labs, library & campus life", href: "/gallery", icon: Building, badge: "Tour" },
@@ -115,11 +115,12 @@ const chooseReasons = [
 
 const testimonialsData = {
   students: [
-    { name: "Chinedu Okafor", program: "Nursing Science (ND)", text: "The medical lab equipment at CrestOak is outstanding. The practical sessions prepare us for actual clinical tasks. It makes a huge difference compared to other colleges.", outcome: "Clinical Intern" },
-    { name: "Fatima Bello", program: "Computer Science (HND)", text: "I love the hybrid learning structure. CrestOak has modern computer hardware labs and the collaboration with Atiba University provides great resources.", outcome: "Software Dev Aspirant" }
+    { name: "Chinedu Okafor", program: "Nursing Science (B.Sc.)", text: "The medical lab equipment at CrestOak is outstanding. The practical sessions prepare us for actual clinical tasks. It makes a huge difference compared to other colleges.", outcome: "Clinical Intern" },
+    { name: "Fatima Bello", program: "Computer Science (B.Sc.)", text: "I love the hybrid learning structure. CrestOak has modern computer hardware labs and the collaboration with Atiba University provides great resources.", outcome: "Software Dev Aspirant" }
   ],
   alumni: [
-    { name: "Tunde Adelakun", program: "Medical Laboratory Science", text: "Directly after my HND program, I secured a job at a top diagnostic center in Lagos. The licensing review drills at CrestOak were the key to passing my board exams.", outcome: "Lab Scientist at Synlab" },
+    { name: "Tunde Adelakun", program: "Medical Laboratory Science (B.Sc.)", text: "Directly after my B.Sc. program, I secured a job at a top diagnostic center in Lagos. The licensing review drills at CrestOak were the key to passing my board exams.", outcome: "Lab Scientist at Synlab" },
+
     { name: "Amara Okoye", program: "Public Health Graduate", text: "The program focused heavily on community engagement and epidemiology. I was hired by a healthcare NGO immediately after graduation.", outcome: "Health Officer, UNICEF NG" }
   ],
   parents: [
