@@ -97,11 +97,12 @@ export default function StudentPortal() {
 
     // Default Invoices
     const defaultInvoices = [
-      { id: "INV-001", description: "Acceptance Fee", amount: 20000, status: "Pending", category: "Acceptance", date: "June 01, 2026" },
-      { id: "INV-002", description: "First Semester School Fees", amount: 135000, status: "Pending", category: "School Fees", date: "June 02, 2026" },
-      { id: "INV-003", description: "Examination & Practical Assessment", amount: 15000, status: "Pending", category: "Examination", date: "June 03, 2026" },
+      { id: "INV-001", description: "Acceptance Fee", amount: 25000, status: "Pending", category: "Acceptance", date: "June 01, 2026" },
+      { id: "INV-002", description: "First Semester School Fees", amount: 150000, status: "Pending", category: "School Fees", date: "June 02, 2026" },
+      { id: "INV-003", description: "Examination & Practical Assessment", amount: 25000, status: "Pending", category: "Examination", date: "June 03, 2026" },
       { id: "INV-004", description: "Hostel Accommodation Fee (Optional)", amount: 50000, status: "Pending", category: "Hostel", date: "June 04, 2026" }
     ];
+
 
     const savedInvoices = localStorage.getItem("cchsmt_student_invoices");
     if (savedInvoices) {

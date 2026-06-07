@@ -28,14 +28,14 @@ export default function AdminCMS() {
 
   // Fees State
   const [feesData, setFeesData] = useState({
-    healthTuition: 135000,
-    socialTuition: 95000,
-    naturalTuition: 105000,
-    lawTuition: 180000,
-    artsTuition: 90000,
-    agricTuition: 85000,
+    healthTuition: 150000,
+    socialTuition: 150000,
+    naturalTuition: 150000,
+    lawTuition: 150000,
+    artsTuition: 150000,
+    agricTuition: 150000,
     applicationFee: 10000,
-    acceptanceFee: 20000
+    acceptanceFee: 25000
   });
 
   // Applications list from admissions
@@ -115,9 +115,10 @@ export default function AdminCMS() {
     const defaultInvoices = [
       { id: "INV-001", description: "Acceptance Fee", amount: Number(feesData.acceptanceFee), status: "Pending", category: "Acceptance", date: "June 01, 2026" },
       { id: "INV-002", description: "First Semester School Fees", amount: Number(feesData.healthTuition), status: "Pending", category: "School Fees", date: "June 02, 2026" },
-      { id: "INV-003", description: "Examination & Practical Assessment", amount: 15000, status: "Pending", category: "Examination", date: "June 03, 2026" },
+      { id: "INV-003", description: "Examination & Practical Assessment", amount: 25000, status: "Pending", category: "Examination", date: "June 03, 2026" },
       { id: "INV-004", description: "Hostel Accommodation Fee (Optional)", amount: 50000, status: "Pending", category: "Hostel", date: "June 04, 2026" }
     ];
+
     localStorage.setItem("cchsmt_student_invoices", JSON.stringify(defaultInvoices));
     
     triggerSuccessIndicator();

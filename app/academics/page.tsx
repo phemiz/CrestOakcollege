@@ -39,9 +39,9 @@ const facultiesData = [
     ],
     fees: {
       application: 10000,
-      acceptance: 20000,
-      tuition: 135000,
-      examination: 15000,
+      acceptance: 25000,
+      tuition: 150000,
+      examination: 25000,
       hostel: 50000
     }
   },
@@ -64,11 +64,11 @@ const facultiesData = [
       "Public Administration (B.Sc.)"
     ],
     fees: {
-      application: 7500,
-      acceptance: 15000,
-      tuition: 95000,
-      examination: 10000,
-      hostel: 40000
+      application: 10000,
+      acceptance: 25000,
+      tuition: 150000,
+      examination: 25000,
+      hostel: 50000
     }
   },
   {
@@ -87,11 +87,11 @@ const facultiesData = [
       "Physics with Electronics (B.Sc.)"
     ],
     fees: {
-      application: 8500,
-      acceptance: 15000,
-      tuition: 105000,
-      examination: 12000,
-      hostel: 45000
+      application: 10000,
+      acceptance: 25000,
+      tuition: 150000,
+      examination: 25000,
+      hostel: 50000
     }
   },
   {
@@ -107,10 +107,10 @@ const facultiesData = [
       "Legal Practice Diploma"
     ],
     fees: {
-      application: 15000,
-      acceptance: 30000,
-      tuition: 180000,
-      examination: 20000,
+      application: 10000,
+      acceptance: 25000,
+      tuition: 150000,
+      examination: 25000,
       hostel: 50000
     }
   },
@@ -127,11 +127,11 @@ const facultiesData = [
       "Theatre & Creative Arts (B.A.)"
     ],
     fees: {
-      application: 7500,
-      acceptance: 15000,
-      tuition: 90000,
-      examination: 10000,
-      hostel: 40000
+      application: 10000,
+      acceptance: 25000,
+      tuition: 150000,
+      examination: 25000,
+      hostel: 50000
     }
   },
   {
@@ -147,13 +147,14 @@ const facultiesData = [
       "Animal Science & Crop Tech (B.Agric.)"
     ],
     fees: {
-      application: 7500,
-      acceptance: 15000,
-      tuition: 85000,
-      examination: 10000,
-      hostel: 40000
+      application: 10000,
+      acceptance: 25000,
+      tuition: 150000,
+      examination: 25000,
+      hostel: 50000
     }
   },
+
 ];
 
 
