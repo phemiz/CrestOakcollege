@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from "react";
 import { Header } from "@/components/layout/header";
 import { Footer } from "@/components/layout/footer";
+import { Logo } from "@/components/ui/logo";
 import { motion } from "framer-motion";
 import { 
   ShieldCheck, 
@@ -15,11 +16,20 @@ import {
   UserCheck, 
   RefreshCw,
   Award,
-  BookOpen
+  BookOpen,
+  Lock,
+  User
 } from "lucide-react";
 
 export default function AdminCMS() {
   const [activeTab, setActiveTab] = useState<"admissions" | "fees" | "news" | "applications">("admissions");
+
+  // Authentication Mock State
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [username, setUsername] = useState("");
+  const [password, setPassword] = useState("");
+  const [loginError, setLoginError] = useState("");
+  const [userRole, setUserRole] = useState<"admin" | "staff">("admin");
 
   // CMS States
   const [sessionName, setSessionName] = useState("2025/2026");
@@ -52,6 +62,18 @@ export default function AdminCMS() {
   const [saveSuccess, setSaveSuccess] = useState(false);
 
   useEffect(() => {
+    // Check admin session profile
+    const savedProfile = localStorage.getItem("cchsmt_admin_profile");
+    if (savedProfile) {
+      try {
+        const profile = JSON.parse(savedProfile);
+        setUserRole(profile.role);
+        setIsLoggedIn(true);
+      } catch (e) {
+        console.error(e);
+      }
+    }
+
     // Load config from localStorage
     const savedSession = localStorage.getItem("cchsmt_cms_session");
     if (savedSession) setSessionName(savedSession);
@@ -96,6 +118,43 @@ export default function AdminCMS() {
       setNewsList(defaultNews);
     }
   }, []);
+
+  // Login Handler
+  const handleLogin = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!username.trim() || !password.trim()) {
+      setLoginError("Please enter both portal credentials.");
+      return;
+    }
+
+    const lowerUser = username.trim().toLowerCase();
+    const cleanPass = password.trim();
+
+    if (lowerUser === "admin" && cleanPass === "admin") {
+      const profile = { username: "admin", role: "admin" as const, name: "CMS Administrator" };
+      setUserRole("admin");
+      setIsLoggedIn(true);
+      setLoginError("");
+      localStorage.setItem("cchsmt_admin_profile", JSON.stringify(profile));
+    } else if (lowerUser === "staff" && (cleanPass === "admin" || cleanPass === "staff")) {
+      const profile = { username: "staff", role: "staff" as const, name: "Staff Registrar" };
+      setUserRole("staff");
+      setIsLoggedIn(true);
+      setLoginError("");
+      localStorage.setItem("cchsmt_admin_profile", JSON.stringify(profile));
+    } else {
+      setLoginError("Invalid administrative credentials. Use admin or staff for testing.");
+    }
+  };
+
+  // Logout Handler
+  const handleLogout = () => {
+    localStorage.removeItem("cchsmt_admin_profile");
+    setIsLoggedIn(false);
+    setUsername("");
+    setPassword("");
+    setLoginError("");
+  };
 
   // Save General Admissions details
   const saveAdmissionsConfig = (e: React.FormEvent) => {
@@ -176,6 +235,74 @@ export default function AdminCMS() {
     setTimeout(() => setSaveSuccess(false), 2000);
   };
 
+  if (!isLoggedIn) {
+    return (
+      <>
+        <Header />
+        <main className="flex-grow bg-slate-50 flex items-center justify-center py-24 px-4 min-h-[70vh]">
+          <div className="bg-white border border-slate-200 shadow-xl rounded-3xl p-8 w-full max-w-md relative overflow-hidden">
+            <div className="absolute top-0 left-0 right-0 h-1.5 bg-brand-blue-dark" />
+            
+            <div className="flex flex-col items-center text-center gap-6 mb-8">
+              <Logo variant="atiba" size={60} showText={false} />
+              <div>
+                <h3 className="font-display font-black text-2xl text-brand-blue-dark">Admin CMS Login</h3>
+                <p className="text-slate-400 text-xs mt-1.5 leading-relaxed font-semibold">
+                  Enter your administrative credentials to manage announcements, candidate applications, and session fees.
+                </p>
+              </div>
+            </div>
+
+            {loginError && (
+              <div className="bg-red-50 text-red-700 p-4 rounded-xl text-xs font-bold mb-5 text-center">
+                {loginError}
+              </div>
+            )}
+
+            <form onSubmit={handleLogin} className="flex flex-col gap-5">
+              <div className="flex flex-col gap-1.5">
+                <label className="text-[10px] font-black uppercase text-slate-500 tracking-wider">Username</label>
+                <input
+                  type="text"
+                  placeholder="e.g. admin or staff"
+                  value={username}
+                  onChange={(e) => setUsername(e.target.value)}
+                  className="p-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:border-brand-blue font-bold text-sm"
+                />
+              </div>
+
+              <div className="flex flex-col gap-1.5 font-semibold">
+                <label className="text-[10px] font-black uppercase text-slate-500 tracking-wider">Portal Password</label>
+                <input
+                  type="password"
+                  placeholder="••••••••"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  className="p-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:border-brand-blue font-semibold text-sm"
+                />
+              </div>
+
+              <button
+                type="submit"
+                className="bg-brand-blue-dark hover:bg-brand-blue text-white font-display font-bold py-3.5 rounded-xl shadow-lg transition-colors flex items-center justify-center gap-2 cursor-pointer mt-2"
+              >
+                <span>Authenticate Console</span>
+                <Lock size={15} />
+              </button>
+            </form>
+
+            <div className="mt-6 border-t border-slate-100 pt-4 text-center">
+              <p className="text-[10px] text-slate-400 font-bold leading-relaxed">
+                * Note: Use username <strong className="text-brand-blue-dark">admin</strong> with password <strong className="text-brand-blue-dark">admin</strong> for Administrator role, or <strong className="text-brand-blue-dark">staff</strong> for Staff Member role.
+              </p>
+            </div>
+          </div>
+        </main>
+        <Footer />
+      </>
+    );
+  }
+
   return (
     <>
       <Header />
@@ -195,12 +322,25 @@ export default function AdminCMS() {
                 <p className="text-slate-400 text-xs mt-1 font-semibold">CrestOak College website administration and content adjustments dashboard.</p>
               </div>
             </div>
-            {saveSuccess && (
-              <div className="bg-emerald-500 text-white px-4 py-2 rounded-xl text-xs font-bold flex items-center gap-2 relative z-10 shadow-lg">
-                <ShieldCheck size={14} />
-                <span>Changes Serialized!</span>
-              </div>
-            )}
+            
+            <div className="flex flex-wrap items-center gap-3 relative z-10">
+              {saveSuccess && (
+                <div className="bg-emerald-500 text-white px-4 py-2 rounded-xl text-xs font-bold flex items-center gap-2 shadow-lg">
+                  <ShieldCheck size={14} />
+                  <span>Changes Serialized!</span>
+                </div>
+              )}
+              <span className="bg-white/10 px-3.5 py-2 rounded-xl border border-white/10 text-xs font-bold uppercase tracking-wider text-brand-gold flex items-center gap-1.5">
+                <User size={14} />
+                <span>Role: {userRole === "admin" ? "Administrator" : "Staff Member"}</span>
+              </span>
+              <button 
+                onClick={handleLogout}
+                className="bg-brand-red hover:bg-brand-red/90 text-white px-4 py-2 rounded-xl text-xs font-bold cursor-pointer transition-colors shadow-md flex items-center gap-1.5"
+              >
+                <span>Sign Out</span>
+              </button>
+            </div>
           </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
@@ -242,23 +382,35 @@ export default function AdminCMS() {
                     <p className="text-slate-400 text-xs mt-1">Configure session labels, cutoffs, and header scroll alerts.</p>
                   </div>
 
+                  {userRole === "staff" && (
+                    <div className="bg-amber-50 border border-amber-200 text-amber-800 p-4 rounded-2xl flex items-start gap-3">
+                      <Lock size={16} className="shrink-0 mt-0.5 text-amber-600" />
+                      <div>
+                        <p className="font-bold">View-Only Mode</p>
+                        <p className="text-[11px] text-amber-700 mt-0.5">Only Administrators can modify admissions configuration and session parameters. Your edits will not be saved.</p>
+                      </div>
+                    </div>
+                  )}
+
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div className="flex flex-col gap-1">
                       <label>Academic Session Label</label>
                       <input
                         type="text"
+                        disabled={userRole === "staff"}
                         value={sessionName}
                         onChange={(e) => setSessionName(e.target.value)}
-                        className="p-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:border-brand-blue text-slate-800 font-bold"
+                        className="p-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:border-brand-blue text-slate-800 font-bold disabled:opacity-70 disabled:cursor-not-allowed"
                       />
                     </div>
                     <div className="flex flex-col gap-1">
                       <label>JAMB Cut-Off Mark Threshold</label>
                       <input
                         type="number"
+                        disabled={userRole === "staff"}
                         value={jambCutoff}
                         onChange={(e) => setJambCutoff(e.target.value)}
-                        className="p-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:border-brand-blue text-slate-800 font-bold"
+                        className="p-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:border-brand-blue text-slate-800 font-bold disabled:opacity-70 disabled:cursor-not-allowed"
                       />
                     </div>
                   </div>
@@ -267,18 +419,24 @@ export default function AdminCMS() {
                     <label>Scrollbar Alert Announcement Banner Text</label>
                     <input
                       type="text"
+                      disabled={userRole === "staff"}
                       value={deadlineText}
                       onChange={(e) => setDeadlineText(e.target.value)}
-                      className="p-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:border-brand-blue text-slate-800 font-bold"
+                      className="p-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:border-brand-blue text-slate-800 font-bold disabled:opacity-70 disabled:cursor-not-allowed"
                     />
                   </div>
 
                   <button
                     type="submit"
-                    className="bg-brand-blue hover:bg-brand-blue-dark text-white font-display font-bold py-3.5 rounded-xl transition-colors cursor-pointer flex items-center justify-center gap-2 mt-4 shadow-md w-fit px-6"
+                    disabled={userRole === "staff"}
+                    className={`font-display font-bold py-3.5 rounded-xl transition-colors cursor-pointer flex items-center justify-center gap-2 mt-4 shadow-md w-fit px-6 ${
+                      userRole === "staff"
+                        ? "bg-slate-200 text-slate-400 cursor-not-allowed shadow-none"
+                        : "bg-brand-blue hover:bg-brand-blue-dark text-white"
+                    }`}
                   >
                     <Save size={14} />
-                    <span>Save Parameters</span>
+                    <span>{userRole === "staff" ? "Saving Disabled" : "Save Parameters"}</span>
                   </button>
                 </form>
               )}
@@ -291,69 +449,90 @@ export default function AdminCMS() {
                     <p className="text-slate-400 text-xs mt-1">Modify session tuition amounts. When saved, new tuition indices automatically overwrite portal invoicing grids.</p>
                   </div>
 
+                  {userRole === "staff" && (
+                    <div className="bg-amber-50 border border-amber-200 text-amber-800 p-4 rounded-2xl flex items-start gap-3">
+                      <Lock size={16} className="shrink-0 mt-0.5 text-amber-600" />
+                      <div>
+                        <p className="font-bold">View-Only Mode</p>
+                        <p className="text-[11px] text-amber-700 mt-0.5">Only Administrators can modify school fees schedules and application fees. Your edits will not be saved.</p>
+                      </div>
+                    </div>
+                  )}
+
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div className="flex flex-col gap-1">
                       <label>Applied Health Sciences Tuition (₦)</label>
                       <input
                         type="number"
+                        disabled={userRole === "staff"}
                         value={feesData.healthTuition}
                         onChange={(e) => setFeesData({ ...feesData, healthTuition: Number(e.target.value) })}
-                        className="p-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:border-brand-blue text-slate-800 font-bold"
+                        className="p-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:border-brand-blue text-slate-800 font-bold disabled:opacity-70 disabled:cursor-not-allowed"
                       />
                     </div>
                     <div className="flex flex-col gap-1">
                       <label>Social & Management Sciences Tuition (₦)</label>
                       <input
                         type="number"
+                        disabled={userRole === "staff"}
                         value={feesData.socialTuition}
                         onChange={(e) => setFeesData({ ...feesData, socialTuition: Number(e.target.value) })}
-                        className="p-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:border-brand-blue text-slate-800 font-bold"
+                        className="p-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:border-brand-blue text-slate-800 font-bold disabled:opacity-70 disabled:cursor-not-allowed"
                       />
                     </div>
                     <div className="flex flex-col gap-1">
                       <label>Natural & Applied Sciences Tuition (₦)</label>
                       <input
                         type="number"
+                        disabled={userRole === "staff"}
                         value={feesData.naturalTuition}
                         onChange={(e) => setFeesData({ ...feesData, naturalTuition: Number(e.target.value) })}
-                        className="p-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:border-brand-blue text-slate-800 font-bold"
+                        className="p-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:border-brand-blue text-slate-800 font-bold disabled:opacity-70 disabled:cursor-not-allowed"
                       />
                     </div>
                     <div className="flex flex-col gap-1">
                       <label>Faculty of Law LL.B Tuition (₦)</label>
                       <input
                         type="number"
+                        disabled={userRole === "staff"}
                         value={feesData.lawTuition}
                         onChange={(e) => setFeesData({ ...feesData, lawTuition: Number(e.target.value) })}
-                        className="p-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:border-brand-blue text-slate-800 font-bold"
+                        className="p-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:border-brand-blue text-slate-800 font-bold disabled:opacity-70 disabled:cursor-not-allowed"
                       />
                     </div>
                     <div className="flex flex-col gap-1">
                       <label>Application Processing Fee (₦)</label>
                       <input
                         type="number"
+                        disabled={userRole === "staff"}
                         value={feesData.applicationFee}
                         onChange={(e) => setFeesData({ ...feesData, applicationFee: Number(e.target.value) })}
-                        className="p-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:border-brand-blue text-slate-800 font-bold"
+                        className="p-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:border-brand-blue text-slate-800 font-bold disabled:opacity-70 disabled:cursor-not-allowed"
                       />
                     </div>
                     <div className="flex flex-col gap-1">
                       <label>Acceptance Offer Fee (₦)</label>
                       <input
                         type="number"
+                        disabled={userRole === "staff"}
                         value={feesData.acceptanceFee}
                         onChange={(e) => setFeesData({ ...feesData, acceptanceFee: Number(e.target.value) })}
-                        className="p-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:border-brand-blue text-slate-800 font-bold"
+                        className="p-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:border-brand-blue text-slate-800 font-bold disabled:opacity-70 disabled:cursor-not-allowed"
                       />
                     </div>
                   </div>
 
                   <button
                     type="submit"
-                    className="bg-brand-blue hover:bg-brand-blue-dark text-white font-display font-bold py-3.5 rounded-xl transition-colors cursor-pointer flex items-center justify-center gap-2 mt-4 shadow-md w-fit px-6"
+                    disabled={userRole === "staff"}
+                    className={`font-display font-bold py-3.5 rounded-xl transition-colors cursor-pointer flex items-center justify-center gap-2 mt-4 shadow-md w-fit px-6 ${
+                      userRole === "staff"
+                        ? "bg-slate-200 text-slate-400 cursor-not-allowed shadow-none"
+                        : "bg-brand-blue hover:bg-brand-blue-dark text-white"
+                    }`}
                   >
                     <Save size={14} />
-                    <span>Apply Fee Updates</span>
+                    <span>{userRole === "staff" ? "Saving Disabled" : "Apply Fee Updates"}</span>
                   </button>
                 </form>
               )}

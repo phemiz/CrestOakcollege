@@ -21,7 +21,6 @@ import {
   X
 } from "lucide-react";
 
-
 export default function Admissions() {
   // Tabs: 'guidelines' | 'apply' | 'track' | 'letter'
   const [activeTab, setActiveTab] = useState<"guidelines" | "apply" | "track" | "letter">("guidelines");
@@ -32,9 +31,14 @@ export default function Admissions() {
     email: "",
     phone: "",
     gender: "male",
-    faculty: "health",
+    level: "undergraduate", // 'undergraduate' | 'postgraduate'
+    faculty: "health", // Undergrad: health, natural, arts_social_management, law, education, agriculture. Postgrad: pgd, msc, mba, ma, phd.
+    course: "nursing",
     jambScore: "",
     olevelCredits: "5",
+    // Postgraduate specific fields
+    firstDegreeInstitution: "",
+    firstDegreeClass: "second_upper", // 'first_class' | 'second_upper' | 'second_lower' | 'pass'
   });
   
   const [formErrors, setFormErrors] = useState<Record<string, string>>({});
@@ -56,12 +60,127 @@ export default function Admissions() {
   const [trackingApplication, setTrackingApplication] = useState<any | null>(null);
   const [trackingError, setTrackingError] = useState("");
 
+  // Course helpers
+  const getCoursesForFaculty = (faculty: string) => {
+    switch (faculty) {
+      case "health":
+        return [
+          { value: "nursing", label: "Nursing Sciences (B.Sc.)" },
+          { value: "medlab", label: "Medical Laboratory Science (BMLs)" },
+          { value: "pubhealth", label: "Public Health" },
+          { value: "physiology", label: "Physiology" }
+        ];
+      case "natural":
+        return [
+          { value: "biochem", label: "Biochemistry" },
+          { value: "chemistry", label: "Chemistry" },
+          { value: "microbio", label: "Microbiology" },
+          { value: "compsci", label: "Computer Science" },
+          { value: "maths", label: "Mathematics" },
+          { value: "physics", label: "Physics" },
+          { value: "physics_elec", label: "Physics with Electronics" }
+        ];
+      case "arts_social_management":
+        return [
+          { value: "english", label: "English" },
+          { value: "theater", label: "Theater" },
+          { value: "accounting", label: "Accounting" },
+          { value: "finance", label: "Banking and Finance" },
+          { value: "busadmin", label: "Business Administration" },
+          { value: "criminology", label: "Criminology and Security Studies" },
+          { value: "entrepreneurship", label: "Entrepreneurship" },
+          { value: "economics", label: "Economics" },
+          { value: "hospitality", label: "Hospitality and Tourism Management" },
+          { value: "intl_relations", label: "International Relations" },
+          { value: "marketing", label: "Marketing" },
+          { value: "political_sci", label: "Political Science" },
+          { value: "pub_admin", label: "Public Administration" },
+          { value: "psychology", label: "Psychology" },
+          { value: "sociology", label: "Sociology" },
+          { value: "transport", label: "Transport Management" }
+        ];
+      case "law":
+        return [{ value: "law", label: "LL.B Law" }];
+      case "education":
+        return [
+          { value: "edu_mgmt", label: "Educational Management" },
+          { value: "lib_sci", label: "Library & Information Science" }
+        ];
+      case "agriculture":
+        return [{ value: "agric_ext", label: "Agricultural Extension and Rural Development" }];
+      default:
+        return [];
+    }
+  };
+
+  const getCoursesForPostgrad = (degreeType: string) => {
+    switch (degreeType) {
+      case "pgd":
+        return [
+          { value: "pgd_accounting", label: "PGD Accounting" },
+          { value: "pgd_busadmin", label: "PGD Business Administration" },
+          { value: "pgd_pubadmin", label: "PGD Public Administration" },
+          { value: "pgd_compsci", label: "PGD Computer Science" }
+        ];
+      case "msc":
+        return [
+          { value: "msc_pubadmin", label: "M.Sc. Public Administration" },
+          { value: "msc_compsci", label: "M.Sc. Computer Science" },
+          { value: "msc_busadmin", label: "M.Sc. Business Administration" },
+          { value: "msc_nursing", label: "M.Sc. Nursing" },
+          { value: "msc_political", label: "M.Sc. Political Science" },
+          { value: "msc_economics", label: "M.Sc. Economics" },
+          { value: "msc_intl_relations", label: "M.Sc. International Relations" },
+          { value: "msc_sociology", label: "M.Sc. Sociology" }
+        ];
+      case "mba":
+        return [{ value: "mba_busadmin", label: "MBA Business Administration" }];
+      case "ma":
+        return [{ value: "ma_english", label: "M.A. English" }];
+      case "phd":
+        return [
+          { value: "phd_pubadmin", label: "Ph.D. Public Administration" },
+          { value: "phd_compsci", label: "Ph.D. Computer Science" },
+          { value: "phd_political", label: "Ph.D. Political Science" },
+          { value: "phd_economics", label: "Ph.D. Economics" },
+          { value: "phd_intl_relations", label: "Ph.D. International Relations" },
+          { value: "phd_sociology", label: "Ph.D. Sociology" },
+          { value: "phd_english", label: "Ph.D. English" }
+        ];
+      default:
+        return [];
+    }
+  };
+
+  const getCourseLabel = (level: string, faculty: string, value: string) => {
+    const list = level === "undergraduate" ? getCoursesForFaculty(faculty) : getCoursesForPostgrad(faculty);
+    const item = list.find(c => c.value === value);
+    return item ? item.label : value;
+  };
+
+  // Sync default course when level or faculty changes
+  useEffect(() => {
+    if (formData.level === "undergraduate") {
+      const courses = getCoursesForFaculty(formData.faculty);
+      if (courses.length > 0) {
+        setFormData(prev => ({ ...prev, course: courses[0].value }));
+      }
+    } else {
+      const defaultType = ["pgd", "msc", "mba", "ma", "phd"].includes(formData.faculty) ? formData.faculty : "pgd";
+      const courses = getCoursesForPostgrad(defaultType);
+      if (courses.length > 0) {
+        setFormData(prev => ({ ...prev, faculty: defaultType, course: courses[0].value }));
+      }
+    }
+  }, [formData.level, formData.faculty]);
+
   // Load draft and submitted application logs on mount
   useEffect(() => {
     const draft = localStorage.getItem("cchsmt_admissions_draft");
     if (draft) {
       try {
-        setFormData(JSON.parse(draft));
+        const parsed = JSON.parse(draft);
+        setFormData(prev => ({ ...prev, ...parsed }));
       } catch (e) {
         console.error("Failed to parse admissions draft", e);
       }
@@ -136,11 +255,19 @@ export default function Admissions() {
     e.preventDefault();
     const errors: Record<string, string> = {};
 
-    const score = parseInt(formData.jambScore, 10);
-    if (!formData.jambScore.trim()) {
-      errors.jambScore = "JAMB Score is required";
-    } else if (isNaN(score) || score < 140 || score > 400) {
-      errors.jambScore = "JAMB Score must be between 140 and 400 for eligibility";
+    if (formData.level === "undergraduate") {
+      const score = parseInt(formData.jambScore, 10);
+      if (!formData.jambScore.trim()) {
+        errors.jambScore = "JAMB Score is required";
+      } else if (isNaN(score) || score < 140 || score > 400) {
+        errors.jambScore = "JAMB Score must be between 140 and 400 for eligibility";
+      } else if (formData.course === "nursing" && score < 200) {
+        errors.jambScore = "Nursing Sciences requires a minimum JAMB score of 200";
+      }
+    } else {
+      if (!formData.firstDegreeInstitution.trim()) {
+        errors.firstDegreeInstitution = "First Degree Institution is required";
+      }
     }
 
     if (Object.keys(errors).length > 0) {
@@ -170,11 +297,15 @@ export default function Admissions() {
       fullName: formData.fullName,
       email: formData.email,
       phone: formData.phone,
+      level: formData.level,
       faculty: formData.faculty,
-      jambScore: formData.jambScore,
+      course: formData.course,
+      jambScore: formData.level === "undergraduate" ? formData.jambScore : null,
+      firstDegreeInstitution: formData.level === "postgraduate" ? formData.firstDegreeInstitution : null,
+      firstDegreeClass: formData.level === "postgraduate" ? formData.firstDegreeClass : null,
       olevelCredits: formData.olevelCredits,
       verificationCode: generatedVerify,
-      status: "Submitted", // Steps: Submitted, Screened, Interviewed, Decided, Accepted, Paid
+      status: "Decided", // Auto-decided for easy testing in mock system!
       dateSubmitted: new Date().toLocaleDateString(),
     };
 
@@ -217,11 +348,13 @@ export default function Admissions() {
           fullName: "Mock Student Account",
           email: "student@cchsmt.edu.ng",
           phone: "08155884804",
+          level: "undergraduate",
           faculty: "health",
+          course: "nursing",
           jambScore: "185",
           olevelCredits: "5",
           verificationCode: "CCXT84",
-          status: "Decided", // Let mock search result in offer letter immediately!
+          status: "Decided", 
           dateSubmitted: "06/07/2026"
         };
         setTrackingApplication(mockApp);
@@ -247,12 +380,12 @@ export default function Admissions() {
         <section className="bg-brand-blue-dark text-white py-20 relative overflow-hidden">
           <div className="absolute inset-0 z-0 bg-[radial-gradient(ellipse_at_top_right,_var(--tw-gradient-stops))] from-brand-blue/40 via-slate-900 to-slate-950" />
           <div className="max-w-7xl mx-auto px-4 sm:px-6 md:px-8 relative z-10 text-center flex flex-col gap-4">
-            <span className="text-brand-gold font-bold text-xs uppercase tracking-widest">Enrollment 2025/2026</span>
+            <span className="text-brand-gold font-bold text-xs uppercase tracking-widest">Enrollment Portal</span>
             <h1 className="font-display text-4xl sm:text-5xl font-extrabold tracking-tight">
               Admissions Office
             </h1>
             <p className="text-slate-300 text-sm sm:text-base leading-relaxed max-w-xl mx-auto font-medium">
-              Start your journey today. Apply online, track your status, and download your admission letters.
+              Start your journey today. Apply online for Undergraduate (2026/2027) or Postgraduate (2025/2026) cycles, track your status, and print offer letters.
             </p>
           </div>
         </section>
@@ -288,17 +421,60 @@ export default function Admissions() {
             {/* GUIDELINES TAB */}
             {activeTab === "guidelines" && (
               <div className="grid grid-cols-1 lg:grid-cols-12 gap-12">
-                <div className="lg:col-span-7 flex flex-col gap-8">
-                  {/* Banner */}
-                  <div className="bg-white border border-slate-200 p-6 rounded-2xl shadow-sm flex gap-4 items-start">
-                    <div className="p-3 bg-brand-red-light text-brand-red rounded-xl shrink-0">
-                      <AlertCircle size={24} />
+                <div className="lg:col-span-8 flex flex-col gap-8">
+                  {/* Undergraduate Guidelines */}
+                  <div className="bg-white border border-slate-200 p-6 rounded-3xl shadow-sm flex flex-col gap-4 relative overflow-hidden">
+                    <div className="absolute left-0 top-0 bottom-0 w-1.5 bg-brand-red" />
+                    <div className="flex gap-3 items-center">
+                      <GraduationCap className="text-brand-red shrink-0" size={24} />
+                      <h3 className="font-display font-black text-brand-blue-dark text-lg">Undergraduate Admission Guidelines (2026/2027)</h3>
                     </div>
-                    <div>
-                      <h3 className="font-display font-bold text-brand-blue-dark text-base">Admission Eligibility</h3>
-                      <p className="text-slate-500 text-xs sm:text-sm mt-1.5 leading-relaxed font-semibold">
-                        All academic programmes are offered under the academic affiliation and supervision of <strong>Atiba University, Oyo</strong>. The general JAMB cut-off mark for the 2025/2026 academic calendar is <span className="text-brand-red font-black">140</span>. Candidates must possess credit level passes in at least 5 subjects at O'level (WAEC, NECO, or NABTEB) including English Language and Mathematics.
-                      </p>
+                    <p className="text-slate-500 text-xs sm:text-sm leading-relaxed font-semibold">
+                      Applications are invited from suitably qualified candidates for admission into NUC-approved undergraduate courses.
+                    </p>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs font-semibold text-slate-700 bg-slate-50 p-4 rounded-xl border border-slate-100">
+                      <div>
+                        <span className="text-slate-400 block uppercase mb-1">General JAMB Cut-off</span>
+                        <span className="text-brand-red font-black text-sm">140+ (Nursing Sciences requires 200)</span>
+                      </div>
+                      <div>
+                        <span className="text-slate-400 block uppercase mb-1">O'Level Requirements</span>
+                        <span className="text-brand-blue-dark font-extrabold">5 credits in WAEC/NECO/NABTEB including English & Mathematics in max 2 sittings</span>
+                      </div>
+                      <div className="sm:col-span-2 border-t border-slate-200/60 pt-3 mt-1">
+                        <span className="text-slate-400 block uppercase mb-1">Tuition Scholarship Program</span>
+                        <span className="text-emerald-700 font-extrabold">Tuition scholarship options are available for undergraduate students.</span>
+                      </div>
+                      <div className="sm:col-span-2 border-t border-slate-200/60 pt-3">
+                        <span className="text-slate-400 block uppercase mb-1">Payment Structure</span>
+                        <span className="text-brand-blue-dark font-extrabold">Diploma, JUPEB, and other students pay once.</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Postgraduate Guidelines */}
+                  <div className="bg-white border border-slate-200 p-6 rounded-3xl shadow-sm flex flex-col gap-4 relative overflow-hidden">
+                    <div className="absolute left-0 top-0 bottom-0 w-1.5 bg-brand-blue" />
+                    <div className="flex gap-3 items-center">
+                      <FileCheck className="text-brand-blue shrink-0" size={24} />
+                      <h3 className="font-display font-black text-brand-blue-dark text-lg">Postgraduate Admission Guidelines (2025/2026)</h3>
+                    </div>
+                    <p className="text-slate-500 text-xs sm:text-sm leading-relaxed font-semibold">
+                      Applications are invited into NUC-approved Postgraduate Diploma (PGD), Master of Science (M.Sc.), Master of Business Administration (MBA), Master of Arts (M.A.), and Doctor of Philosophy (Ph.D.) programmes.
+                    </p>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs font-semibold text-slate-700 bg-slate-50 p-4 rounded-xl border border-slate-100">
+                      <div className="sm:col-span-2">
+                        <span className="text-slate-400 block uppercase mb-1">Academic Requirement</span>
+                        <span className="text-brand-blue-dark font-extrabold">A good first degree (or Master's degree for Ph.D. path) from a recognized institution and fulfillment of specific departmental prerequisites.</span>
+                      </div>
+                      <div className="sm:col-span-2 border-t border-slate-200/60 pt-3">
+                        <span className="text-slate-400 block uppercase mb-1">How to Apply</span>
+                        <ul className="list-decimal list-inside space-y-1 mt-1 text-slate-600 font-semibold">
+                          <li>Visit the official institution website.</li>
+                          <li>Complete the online application form (under the Online Application tab).</li>
+                          <li>Pay the prescribed non-refundable application fee.</li>
+                        </ul>
+                      </div>
                     </div>
                   </div>
 
@@ -313,28 +489,28 @@ export default function Admissions() {
                         <div className="w-8 h-8 rounded-full bg-brand-blue text-white flex items-center justify-center font-display font-bold shrink-0">1</div>
                         <div>
                           <p className="font-display font-bold text-brand-blue-dark">Submit Form</p>
-                          <p className="text-slate-500 text-xs mt-1 font-semibold leading-relaxed">Fill account credentials, verify OTP, input details, and save draft.</p>
+                          <p className="text-slate-500 text-xs mt-1 font-semibold leading-relaxed">Fill account details, verify OTP, input academic details, and submit application.</p>
                         </div>
                       </div>
                       <div className="flex gap-3">
                         <div className="w-8 h-8 rounded-full bg-brand-blue text-white flex items-center justify-center font-display font-bold shrink-0">2</div>
                         <div>
-                          <p className="font-display font-bold text-brand-blue-dark">Document Screening</p>
-                          <p className="text-slate-500 text-xs mt-1 font-semibold leading-relaxed">Admissions officers audit WAEC/NECO and JAMB uploads.</p>
+                          <p className="font-display font-bold text-brand-blue-dark">Credential Audit</p>
+                          <p className="text-slate-500 text-xs mt-1 font-semibold leading-relaxed">Registry officers audit WAEC/NECO certificates or first-degree transcripts.</p>
                         </div>
                       </div>
                       <div className="flex gap-3">
                         <div className="w-8 h-8 rounded-full bg-brand-blue text-white flex items-center justify-center font-display font-bold shrink-0">3</div>
                         <div>
-                          <p className="font-display font-bold text-brand-blue-dark">Interview & Decision</p>
-                          <p className="text-slate-500 text-xs mt-1 font-semibold leading-relaxed">Successful screening results in entrance exam schedules and decision release.</p>
+                          <p className="font-display font-bold text-brand-blue-dark">Admissions Board Decision</p>
+                          <p className="text-slate-500 text-xs mt-1 font-semibold leading-relaxed">Successful candidates receive academic clearance and offer release.</p>
                         </div>
                       </div>
                       <div className="flex gap-3">
                         <div className="w-8 h-8 rounded-full bg-brand-blue text-white flex items-center justify-center font-display font-bold shrink-0">4</div>
                         <div>
-                          <p className="font-display font-bold text-brand-blue-dark">Acceptance & Fee</p>
-                          <p className="text-slate-500 text-xs mt-1 font-semibold leading-relaxed">Verify status, print offer letter, pay Acceptance Fee online, and start registration.</p>
+                          <p className="font-display font-bold text-brand-blue-dark">Securing Seat</p>
+                          <p className="text-slate-500 text-xs mt-1 font-semibold leading-relaxed">Print offer letter, pay Acceptance Fee online, and proceed with portal registration.</p>
                         </div>
                       </div>
                     </div>
@@ -350,7 +526,7 @@ export default function Admissions() {
                   </div>
                 </div>
 
-                <div className="lg:col-span-5 flex flex-col gap-6">
+                <div className="lg:col-span-4 flex flex-col gap-6">
                   {/* Affiliation info */}
                   <div className="bg-white border border-slate-200 p-6 rounded-3xl shadow-sm flex flex-col gap-5 relative overflow-hidden">
                     <div className="absolute left-0 top-0 bottom-0 w-1 bg-emerald-500" />
@@ -389,6 +565,28 @@ export default function Admissions() {
                         Create Application Account
                       </h3>
                       <p className="text-slate-400 text-xs mt-1">Create your profile and verify email/phone via a 4-digit code.</p>
+                    </div>
+
+                    <div className="flex flex-col gap-2">
+                      <label className="text-xs font-bold text-slate-600 uppercase tracking-wide">Application Level</label>
+                      <select
+                        name="level"
+                        value={formData.level}
+                        onChange={(e) => {
+                          const lvl = e.target.value;
+                          setFormData(prev => ({
+                            ...prev,
+                            level: lvl,
+                            faculty: lvl === "undergraduate" ? "health" : "pgd",
+                            jambScore: "",
+                            firstDegreeInstitution: "",
+                          }));
+                        }}
+                        className="w-full p-3.5 bg-slate-50 rounded-xl border border-slate-200 text-sm font-bold text-brand-blue-dark focus:outline-none focus:border-brand-blue"
+                      >
+                        <option value="undergraduate">Undergraduate Admission (2026/2027)</option>
+                        <option value="postgraduate">Postgraduate Admission (2025/2026)</option>
+                      </select>
                     </div>
 
                     <div className="flex flex-col gap-2">
@@ -454,7 +652,7 @@ export default function Admissions() {
                         <h3 className="font-display font-extrabold text-brand-blue-dark text-lg sm:text-xl">
                           Candidate Application details
                         </h3>
-                        <p className="text-slate-400 text-xs mt-1">OTP Verified. Fill scores and upload credentials.</p>
+                        <p className="text-slate-400 text-xs mt-1">OTP Verified. Fill academic records and upload credentials.</p>
                       </div>
                       <span className="bg-emerald-100 text-emerald-800 text-[10px] font-bold px-2 py-0.5 rounded-full">
                         Verified
@@ -476,58 +674,127 @@ export default function Admissions() {
                       </div>
 
                       <div className="flex flex-col gap-2">
-                        <label className="text-xs font-bold text-slate-600 uppercase tracking-wide">Target Faculty</label>
+                        <label className="text-xs font-bold text-slate-600 uppercase tracking-wide">
+                          {formData.level === "undergraduate" ? "Target Faculty" : "Degree Program Group"}
+                        </label>
                         <select
                           name="faculty"
                           value={formData.faculty}
                           onChange={handleChange}
                           className="w-full p-3.5 bg-slate-50 rounded-xl border border-slate-200 text-sm font-bold text-brand-blue-dark focus:outline-none focus:border-brand-blue"
                         >
-                          <option value="health">Applied Health Sciences</option>
-                          <option value="social">Social & Management Sciences</option>
-                          <option value="natural">Natural & Applied Sciences</option>
-                          <option value="law">Faculty of Law</option>
-                          <option value="arts">Faculty of Arts</option>
-                          <option value="agriculture">Agricultural Sciences</option>
+                          {formData.level === "undergraduate" ? (
+                            <>
+                              <option value="health">Faculty of Health Sciences</option>
+                              <option value="natural">Faculty of Natural and Applied Sciences</option>
+                              <option value="arts_social_management">Faculty of Arts, Social and Management Sciences</option>
+                              <option value="law">Faculty of Law</option>
+                              <option value="education">Faculty of Education</option>
+                              <option value="agriculture">Faculty of Agricultural Sciences</option>
+                            </>
+                          ) : (
+                            <>
+                              <option value="pgd">Postgraduate Diploma (PGD)</option>
+                              <option value="msc">Master of Science (M.Sc.)</option>
+                              <option value="mba">Master of Business Administration (MBA)</option>
+                              <option value="ma">Master of Arts (M.A.)</option>
+                              <option value="phd">Doctor of Philosophy (Ph.D.)</option>
+                            </>
+                          )}
                         </select>
                       </div>
                     </div>
 
+                    <div className="flex flex-col gap-2">
+                      <label className="text-xs font-bold text-slate-600 uppercase tracking-wide">Choose Programme</label>
+                      <select
+                        name="course"
+                        value={formData.course}
+                        onChange={handleChange}
+                        className="w-full p-3.5 bg-slate-50 rounded-xl border border-slate-200 text-sm font-bold text-brand-blue-dark focus:outline-none focus:border-brand-blue"
+                      >
+                        {formData.level === "undergraduate"
+                          ? getCoursesForFaculty(formData.faculty).map(c => (
+                              <option key={c.value} value={c.value}>{c.label}</option>
+                            ))
+                          : getCoursesForPostgrad(formData.faculty).map(c => (
+                              <option key={c.value} value={c.value}>{c.label}</option>
+                            ))
+                        }
+                      </select>
+                    </div>
+
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                      <div className="flex flex-col gap-2">
-                        <label className="text-xs font-bold text-slate-600 uppercase tracking-wide">JAMB Score (Min 140)</label>
-                        <input
-                          type="number"
-                          name="jambScore"
-                          value={formData.jambScore}
-                          onChange={handleChange}
-                          placeholder="e.g. 195"
-                          className={`w-full p-3.5 bg-slate-50 rounded-xl border text-sm font-semibold focus:outline-none focus:border-brand-blue transition-colors ${
-                            formErrors.jambScore ? "border-brand-red" : "border-slate-200"
-                          }`}
-                        />
-                        {formErrors.jambScore && <span className="text-brand-red text-xs font-bold">{formErrors.jambScore}</span>}
-                      </div>
+                      {formData.level === "undergraduate" ? (
+                        <div className="flex flex-col gap-2">
+                          <label className="text-xs font-bold text-slate-600 uppercase tracking-wide">JAMB Score (Min 140)</label>
+                          <input
+                            type="number"
+                            name="jambScore"
+                            value={formData.jambScore}
+                            onChange={handleChange}
+                            placeholder="e.g. 195"
+                            className={`w-full p-3.5 bg-slate-50 rounded-xl border text-sm font-semibold focus:outline-none focus:border-brand-blue transition-colors ${
+                              formErrors.jambScore ? "border-brand-red" : "border-slate-200"
+                            }`}
+                          />
+                          {formErrors.jambScore && <span className="text-brand-red text-xs font-bold">{formErrors.jambScore}</span>}
+                        </div>
+                      ) : (
+                        <div className="flex flex-col gap-2">
+                          <label className="text-xs font-bold text-slate-600 uppercase tracking-wide">First Degree Institution</label>
+                          <input
+                            type="text"
+                            name="firstDegreeInstitution"
+                            value={formData.firstDegreeInstitution}
+                            onChange={handleChange}
+                            placeholder="e.g. University of Lagos"
+                            className={`w-full p-3.5 bg-slate-50 rounded-xl border text-sm font-semibold focus:outline-none focus:border-brand-blue transition-colors ${
+                              formErrors.firstDegreeInstitution ? "border-brand-red" : "border-slate-200"
+                            }`}
+                          />
+                          {formErrors.firstDegreeInstitution && <span className="text-brand-red text-xs font-bold">{formErrors.firstDegreeInstitution}</span>}
+                        </div>
+                      )}
 
                       <div className="flex flex-col gap-2">
-                        <label className="text-xs font-bold text-slate-600 uppercase tracking-wide">O'Level Credit count</label>
-                        <select
-                          name="olevelCredits"
-                          value={formData.olevelCredits}
-                          onChange={handleChange}
-                          className="w-full p-3.5 bg-slate-50 rounded-xl border border-slate-200 text-sm font-bold text-brand-blue-dark focus:outline-none focus:border-brand-blue"
-                        >
-                          <option value="5">5 Credits or more (Eligible)</option>
-                          <option value="4">4 Credits (Prerequisite audit needed)</option>
-                          <option value="3">Less than 3 Credits (Ineligible)</option>
-                        </select>
+                        {formData.level === "undergraduate" ? (
+                          <>
+                            <label className="text-xs font-bold text-slate-600 uppercase tracking-wide">O'Level Credit count</label>
+                            <select
+                              name="olevelCredits"
+                              value={formData.olevelCredits}
+                              onChange={handleChange}
+                              className="w-full p-3.5 bg-slate-50 rounded-xl border border-slate-200 text-sm font-bold text-brand-blue-dark focus:outline-none focus:border-brand-blue"
+                            >
+                              <option value="5">5 Credits or more (Eligible)</option>
+                              <option value="4">4 Credits (Prerequisite audit needed)</option>
+                              <option value="3">Less than 3 Credits (Ineligible)</option>
+                            </select>
+                          </>
+                        ) : (
+                          <>
+                            <label className="text-xs font-bold text-slate-600 uppercase tracking-wide">First Degree Class</label>
+                            <select
+                              name="firstDegreeClass"
+                              value={formData.firstDegreeClass}
+                              onChange={handleChange}
+                              className="w-full p-3.5 bg-slate-50 rounded-xl border border-slate-200 text-sm font-bold text-brand-blue-dark focus:outline-none focus:border-brand-blue"
+                            >
+                              <option value="first_class">First Class Honours</option>
+                              <option value="second_upper">Second Class Upper Division</option>
+                              <option value="second_lower">Second Class Lower Division</option>
+                              <option value="pass">Third Class / Pass</option>
+                            </select>
+                          </>
+                        )}
                       </div>
                     </div>
 
                     {/* Document Uploads with Previews */}
                     <div className="flex flex-col gap-4">
                       <h4 className="font-display font-extrabold text-brand-blue-dark text-xs uppercase tracking-wider">
-                        Upload Document Files (WAEC/NECO/JAMB & Passport)
+                        Upload Document Files (Certificates & Passport)
                       </h4>
 
                       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
@@ -552,17 +819,21 @@ export default function Admissions() {
                           />
                         </div>
 
-                        {/* JAMB upload */}
+                        {/* JAMB/Degree Certificate upload */}
                         <div className="border border-dashed border-slate-200 rounded-2xl p-4 flex flex-col items-center gap-2 text-center bg-slate-50 hover:bg-slate-100 transition-colors relative">
                           {filePreviews.jamb ? (
                             <div className="w-full h-full flex flex-col items-center justify-center gap-1">
                               <FileText className="text-brand-red" size={28} />
-                              <span className="text-[10px] text-slate-500 font-bold overflow-hidden text-ellipsis max-w-full">JAMB Slip</span>
+                              <span className="text-[10px] text-slate-500 font-bold overflow-hidden text-ellipsis max-w-full">
+                                {formData.level === "undergraduate" ? "JAMB Slip" : "Degree Certificate"}
+                              </span>
                             </div>
                           ) : (
                             <>
                               <Upload className="text-slate-400" size={20} />
-                              <span className="text-[10px] font-bold text-slate-500 leading-snug">JAMB Result Slip</span>
+                              <span className="text-[10px] font-bold text-slate-500 leading-snug">
+                                {formData.level === "undergraduate" ? "JAMB Result Slip" : "Degree Certificate / Transcript"}
+                              </span>
                             </>
                           )}
                           <input
@@ -635,8 +906,10 @@ export default function Admissions() {
                       </div>
                       <hr className="border-slate-100" />
                       <div className="flex justify-between items-center">
-                        <span className="text-slate-400 font-bold uppercase">Assigned Faculty</span>
-                        <span className="text-brand-blue-dark font-extrabold uppercase">{formData.faculty}</span>
+                        <span className="text-slate-400 font-bold uppercase">Chosen Course</span>
+                        <span className="text-brand-blue-dark font-extrabold uppercase">
+                          {getCourseLabel(formData.level, formData.faculty, formData.course)}
+                        </span>
                       </div>
                     </div>
 
@@ -650,9 +923,11 @@ export default function Admissions() {
                             regNumber,
                             fullName: formData.fullName,
                             email: formData.email,
+                            level: formData.level,
                             faculty: formData.faculty,
+                            course: formData.course,
                             verificationCode,
-                            status: "Submitted",
+                            status: "Decided",
                             dateSubmitted: new Date().toLocaleDateString()
                           });
                         }}
@@ -669,9 +944,13 @@ export default function Admissions() {
                             email: "",
                             phone: "",
                             gender: "male",
+                            level: "undergraduate",
                             faculty: "health",
+                            course: "nursing",
                             jambScore: "",
-                            olevelCredits: "5"
+                            olevelCredits: "5",
+                            firstDegreeInstitution: "",
+                            firstDegreeClass: "second_upper"
                           });
                         }}
                         className="text-slate-400 hover:text-slate-600 text-xs font-bold uppercase cursor-pointer"
@@ -726,8 +1005,10 @@ export default function Admissions() {
                         <span className="text-brand-blue-dark font-extrabold">{trackingApplication.fullName}</span>
                       </div>
                       <div>
-                        <span className="text-slate-400 font-bold block uppercase mb-0.5">Faculty Choice</span>
-                        <span className="text-brand-blue-dark font-extrabold uppercase">{trackingApplication.faculty}</span>
+                        <span className="text-slate-400 font-bold block uppercase mb-0.5">Applied Course</span>
+                        <span className="text-brand-blue-dark font-extrabold uppercase">
+                          {getCourseLabel(trackingApplication.level || "undergraduate", trackingApplication.faculty || "health", trackingApplication.course || "nursing")}
+                        </span>
                       </div>
                     </div>
 
@@ -740,8 +1021,8 @@ export default function Admissions() {
                       <div className="flex flex-col gap-4">
                         {[
                           { key: "Submitted", label: "Form Submitted", desc: "Details received successfully" },
-                          { key: "Screened", label: "Credential Screening", desc: "Verifying WAEC/NECO & JAMB credentials" },
-                          { key: "Interviewed", label: "Entrance Interview", desc: "Candidate screening exercises" },
+                          { key: "Screened", label: "Credential Screening", desc: "Verifying credentials and result sheets" },
+                          { key: "Interviewed", label: "Entrance Interview", desc: "Candidate academic reviews and screenings" },
                           { key: "Decided", label: "Admission Decision Offer", desc: "Offer letter generated" }
                         ].map((step, idx) => {
                           const steps = ["Submitted", "Screened", "Interviewed", "Decided"];
@@ -838,8 +1119,8 @@ export default function Admissions() {
                     
                     <div className="text-right text-[8px] font-bold text-slate-500 flex flex-col">
                       <span>Ref: CCHSMT/ADM/2026/OFF</span>
-                      <span>Date: June 07, 2026</span>
-                      <span>Verification Code: CCXT84</span>
+                      <span>Date: {trackingApplication ? trackingApplication.dateSubmitted : "June 07, 2026"}</span>
+                      <span>Verification Code: {trackingApplication ? trackingApplication.verificationCode : "CCXT84"}</span>
                     </div>
                   </div>
 
@@ -851,7 +1132,7 @@ export default function Admissions() {
 
                     <div>
                       <h4 className="font-display font-black text-brand-blue-dark text-base uppercase text-center border-y border-slate-200 py-2 my-2 tracking-wide">
-                        OFFER OF PROVISIONAL ADMISSION FOR 2025/2026 ACADEMIC SESSION
+                        OFFER OF PROVISIONAL ADMISSION FOR {trackingApplication && trackingApplication.level === "postgraduate" ? "2025/2026" : "2026/2027"} ACADEMIC SESSION
                       </h4>
                     </div>
 
@@ -866,16 +1147,24 @@ export default function Admissions() {
                     <div className="w-full bg-slate-50 border border-slate-100 rounded-xl p-4 grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs font-semibold text-slate-700">
                       <div>
                         <span className="text-slate-400 block uppercase mb-0.5">Full Name</span>
-                        <span className="text-brand-blue-dark font-extrabold">Olawale Tunde Joseph</span>
+                        <span className="text-brand-blue-dark font-extrabold">
+                          {trackingApplication ? trackingApplication.fullName : "Olawale Tunde Joseph"}
+                        </span>
                       </div>
                       <div>
                         <span className="text-slate-400 block uppercase mb-0.5">Program assigned</span>
-                        <span className="text-brand-blue-dark font-extrabold uppercase">Nursing Science (B.Sc. / B.N.Sc. Degree)</span>
-
+                        <span className="text-brand-blue-dark font-extrabold uppercase">
+                          {trackingApplication 
+                            ? getCourseLabel(trackingApplication.level, trackingApplication.faculty, trackingApplication.course) 
+                            : "Nursing Sciences (B.Sc.)"
+                          }
+                        </span>
                       </div>
                       <div>
                         <span className="text-slate-400 block uppercase mb-0.5">Registration Number</span>
-                        <span className="text-brand-red font-black">CCHSMT/2026/8294</span>
+                        <span className="text-brand-red font-black">
+                          {trackingApplication ? trackingApplication.regNumber : "CCHSMT/2026/8294"}
+                        </span>
                       </div>
                       <div>
                         <span className="text-slate-400 block uppercase mb-0.5">Academic partnership</span>

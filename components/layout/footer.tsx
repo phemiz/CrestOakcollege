@@ -59,12 +59,7 @@ export const Footer: React.FC = () => {
           <ul className="flex flex-col gap-3.5 text-sm font-medium">
             <li>
               <Link href="/academics?faculty=health" className="hover:text-white transition-colors">
-                Applied Health Sciences
-              </Link>
-            </li>
-            <li>
-              <Link href="/academics?faculty=social" className="hover:text-white transition-colors">
-                Social & Management Sciences
+                Health Sciences
               </Link>
             </li>
             <li>
@@ -73,13 +68,18 @@ export const Footer: React.FC = () => {
               </Link>
             </li>
             <li>
+              <Link href="/academics?faculty=arts_social_management" className="hover:text-white transition-colors">
+                Arts, Social & Management Sciences
+              </Link>
+            </li>
+            <li>
               <Link href="/academics?faculty=law" className="hover:text-white transition-colors">
                 Faculty of Law
               </Link>
             </li>
             <li>
-              <Link href="/academics?faculty=arts" className="hover:text-white transition-colors">
-                Faculty of Arts
+              <Link href="/academics?faculty=education" className="hover:text-white transition-colors">
+                Faculty of Education
               </Link>
             </li>
             <li>

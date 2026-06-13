@@ -194,10 +194,10 @@ export default function Home() {
                   initial={{ opacity: 0, y: -20 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ duration: 0.5 }}
-                  className="inline-flex items-center gap-2 bg-brand-red-light/10 border border-brand-red/30 px-3.5 py-1.5 rounded-full text-brand-red font-semibold text-[10px] sm:text-xs uppercase tracking-wider w-fit"
+                  className="inline-flex items-center gap-2 bg-red-500/25 border-2 border-red-400 text-red-200 shadow-[0_0_15px_rgba(239,68,68,0.45)] px-4 py-2 rounded-full font-bold text-xs uppercase tracking-wider w-fit animate-pulse"
                 >
-                  <span className="w-1.5 h-1.5 rounded-full bg-brand-red animate-ping" />
-                  Admissions Open 2025/2026
+                  <span className="w-2.5 h-2.5 rounded-full bg-red-400 animate-ping shrink-0" />
+                  Admissions Open: Undergrad 2026/2027 & Postgrad 2025/2026
                 </motion.div>
                 <motion.div
                   initial={{ opacity: 0, y: -20 }}
