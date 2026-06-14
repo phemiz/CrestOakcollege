@@ -29,7 +29,8 @@ import {
   DollarSign,
   X,
   CheckCircle2,
-  Printer
+  Printer,
+  Info
 } from "lucide-react";
 
 
@@ -95,14 +96,26 @@ export default function StudentPortal() {
       setIsLoggedIn(true);
     }
 
-    // Default Invoices
-    const defaultInvoices = [
-      { id: "INV-001", description: "Acceptance Fee", amount: 25000, status: "Pending", category: "Acceptance", date: "June 01, 2026" },
-      { id: "INV-002", description: "First Semester School Fees", amount: 150000, status: "Pending", category: "School Fees", date: "June 02, 2026" },
-      { id: "INV-003", description: "Examination & Practical Assessment", amount: 25000, status: "Pending", category: "Examination", date: "June 03, 2026" },
-      { id: "INV-004", description: "Hostel Accommodation Fee (Optional)", amount: 50000, status: "Pending", category: "Hostel", date: "June 04, 2026" }
-    ];
+    // Default Invoices (Updated for 2026/2027 Approved Fee Structure)
+    let tuitionRate = 400000; // default for health
+    let loadedFaculty = "health";
+    if (profile) {
+      try {
+        const prof = JSON.parse(profile);
+        loadedFaculty = prof.faculty;
+        if (prof.faculty === "natural" || prof.faculty === "physical") tuitionRate = 300000;
+        else if (["arts_social_management", "education", "agriculture", "management", "social"].includes(prof.faculty)) tuitionRate = 250000;
+        else if (prof.faculty === "law") tuitionRate = 400000;
+      } catch (e) {}
+    }
 
+    const defaultInvoices = [
+      { id: "INV-001", description: "Acceptance Fee *", amount: 50000, status: "Pending", category: "Acceptance", date: "June 01, 2026" },
+      { id: "INV-002", description: "First Semester Tuition (70% Upfront)", amount: tuitionRate * 0.70, status: "Pending", category: "School Fees", date: "June 02, 2026" },
+      { id: "INV-003", description: "Second Semester Tuition (30% Balance)", amount: tuitionRate * 0.30, status: "Pending", category: "School Fees", date: "June 03, 2026" },
+      { id: "INV-004", description: "Administrative & Academic Charges *", amount: loadedFaculty === "health" ? 175000 : (loadedFaculty === "natural" || loadedFaculty === "physical" ? 150005 : 120000), status: "Pending", category: "Administrative", date: "June 04, 2026" },
+      { id: "INV-005", description: "Hostel Accommodation Fee * (Optional)", amount: 200000, status: "Pending", category: "Hostel", date: "June 05, 2026" }
+    ];
 
     const savedInvoices = localStorage.getItem("cchsmt_student_invoices");
     if (savedInvoices) {
@@ -171,6 +184,23 @@ export default function StudentPortal() {
 
     setStudentProfile(mockProfile);
     localStorage.setItem("cchsmt_student_profile", JSON.stringify(mockProfile));
+
+    // Dynamically update user invoices based on faculty
+    let loggedTuition = 400000;
+    if (matchedFaculty === "natural" || matchedFaculty === "physical") loggedTuition = 300000;
+    else if (["arts_social_management", "education", "agriculture", "management", "social"].includes(matchedFaculty)) loggedTuition = 250000;
+    else if (matchedFaculty === "law") loggedTuition = 400000;
+
+    const matchedInvoices = [
+      { id: "INV-001", description: "Acceptance Fee *", amount: 50000, status: "Pending", category: "Acceptance", date: "June 01, 2026" },
+      { id: "INV-002", description: "First Semester Tuition (70% Upfront)", amount: loggedTuition * 0.70, status: "Pending", category: "School Fees", date: "June 02, 2026" },
+      { id: "INV-003", description: "Second Semester Tuition (30% Balance)", amount: loggedTuition * 0.30, status: "Pending", category: "School Fees", date: "June 03, 2026" },
+      { id: "INV-004", description: "Administrative & Academic Charges *", amount: matchedFaculty === "health" ? 175000 : (matchedFaculty === "natural" || matchedFaculty === "physical" ? 150000 : 120000), status: "Pending", category: "Administrative", date: "June 04, 2026" },
+      { id: "INV-005", description: "Hostel Accommodation Fee * (Optional)", amount: 200000, status: "Pending", category: "Hostel", date: "June 05, 2026" }
+    ];
+    setInvoices(matchedInvoices);
+    localStorage.setItem("cchsmt_student_invoices", JSON.stringify(matchedInvoices));
+
     setIsLoggedIn(true);
     setStudentError("");
   };
@@ -751,6 +781,43 @@ export default function StudentPortal() {
                           </div>
                         </div>
                       ))}
+                    </div>
+                  </div>
+
+                  {/* Payment Note and Bank details */}
+                  <div className="bg-slate-50 border border-slate-150 p-5 rounded-3xl grid grid-cols-1 md:grid-cols-2 gap-6 text-xs text-slate-700">
+                    <div className="flex flex-col gap-2">
+                      <div className="flex items-center gap-1.5 font-bold text-brand-blue-dark">
+                        <Info size={16} className="text-brand-blue" />
+                        <span>Installment Policy Guidelines</span>
+                      </div>
+                      <p className="text-slate-500 mt-1 font-semibold leading-relaxed">
+                        A minimum of <strong>70% upfront payment</strong> is required upon receiving admission, with the remaining <strong>30% balance</strong> paid before semester examinations.
+                      </p>
+                      <p className="text-slate-500 font-semibold leading-relaxed">
+                        Fees marked with <strong>(*)</strong> represent administrative, medical test, acceptance, and matriculation charges and must be <strong>paid in full upfront</strong>.
+                      </p>
+                    </div>
+
+                    <div className="flex flex-col gap-2.5">
+                      <div className="flex items-center gap-1.5 font-bold text-brand-blue-dark">
+                        <Building size={16} className="text-amber-600" />
+                        <span>Official Bank Transfer Coordinates</span>
+                      </div>
+                      <div className="bg-white p-3 rounded-xl border border-slate-100 flex flex-col gap-1.5 text-[11px] font-semibold">
+                        <div>
+                          <span className="text-slate-400 font-bold block uppercase text-[8px]">Bank Name</span>
+                          <span className="text-brand-blue-dark font-extrabold">First Bank of Nigeria</span>
+                        </div>
+                        <div>
+                          <span className="text-slate-400 font-bold block uppercase text-[8px]">Account Name</span>
+                          <span className="text-brand-blue-dark font-extrabold block truncate">CrestOak College of Health Sciences Management and Technology</span>
+                        </div>
+                        <div>
+                          <span className="text-slate-400 font-bold block uppercase text-[8px]">Account Number</span>
+                          <span className="text-brand-red font-black font-display text-sm">1023948576</span>
+                        </div>
+                      </div>
                     </div>
                   </div>
 

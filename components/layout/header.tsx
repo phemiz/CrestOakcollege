@@ -22,7 +22,14 @@ const navigationItems = [
       { name: "Faculty of Agricultural Sciences", href: "/academics?faculty=agriculture" },
     ],
   },
-  { name: "Admissions", href: "/admissions" },
+  {
+    name: "Admissions",
+    href: "/admissions",
+    dropdown: [
+      { name: "Admissions Process", href: "/admissions" },
+      { name: "Bursary & Tuition Fees", href: "/bursary" },
+    ]
+  },
   { name: "Gallery & Tour", href: "/gallery" },
   { name: "Contact", href: "/contact" },
 ];
@@ -71,7 +78,9 @@ const searchDatabase = [
   // Admissions
   { title: "How to Apply", category: "Admissions", href: "/admissions", details: "Step-by-step registration guidelines." },
   { title: "JAMB Cut-Off Mark (140+ / Nursing: 200)", category: "Admissions", href: "/admissions", details: "Minimum JAMB eligibility score is 140 (Nursing: 200)." },
-  { title: "Tuition and School Fees", category: "Admissions", href: "/academics", details: "Find school fees, acceptance fees, application fees." },
+  { title: "Tuition and School Fees", category: "Admissions", href: "/bursary", details: "Find school fees, acceptance fees, application fees." },
+  { title: "Approved Fee Structure (2026/2027)", category: "Bursary", href: "/bursary", details: "Official fee schedule and calculator for tuition, hostel, and admin charges." },
+  { title: "Bursary Department Details", category: "Bursary", href: "/bursary", details: "Bank account details, payment methods, and installment rules." },
   { title: "Screening Dates & Entry Exams", category: "Admissions", href: "/admissions", details: "Admission screening schedules." },
   { title: "Atiba University Affiliation Details", category: "Admissions", href: "/about", details: "Official degrees supervised by Atiba University, Oyo." },
 

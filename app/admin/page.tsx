@@ -32,20 +32,21 @@ export default function AdminCMS() {
   const [userRole, setUserRole] = useState<"admin" | "staff">("admin");
 
   // CMS States
-  const [sessionName, setSessionName] = useState("2025/2026");
+  const [sessionName, setSessionName] = useState("2026/2027");
   const [jambCutoff, setJambCutoff] = useState("140");
-  const [deadlineText, setDeadlineText] = useState("Admission in Progress 2025/2026 Session");
+  const [deadlineText, setDeadlineText] = useState("Admission in Progress 2026/2027 Session");
 
-  // Fees State
+  // Fees State (Updated for 2026/2027)
   const [feesData, setFeesData] = useState({
-    healthTuition: 150000,
-    socialTuition: 150000,
-    naturalTuition: 150000,
-    lawTuition: 150000,
-    artsTuition: 150000,
-    agricTuition: 150000,
-    applicationFee: 10000,
-    acceptanceFee: 25000
+    healthTuition: 400000,
+    socialTuition: 250000,
+    naturalTuition: 300000,
+    lawTuition: 400000,
+    artsTuition: 250000,
+    agricTuition: 250000,
+    educationTuition: 250000,
+    applicationFee: 20000,
+    acceptanceFee: 50000
   });
 
   // Applications list from admissions
@@ -172,10 +173,11 @@ export default function AdminCMS() {
     
     // Also modify outstanding template invoices for students portal
     const defaultInvoices = [
-      { id: "INV-001", description: "Acceptance Fee", amount: Number(feesData.acceptanceFee), status: "Pending", category: "Acceptance", date: "June 01, 2026" },
-      { id: "INV-002", description: "First Semester School Fees", amount: Number(feesData.healthTuition), status: "Pending", category: "School Fees", date: "June 02, 2026" },
-      { id: "INV-003", description: "Examination & Practical Assessment", amount: 25000, status: "Pending", category: "Examination", date: "June 03, 2026" },
-      { id: "INV-004", description: "Hostel Accommodation Fee (Optional)", amount: 50000, status: "Pending", category: "Hostel", date: "June 04, 2026" }
+      { id: "INV-001", description: "Acceptance Fee *", amount: Number(feesData.acceptanceFee), status: "Pending", category: "Acceptance", date: "June 01, 2026" },
+      { id: "INV-002", description: "First Semester Tuition (70% Upfront)", amount: Number(feesData.healthTuition) * 0.70, status: "Pending", category: "School Fees", date: "June 02, 2026" },
+      { id: "INV-003", description: "Second Semester Tuition (30% Balance)", amount: Number(feesData.healthTuition) * 0.30, status: "Pending", category: "School Fees", date: "June 03, 2026" },
+      { id: "INV-004", description: "Administrative & Academic Charges *", amount: 175000, status: "Pending", category: "Administrative", date: "June 04, 2026" },
+      { id: "INV-005", description: "Hostel Accommodation Fee * (Optional)", amount: 200000, status: "Pending", category: "Hostel", date: "June 05, 2026" }
     ];
 
     localStorage.setItem("cchsmt_student_invoices", JSON.stringify(defaultInvoices));
@@ -497,6 +499,26 @@ export default function AdminCMS() {
                         disabled={userRole === "staff"}
                         value={feesData.lawTuition}
                         onChange={(e) => setFeesData({ ...feesData, lawTuition: Number(e.target.value) })}
+                        className="p-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:border-brand-blue text-slate-800 font-bold disabled:opacity-70 disabled:cursor-not-allowed"
+                      />
+                    </div>
+                    <div className="flex flex-col gap-1">
+                      <label>Faculty of Education Tuition (₦)</label>
+                      <input
+                        type="number"
+                        disabled={userRole === "staff"}
+                        value={feesData.educationTuition}
+                        onChange={(e) => setFeesData({ ...feesData, educationTuition: Number(e.target.value) })}
+                        className="p-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:border-brand-blue text-slate-800 font-bold disabled:opacity-70 disabled:cursor-not-allowed"
+                      />
+                    </div>
+                    <div className="flex flex-col gap-1">
+                      <label>Faculty of Agricultural Sciences Tuition (₦)</label>
+                      <input
+                        type="number"
+                        disabled={userRole === "staff"}
+                        value={feesData.agricTuition}
+                        onChange={(e) => setFeesData({ ...feesData, agricTuition: Number(e.target.value) })}
                         className="p-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:border-brand-blue text-slate-800 font-bold disabled:opacity-70 disabled:cursor-not-allowed"
                       />
                     </div>

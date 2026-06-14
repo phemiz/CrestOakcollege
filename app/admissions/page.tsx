@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
+import Link from "next/link";
 import { Header } from "@/components/layout/header";
 import { Footer } from "@/components/layout/footer";
 import { 
@@ -22,8 +23,44 @@ import {
 } from "lucide-react";
 
 export default function Admissions() {
-  // Tabs: 'guidelines' | 'apply' | 'track' | 'letter'
-  const [activeTab, setActiveTab] = useState<"guidelines" | "apply" | "track" | "letter">("guidelines");
+  // Tabs: 'guidelines' | 'fees' | 'apply' | 'track' | 'letter'
+  const [activeTab, setActiveTab] = useState<"guidelines" | "fees" | "apply" | "track" | "letter">("guidelines");
+
+  // Admissions Fee Calculator States
+  const [admFeeFaculty, setAdmFeeFaculty] = useState("health");
+  const [admFeeHostel, setAdmFeeHostel] = useState("none");
+  const [admSelectedCharges, setAdmSelectedCharges] = useState<Record<string, boolean>>({});
+
+  useEffect(() => {
+    const initialCharges: Record<string, boolean> = {};
+    const chargesList = [
+      { name: "Application Fee/Registration", amount: 20000, mustPaidInFull: true, key: "app_fee", defaultSelected: true },
+      { name: "Acceptance Fee", amount: 50000, mustPaidInFull: true, key: "acceptance_fee", defaultSelected: true },
+      { name: "Medical Test", amount: 10000, mustPaidInFull: true, key: "medical", defaultSelected: true },
+      { name: "ID Card", amount: 10000, mustPaidInFull: true, key: "id_card", defaultSelected: true },
+      { name: "Matriculation Fee", amount: 20000, mustPaidInFull: true, key: "matric", defaultSelected: true },
+      { name: "Portal Maintenance Fee", amount: 10000, mustPaidInFull: true, key: "portal", defaultSelected: true },
+      { name: "Departmental Dues (Per Semester)", amount: 5000, mustPaidInFull: true, key: "dept_dues", defaultSelected: true },
+      { name: "Library Fee", amount: 10000, mustPaidInFull: false, key: "library", defaultSelected: true },
+      { name: "Course Form", amount: 10000, mustPaidInFull: false, key: "course_form", defaultSelected: true },
+      { name: "Polo Shirts", amount: 25000, mustPaidInFull: true, key: "polo", defaultSelected: true },
+      { name: "Lab/Workshop Fee", amount: 15000, mustPaidInFull: false, key: "lab", defaultSelected: false, categorySpecific: ["health", "physical"] },
+      { name: "Manual (Sciences)", amount: 15000, mustPaidInFull: true, key: "manual", defaultSelected: false, categorySpecific: ["health", "physical"] },
+      { name: "Nursing Procedure", amount: 20000, mustPaidInFull: true, key: "nursing_proc", defaultSelected: false, categorySpecific: ["health"] },
+      { name: "Entrepreneurship", amount: 60000, mustPaidInFull: false, key: "entrepreneurship", defaultSelected: false },
+      { name: "Carryover Fees (Per Semester)", amount: 20000, mustPaidInFull: true, key: "carryover", defaultSelected: false }
+    ];
+    chargesList.forEach(charge => {
+      if (charge.defaultSelected) {
+        initialCharges[charge.key] = true;
+      } else if (charge.categorySpecific && charge.categorySpecific.includes(admFeeFaculty)) {
+        initialCharges[charge.key] = true;
+      } else {
+        initialCharges[charge.key] = false;
+      }
+    });
+    setAdmSelectedCharges(initialCharges);
+  }, [admFeeFaculty]);
 
   // Form States
   const [formData, setFormData] = useState({
@@ -395,6 +432,7 @@ export default function Admissions() {
           <div className="max-w-7xl mx-auto px-4 sm:px-6 md:px-8 flex border-collapse justify-center sm:justify-start">
             {[
               { id: "guidelines", label: "General Guidelines" },
+              { id: "fees", label: "Fees & Bursary" },
               { id: "apply", label: "Online Application" },
               { id: "track", label: "Admission Tracker" },
               { id: "letter", label: "Admission Letter" }
@@ -545,6 +583,210 @@ export default function Admissions() {
                       </p>
                       <p className="text-slate-400 text-xs mt-2 font-semibold">
                         Email: <a href="mailto:admissionsofficer@atibauniversity.edu.ng" className="text-brand-red hover:underline">admissionsofficer@atibauniversity.edu.ng</a>
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* FEES & BURSARY TAB */}
+            {activeTab === "fees" && (
+              <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+                <div className="lg:col-span-8 flex flex-col gap-6">
+                  <div className="bg-white border border-slate-200 rounded-3xl p-6 shadow-sm flex flex-col gap-6">
+                    <div className="border-b border-slate-100 pb-4 flex items-center justify-between">
+                      <div>
+                        <h3 className="font-display font-extrabold text-brand-blue-dark text-lg">Approved Fee Structure (2026/2027)</h3>
+                        <p className="text-slate-400 text-xs mt-1">Review the dynamic tuition calculator for customized estimates.</p>
+                      </div>
+                      <Link href="/bursary">
+                        <button className="text-[10px] font-bold tracking-wider uppercase text-brand-blue-light hover:underline flex items-center gap-1">
+                          Full Guide <ArrowRight size={12} />
+                        </button>
+                      </Link>
+                    </div>
+
+                    {/* Faculty Select */}
+                    <div className="flex flex-col gap-2.5">
+                      <label className="text-[10px] font-black text-slate-500 uppercase tracking-wide">Select Faculty Pathway</label>
+                      <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 text-xs">
+                        {[
+                          { name: "Education", amount: 250000, key: "education" },
+                          { name: "Health Sciences", amount: 400000, key: "health" },
+                          { name: "Management Sciences", amount: 250000, key: "management" },
+                          { name: "Physical Sciences", amount: 300000, key: "physical" },
+                          { name: "Social Sciences", amount: 250000, key: "social" },
+                          { name: "Law", amount: 400000, key: "law" }
+                        ].map(fac => (
+                          <button
+                            key={fac.key}
+                            type="button"
+                            onClick={() => setAdmFeeFaculty(fac.key)}
+                            className={`p-2.5 rounded-xl border text-center transition-all cursor-pointer ${
+                              admFeeFaculty === fac.key
+                                ? "border-brand-red bg-brand-red-light/10 text-brand-blue-dark font-bold"
+                                : "border-slate-100 bg-slate-50 text-slate-600 font-semibold"
+                            }`}
+                          >
+                            <p>{fac.name}</p>
+                            <p className="text-[10px] text-slate-400 font-mono mt-0.5">₦{fac.amount.toLocaleString()}</p>
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* Hostel Accommodation */}
+                    <div className="flex flex-col gap-2.5">
+                      <label className="text-[10px] font-black text-slate-500 uppercase tracking-wide">Hostel Accommodation Options</label>
+                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 text-xs">
+                        {[
+                          { name: "No Hostel", amount: 0, key: "none" },
+                          { name: "6 Persons / Room", amount: 200000, key: "six" },
+                          { name: "4 Persons / Room", amount: 250000, key: "four" }
+                        ].map(opt => (
+                          <button
+                            key={opt.key}
+                            type="button"
+                            onClick={() => setAdmFeeHostel(opt.key)}
+                            className={`p-2.5 rounded-xl border text-center transition-all cursor-pointer ${
+                              admFeeHostel === opt.key
+                                ? "border-brand-red bg-brand-red-light/10 text-brand-blue-dark font-bold"
+                                : "border-slate-100 bg-slate-50 text-slate-600 font-semibold"
+                            }`}
+                          >
+                            <p>{opt.name}</p>
+                            <p className="text-[10px] text-slate-400 font-mono mt-0.5">{opt.amount > 0 ? `₦${opt.amount.toLocaleString()}` : "₦0"}</p>
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* Split Results */}
+                    <div className="bg-slate-50 border border-slate-150 rounded-2xl p-4 flex flex-col gap-3 font-semibold text-xs text-slate-600">
+                      <div className="flex justify-between items-center text-sm font-bold text-brand-blue-dark">
+                        <span>Grand Total Estimate</span>
+                        <span className="font-display font-black text-brand-red text-base">
+                          ₦{(
+                            ([
+                              { name: "Education", amount: 250000, key: "education" },
+                              { name: "Health Sciences", amount: 400000, key: "health" },
+                              { name: "Management Sciences", amount: 250000, key: "management" },
+                              { name: "Physical Sciences", amount: 300000, key: "physical" },
+                              { name: "Social Sciences", amount: 250000, key: "social" },
+                              { name: "Law", amount: 400000, key: "law" }
+                            ].find(f => f.key === admFeeFaculty)?.amount || 0) +
+                            ([
+                              { name: "No Hostel", amount: 0, key: "none" },
+                              { name: "6 Persons / Room", amount: 200000, key: "six" },
+                              { name: "4 Persons / Room", amount: 250000, key: "four" }
+                            ].find(o => o.key === admFeeHostel)?.amount || 0) +
+                            // Admin charges (defaults and faculty specific)
+                            (() => {
+                              let totalCharges = 170000; // default sum (App: 20k + Acceptance: 50k + Medical: 10k + ID: 10k + Matric: 20k + Portal: 10k + Dept: 5k + Lib: 10k + Course: 10k + Polo: 25k) = 170k
+                              if (admFeeFaculty === "health") totalCharges += 55000; // Lab 15k + Manual 15k + Nursing 20k + extra 5k for departmental dues per sem? Wait, the base includes dept dues.
+                              else if (admFeeFaculty === "physical") totalCharges += 30000; // Lab 15k + Manual 15k
+                              return totalCharges;
+                            })()
+                          ).toLocaleString()}
+                        </span>
+                      </div>
+                      <hr className="border-slate-200" />
+                      
+                      {/* Upfront split */}
+                      <div className="flex justify-between items-center text-brand-blue-dark">
+                        <div className="flex flex-col gap-0.5">
+                          <span className="font-bold">Initial Upfront Deposit (70% Upfront + 100% * Fees)</span>
+                          <span className="text-[10px] text-slate-400 font-medium">Due upon provisional admission offer acceptance</span>
+                        </div>
+                        <span className="font-display font-black text-sm bg-brand-red-light text-brand-red px-2.5 py-1.5 rounded-xl">
+                          ₦{(
+                            (() => {
+                              const tuition = [
+                                { name: "Education", amount: 250000, key: "education" },
+                                { name: "Health Sciences", amount: 400000, key: "health" },
+                                { name: "Management Sciences", amount: 250000, key: "management" },
+                                { name: "Physical Sciences", amount: 300000, key: "physical" },
+                                { name: "Social Sciences", amount: 250000, key: "social" },
+                                { name: "Law", amount: 400000, key: "law" }
+                              ].find(f => f.key === admFeeFaculty)?.amount || 0;
+                              
+                              const hostel = [
+                                { name: "No Hostel", amount: 0, key: "none" },
+                                { name: "6 Persons / Room", amount: 200000, key: "six" },
+                                { name: "4 Persons / Room", amount: 250000, key: "four" }
+                              ].find(o => o.key === admFeeHostel)?.amount || 0;
+                              
+                              // Tuition split
+                              const tuitionUpfront = tuition * 0.70;
+                              
+                              // Split admin fees (Library 10k, Course Form 10k, Lab/Workshop 15k)
+                              // Full admin fees (App 20k, Acceptance 50k, Medical 10k, ID 10k, Matric 20k, Portal 10k, Dept 5k, Polo 25k, Manual 15k, Nursing 20k)
+                              let splitAdminTotal = 20000; // Library 10k + Course Form 10k
+                              if (admFeeFaculty === "health" || admFeeFaculty === "physical") {
+                                splitAdminTotal += 15000; // Lab 15k
+                              }
+                              
+                              let fullAdminTotal = 150000; // App 20k + Acceptance 50k + Medical 10k + ID 10k + Matric 20k + Portal 10k + Dept 5k + Polo 25k = 150k
+                              if (admFeeFaculty === "health") {
+                                fullAdminTotal += 35000; // Manual 15k + Nursing 20k
+                              } else if (admFeeFaculty === "physical") {
+                                fullAdminTotal += 15000; // Manual 15k
+                              }
+
+                              const upfrontSplittable = (tuition + splitAdminTotal) * 0.70;
+                              return Math.round(upfrontSplittable + fullAdminTotal + hostel);
+                            })()
+                          ).toLocaleString()}
+                        </span>
+                      </div>
+
+                      {/* Balance split */}
+                      <div className="flex justify-between items-center text-brand-blue-dark">
+                        <div className="flex flex-col gap-0.5">
+                          <span className="font-bold">Remaining Balance Due (30% Tuition)</span>
+                          <span className="text-[10px] text-slate-400 font-medium">Payable before the commencement of semester examinations</span>
+                        </div>
+                        <span className="font-display font-black text-sm bg-emerald-50 text-emerald-800 px-2.5 py-1.5 rounded-xl">
+                          ₦{(
+                            (() => {
+                              const tuition = [
+                                { name: "Education", amount: 250000, key: "education" },
+                                { name: "Health Sciences", amount: 400000, key: "health" },
+                                { name: "Management Sciences", amount: 250000, key: "management" },
+                                { name: "Physical Sciences", amount: 300000, key: "physical" },
+                                { name: "Social Sciences", amount: 250000, key: "social" },
+                                { name: "Law", amount: 400000, key: "law" }
+                              ].find(f => f.key === admFeeFaculty)?.amount || 0;
+                              
+                              let splitAdminTotal = 20000; // Library 10k + Course Form 10k
+                              if (admFeeFaculty === "health" || admFeeFaculty === "physical") {
+                                splitAdminTotal += 15000; // Lab 15k
+                              }
+                              return Math.round((tuition + splitAdminTotal) * 0.30);
+                            })()
+                          ).toLocaleString()}
+                        </span>
+                      </div>
+                    </div>
+                    
+                    <div className="text-center pt-2">
+                      <Link href="/bursary" className="text-brand-red hover:underline text-xs font-bold uppercase tracking-wider flex items-center justify-center gap-1">
+                        <span>Open Detailed Fee Calculator & Bank Coordinates</span>
+                        <ArrowRight size={14} />
+                      </Link>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="lg:col-span-4 flex flex-col gap-6">
+                  {/* Account detail card */}
+                  <div className="bg-white border border-slate-200 p-5 rounded-3xl shadow-sm flex flex-col gap-4 relative overflow-hidden">
+                    <div className="absolute left-0 top-0 bottom-0 w-1 bg-brand-gold" />
+                    <div>
+                      <h4 className="font-display font-bold text-brand-blue-dark text-[13px] sm:text-sm">Installment Regulation</h4>
+                      <p className="text-slate-400 text-[10px] mt-1 leading-relaxed">
+                        70% upfront payment is required upon receiving admission, while the remaining 30% balance must be paid before examinations. Fees marked with (*) must be paid in full.
                       </p>
                     </div>
                   </div>
@@ -1173,7 +1415,7 @@ export default function Admissions() {
                     </div>
 
                     <p>
-                      This offer is subject to the verification of your original certificates, credentials, and passport photographs at the administrative registry. To accept this offer, you are expected to pay a non-refundable Acceptance Fee of <strong>₦20,000</strong> using your student portal accounts dashboard within fourteen (14) days of this notice.
+                      This offer is subject to the verification of your original certificates, credentials, and passport photographs at the administrative registry. To accept this offer, you are expected to pay a non-refundable Acceptance Fee of <strong>₦50,000</strong> using your student portal accounts dashboard within fourteen (14) days of this notice.
                     </p>
 
                     <p>

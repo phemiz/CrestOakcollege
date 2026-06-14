@@ -38,11 +38,11 @@ const facultiesData = [
       "Physiology"
     ],
     fees: {
-      application: 10000,
-      acceptance: 25000,
-      tuition: 150000,
+      application: 20000,
+      acceptance: 50000,
+      tuition: 400000,
       examination: 25000,
-      hostel: 50000
+      hostel: 200000
     }
   },
   {
@@ -63,11 +63,11 @@ const facultiesData = [
       "Physics with Electronics"
     ],
     fees: {
-      application: 10000,
-      acceptance: 25000,
-      tuition: 150000,
+      application: 20000,
+      acceptance: 50000,
+      tuition: 300000,
       examination: 25000,
-      hostel: 50000
+      hostel: 200000
     }
   },
   {
@@ -97,11 +97,11 @@ const facultiesData = [
       "Transport Management"
     ],
     fees: {
-      application: 10000,
-      acceptance: 25000,
-      tuition: 150000,
+      application: 20000,
+      acceptance: 50000,
+      tuition: 250000,
       examination: 25000,
-      hostel: 50000
+      hostel: 200000
     }
   },
   {
@@ -116,11 +116,11 @@ const facultiesData = [
       "LL.B Law"
     ],
     fees: {
-      application: 10000,
-      acceptance: 25000,
-      tuition: 150000,
+      application: 20000,
+      acceptance: 50000,
+      tuition: 400000,
       examination: 25000,
-      hostel: 50000
+      hostel: 200000
     }
   },
   {
@@ -136,11 +136,11 @@ const facultiesData = [
       "Library & Information Science"
     ],
     fees: {
-      application: 10000,
-      acceptance: 25000,
-      tuition: 150000,
+      application: 20000,
+      acceptance: 50000,
+      tuition: 250000,
       examination: 25000,
-      hostel: 50000
+      hostel: 200000
     }
   },
   {
@@ -155,11 +155,11 @@ const facultiesData = [
       "Agricultural Extension and Rural Development"
     ],
     fees: {
-      application: 10000,
-      acceptance: 25000,
-      tuition: 150000,
+      application: 20000,
+      acceptance: 50000,
+      tuition: 250000,
       examination: 25000,
-      hostel: 50000
+      hostel: 200000
     }
   }
 ];
@@ -549,7 +549,7 @@ const AcademicsContent: React.FC = () => {
                       <div>
                         <p className="font-bold text-brand-blue-dark">Flexible Payment Plan Options</p>
                         <p className="mt-1 leading-relaxed text-slate-600 font-semibold">
-                          Students can pay academic fees in two installments: a minimum of <strong className="text-emerald-700">60%</strong> before first-semester registration, and the balance <strong className="text-emerald-700">40%</strong> before secondary examination clearances.
+                          Students can pay academic fees in two installments: a minimum of <strong className="text-emerald-700">70%</strong> before first-semester registration, and the balance <strong className="text-emerald-700">30%</strong> before secondary examination clearances.
                         </p>
                       </div>
                     </div>

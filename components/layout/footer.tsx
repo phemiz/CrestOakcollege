@@ -33,6 +33,7 @@ export const Footer: React.FC = () => {
               { label: "About CCHSMT", href: "/about" },
               { label: "Academic Programs", href: "/academics" },
               { label: "Admissions Office", href: "/admissions" },
+              { label: "Bursary & Fees Guide", href: "/bursary" },
               { label: "Student Portal", href: "/portal" },
               { label: "Admin CMS Panel", href: "/admin" },
               { label: "Campus Gallery", href: "/gallery" },
