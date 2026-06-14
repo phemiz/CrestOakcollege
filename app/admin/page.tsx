@@ -348,7 +348,7 @@ export default function AdminCMS() {
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
             
             {/* Sidebar navigation */}
-            <div className="lg:col-span-3 bg-white border border-slate-200 rounded-3xl p-4 shadow-sm flex flex-col gap-2">
+            <div className="lg:col-span-3 bg-white border border-slate-200 rounded-3xl p-4 shadow-sm flex lg:flex-col overflow-x-auto no-scrollbar whitespace-nowrap gap-2 pb-1 lg:pb-0">
               {[
                 { id: "admissions", label: "Admissions Setup", icon: Calendar },
                 { id: "fees", label: "School Fees Setup", icon: Wallet },
@@ -360,7 +360,7 @@ export default function AdminCMS() {
                   <button
                     key={tab.id}
                     onClick={() => setActiveTab(tab.id as any)}
-                    className={`w-full flex items-center gap-3 p-3 rounded-xl border text-left text-xs font-bold transition-all cursor-pointer ${
+                    className={`flex items-center gap-3 p-3 rounded-xl border text-left text-xs font-bold transition-all cursor-pointer shrink-0 ${
                       activeTab === tab.id
                         ? "border-brand-red bg-brand-red-light/10 text-brand-red shadow-sm"
                         : "border-transparent text-slate-500 hover:bg-slate-50"

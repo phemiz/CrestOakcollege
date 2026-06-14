@@ -4,6 +4,7 @@ import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import { Header } from "@/components/layout/header";
 import { Footer } from "@/components/layout/footer";
+import { Logo } from "@/components/ui/logo";
 import { 
   ClipboardList, 
   FileCheck, 
@@ -429,7 +430,7 @@ export default function Admissions() {
 
         {/* Tab Selection */}
         <section className="bg-white border-b border-slate-200">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 md:px-8 flex border-collapse justify-center sm:justify-start">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 md:px-8 flex overflow-x-auto no-scrollbar whitespace-nowrap justify-start">
             {[
               { id: "guidelines", label: "General Guidelines" },
               { id: "fees", label: "Fees & Bursary" },
@@ -440,7 +441,7 @@ export default function Admissions() {
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id as any)}
-                className={`py-4 px-4 sm:px-6 font-display text-xs sm:text-sm font-bold border-b-2 transition-all cursor-pointer ${
+                className={`py-4 px-4 sm:px-6 font-display text-xs sm:text-sm font-bold border-b-2 transition-all cursor-pointer shrink-0 ${
                   activeTab === tab.id
                     ? "border-brand-red text-brand-red font-extrabold"
                     : "border-transparent text-slate-500 hover:text-brand-blue-dark"
@@ -565,24 +566,24 @@ export default function Admissions() {
                 </div>
 
                 <div className="lg:col-span-4 flex flex-col gap-6">
-                  {/* Affiliation info */}
+                  {/* Admissions Info */}
                   <div className="bg-white border border-slate-200 p-6 rounded-3xl shadow-sm flex flex-col gap-5 relative overflow-hidden">
-                    <div className="absolute left-0 top-0 bottom-0 w-1 bg-emerald-500" />
-                    <div className="bg-slate-50 px-3 py-2 rounded-xl border border-slate-100 w-fit">
-                      <img src="/atiba-university-banner.png" alt="Atiba University Logo" className="h-10 w-auto object-contain" />
+                    <div className="absolute left-0 top-0 bottom-0 w-1 bg-brand-red" />
+                    <div className="bg-slate-50 px-3 py-2 rounded-xl border border-slate-100 w-fit animate-pulse-slow">
+                      <Logo variant="crestoak" showText={true} size={40} />
                     </div>
                     <div>
                       <h4 className="font-display font-bold text-brand-blue-dark text-sm sm:text-base">
-                        Affiliation Direct Contacts
+                        Admissions Office Direct Contacts
                       </h4>
                       <p className="text-slate-500 text-xs mt-1 font-semibold leading-relaxed">
-                        For direct confirmations and regulatory approvals:
+                        For direct registration guidance and application support:
                       </p>
                       <p className="text-brand-blue-dark font-extrabold text-sm mt-3">
-                        📞 +234 (0) 816 938 2815, +234 (0) 905 844 8903
+                        📞 +234 (0) 815 588 4804, +234 (0) 803 861 7259
                       </p>
                       <p className="text-slate-400 text-xs mt-2 font-semibold">
-                        Email: <a href="mailto:admissionsofficer@atibauniversity.edu.ng" className="text-brand-red hover:underline">admissionsofficer@atibauniversity.edu.ng</a>
+                        Email: <a href="mailto:info.crestoakcollege@gmail.com" className="text-brand-red hover:underline">info.crestoakcollege@gmail.com</a>
                       </p>
                     </div>
                   </div>

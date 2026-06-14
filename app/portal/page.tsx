@@ -416,7 +416,7 @@ export default function StudentPortal() {
               </div>
 
               {/* Menu items */}
-              <div className="flex flex-col gap-2">
+              <div className="flex lg:flex-col overflow-x-auto no-scrollbar whitespace-nowrap gap-2 pb-1 lg:pb-0">
                 {[
                   { id: "dashboard", label: "Dashboard", icon: User },
                   { id: "academics", label: "Academics & Courses", icon: BookOpen },
@@ -429,7 +429,7 @@ export default function StudentPortal() {
                     <button
                       key={item.id}
                       onClick={() => setActiveTab(item.id as any)}
-                      className={`w-full flex items-center gap-3.5 p-3 rounded-xl border text-left text-xs font-bold transition-all cursor-pointer ${
+                      className={`flex items-center gap-3.5 p-3 rounded-xl border text-left text-xs font-bold transition-all cursor-pointer shrink-0 ${
                         isActive
                           ? "border-brand-red bg-brand-red-light/10 text-brand-red shadow-sm"
                           : "border-transparent text-slate-600 hover:bg-slate-50 hover:text-brand-blue"
@@ -539,7 +539,7 @@ export default function StudentPortal() {
               {activeTab === "academics" && (
                 <div className="flex flex-col gap-6">
                   {/* Sub tabs */}
-                  <div className="flex gap-4 border-b border-slate-100 pb-2">
+                  <div className="flex gap-4 border-b border-slate-100 pb-2 overflow-x-auto no-scrollbar whitespace-nowrap justify-start">
                     {[
                       { id: "registration", label: "Course Registration" },
                       { id: "results", label: "Results Checker" },
@@ -548,7 +548,7 @@ export default function StudentPortal() {
                       <button
                         key={sub.id}
                         onClick={() => setActiveAcademicSubTab(sub.id as any)}
-                        className={`pb-2 text-xs font-bold transition-all cursor-pointer ${
+                        className={`pb-2 text-xs font-bold transition-all cursor-pointer shrink-0 ${
                           activeAcademicSubTab === sub.id
                             ? "text-brand-red border-b-2 border-brand-red font-extrabold"
                             : "text-slate-400 hover:text-brand-blue-dark"

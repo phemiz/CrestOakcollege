@@ -526,12 +526,12 @@ export default function Home() {
             </div>
 
             {/* Selector tabs */}
-            <div className="flex flex-wrap justify-center gap-2 mb-10 max-w-lg mx-auto bg-slate-50 p-1.5 rounded-2xl border border-slate-100">
+            <div className="flex overflow-x-auto no-scrollbar whitespace-nowrap md:justify-center gap-2 mb-10 max-w-lg mx-auto bg-slate-50 p-1.5 rounded-2xl border border-slate-100">
               {(Object.keys(testimonialsData) as Array<keyof typeof testimonialsData>).map((tab) => (
                 <button
                   key={tab}
                   onClick={() => setActiveTab(tab)}
-                  className={`flex-grow py-2.5 px-4 rounded-xl font-display text-xs font-bold capitalize transition-all cursor-pointer ${
+                  className={`shrink-0 md:flex-grow py-2.5 px-4 rounded-xl font-display text-xs font-bold capitalize transition-all cursor-pointer ${
                     activeTab === tab
                       ? "bg-brand-red text-white shadow-sm"
                       : "text-slate-500 hover:text-brand-blue-dark hover:bg-slate-100"

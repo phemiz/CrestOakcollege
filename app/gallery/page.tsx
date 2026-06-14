@@ -120,7 +120,7 @@ export default function Gallery() {
             
             {/* Filter and Search Bar */}
             <div className="flex flex-col md:flex-row justify-between items-center gap-4 bg-white p-4 rounded-3xl border border-slate-200 shadow-sm">
-              <div className="flex flex-wrap gap-2 justify-center">
+              <div className="flex overflow-x-auto no-scrollbar whitespace-nowrap gap-2 justify-start w-full md:w-auto pb-1 md:pb-0">
                 {[
                   { id: "all", label: "All Media" },
                   { id: "labs", label: "Labs & Wards" },
@@ -131,7 +131,7 @@ export default function Gallery() {
                   <button
                     key={btn.id}
                     onClick={() => setFilter(btn.id)}
-                    className={`py-2 px-4 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                    className={`py-2 px-4 rounded-xl text-xs font-bold transition-all cursor-pointer shrink-0 ${
                       filter === btn.id
                         ? "bg-brand-red text-white shadow-sm"
                         : "text-slate-500 hover:text-brand-blue-dark hover:bg-slate-50"
