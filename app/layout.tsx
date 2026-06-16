@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Montserrat, Inter } from "next/font/google";
+import { AdmissionsChatbot } from "@/components/ui/chatbot";
 import "./globals.css";
 
 const montserrat = Montserrat({
@@ -87,8 +88,10 @@ export default function RootLayout({
           }}
         />
         {children}
+        <AdmissionsChatbot />
       </body>
     </html>
   );
 }
+
 

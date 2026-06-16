@@ -20,7 +20,8 @@ import {
   Printer,
   QrCode,
   FileText,
-  X
+  X,
+  CheckCircle2
 } from "lucide-react";
 
 export default function Admissions() {
@@ -212,8 +213,9 @@ export default function Admissions() {
     }
   }, [formData.level, formData.faculty]);
 
-  // Load draft and submitted application logs on mount
+  // Load draft and read query parameters for pathway pre-filling
   useEffect(() => {
+    // Read draft
     const draft = localStorage.getItem("cchsmt_admissions_draft");
     if (draft) {
       try {
@@ -221,6 +223,32 @@ export default function Admissions() {
         setFormData(prev => ({ ...prev, ...parsed }));
       } catch (e) {
         console.error("Failed to parse admissions draft", e);
+      }
+    }
+
+    // Read URL Search Parameters
+    if (typeof window !== "undefined") {
+      const params = new URLSearchParams(window.location.search);
+      const tabParam = params.get("tab") as any;
+      const levelParam = params.get("level") as any;
+      const facultyParam = params.get("faculty");
+      const courseParam = params.get("course");
+
+      if (tabParam && ["guidelines", "fees", "apply", "track", "letter"].includes(tabParam)) {
+        setActiveTab(tabParam);
+      }
+      if (levelParam || facultyParam || courseParam) {
+        setFormData(prev => ({
+          ...prev,
+          ...(levelParam && ["undergraduate", "postgraduate"].includes(levelParam) ? { level: levelParam } : {}),
+          ...(facultyParam ? { faculty: facultyParam } : {}),
+          ...(courseParam ? { course: courseParam } : {})
+        }));
+        
+        // If query specifies a course or a level, go straight to the application form tab!
+        if (courseParam || levelParam) {
+          setActiveTab("apply");
+        }
       }
     }
   }, []);
@@ -1272,26 +1300,29 @@ export default function Admissions() {
                           const currentIdx = steps.indexOf(trackingApplication.status || "Submitted");
                           const stepIdx = steps.indexOf(step.key);
                           const isDone = stepIdx <= currentIdx;
+                          const isPassed = stepIdx < currentIdx;
                           const isActive = stepIdx === currentIdx;
 
                           return (
                             <div key={step.key} className="flex gap-4 items-start">
                               <div className="flex flex-col items-center shrink-0">
-                                <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center text-[10px] font-bold transition-all ${
-                                  isDone
-                                    ? "bg-brand-red border-brand-red text-white"
-                                    : "border-slate-200 text-slate-400"
+                                <div className={`w-7 h-7 rounded-full border-2 flex items-center justify-center text-[10px] font-bold transition-all ${
+                                  isPassed
+                                    ? "bg-emerald-500 border-emerald-500 text-white shadow-sm"
+                                    : isActive
+                                    ? "bg-brand-red border-brand-red text-white ring-4 ring-brand-red/25 animate-pulse"
+                                    : "border-slate-200 text-slate-400 bg-white"
                                 }`}>
-                                  {stepIdx + 1}
+                                  {isPassed ? <CheckCircle2 size={14} className="stroke-[3px]" /> : stepIdx + 1}
                                 </div>
                                 {idx < 3 && (
                                   <div className={`w-0.5 h-10 transition-colors ${
-                                    stepIdx < currentIdx ? "bg-brand-red" : "bg-slate-200"
+                                    stepIdx < currentIdx ? "bg-emerald-500" : "bg-slate-200"
                                   }`} />
                                 )}
                               </div>
                               <div className="text-xs pt-0.5">
-                                <p className={`font-bold uppercase tracking-wide ${isDone ? "text-brand-blue-dark" : "text-slate-400"}`}>
+                                <p className={`font-bold uppercase tracking-wide ${isDone ? "text-brand-blue-dark font-black" : "text-slate-400"}`}>
                                   {step.label}
                                 </p>
                                 <p className="text-slate-500 font-semibold mt-0.5 leading-snug">{step.desc}</p>
@@ -1302,23 +1333,49 @@ export default function Admissions() {
                       </div>
                     </div>
 
-                    {/* Trigger Admission Letter if decided */}
-                    {["Interviewed", "Decided", "Accepted", "Paid"].includes(trackingApplication.status) && (
-                      <div className="bg-emerald-50 text-emerald-800 p-4 rounded-xl text-xs flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mt-2">
-                        <div>
-                          <p className="font-bold text-brand-blue-dark">Admission Offer Available!</p>
-                          <p className="text-slate-500 font-semibold mt-1">Your Admission Letter has been signed by the Registrar.</p>
+                    {/* Dynamic Status Action & Guidance Box */}
+                    <div className="bg-slate-50 border border-slate-200 rounded-2xl p-5 text-xs text-slate-700 font-semibold flex flex-col gap-2">
+                      <h5 className="font-display font-bold text-brand-blue-dark text-xs uppercase tracking-wider flex items-center gap-1.5 border-b border-slate-200/60 pb-2">
+                        <span>Admissions Team Guidance</span>
+                      </h5>
+                      {trackingApplication.status === "Submitted" && (
+                        <p className="text-slate-500 leading-relaxed font-semibold">
+                          Your application has been received. Our registry team is currently auditing your O'Level credits and credentials. Please check back within 48 hours for updates.
+                        </p>
+                      )}
+                      {trackingApplication.status === "Screened" && (
+                        <p className="text-slate-500 leading-relaxed font-semibold">
+                          Registry audits are completed successfully! You are now scheduled for the entrance screening and interview. Please report to the Badagry campus with original credentials on the next screening date (June 15, 2026).
+                        </p>
+                      )}
+                      {trackingApplication.status === "Interviewed" && (
+                        <p className="text-slate-500 leading-relaxed font-semibold">
+                          You have completed your oral interview and entrance examination. The admissions board is compiling decisions. Results will be uploaded here shortly.
+                        </p>
+                      )}
+                      {trackingApplication.status === "Decided" && (
+                        <div className="flex flex-col gap-3">
+                          <p className="text-slate-500 leading-relaxed font-semibold">
+                            Congratulations! You have been offered provisional admission. Please download your admission letter below. You must accept this offer and pay your Acceptance Fee of ₦50,000 within 14 days.
+                          </p>
+                          <div className="flex items-center gap-3">
+                            <button
+                              onClick={() => setActiveTab("letter")}
+                              className="bg-brand-red hover:bg-brand-red/90 text-white font-display font-bold px-4 py-2 rounded-xl text-[10px] uppercase tracking-wider cursor-pointer"
+                            >
+                              Download Letter
+                            </button>
+                            <Link href="/portal">
+                              <button
+                                className="bg-brand-blue hover:bg-brand-blue-dark text-white font-display font-bold px-4 py-2 rounded-xl text-[10px] uppercase tracking-wider cursor-pointer"
+                              >
+                                Accept & Pay Acceptance Fee
+                              </button>
+                            </Link>
+                          </div>
                         </div>
-                        <button
-                          onClick={() => {
-                            setActiveTab("letter");
-                          }}
-                          className="bg-brand-red hover:bg-brand-red/90 text-white font-display font-bold px-4 py-2 rounded-lg text-[10px] uppercase tracking-wider shrink-0 transition-colors cursor-pointer"
-                        >
-                          View Offer Letter
-                        </button>
-                      </div>
-                    )}
+                      )}
+                    </div>
                   </div>
                 )}
               </div>
@@ -1351,11 +1408,16 @@ export default function Admissions() {
                       <img src="/crestoak-logo.png" alt="CrestOak logo" className="w-16 h-16 object-contain rounded-full bg-white p-0.5 border border-slate-100" />
                       <div className="flex flex-col text-left">
                         <span className="font-display text-lg font-black tracking-tight text-brand-blue-dark leading-none">CRESTOAK</span>
-                        <span className="text-[7px] tracking-wider font-extrabold text-brand-red uppercase leading-tight mt-0.5">
-                          College of Health Sciences Management and Technology
-                        </span>
-                        <span className="text-[6px] tracking-tight font-semibold text-slate-500 leading-normal mt-0.5 max-w-[200px]">
-                          Affiliated & Supervised by Atiba University, Oyo, Nigeria.
+                        <div className="flex flex-col mt-0.5 gap-0.5">
+                          <span className="text-[7.5px] tracking-wider font-extrabold text-brand-red uppercase leading-none">
+                            College of Health Sciences
+                          </span>
+                          <span className="text-[6.5px] tracking-[0.05em] font-bold text-brand-blue uppercase leading-none">
+                            Management and Technology
+                          </span>
+                        </div>
+                        <span className="text-[6px] tracking-tight font-semibold text-slate-500 leading-normal mt-1 max-w-[200px]">
+                          Partnered & Supervised by Atiba University, Oyo, Nigeria.
                         </span>
                       </div>
                     </div>
@@ -1380,7 +1442,7 @@ export default function Admissions() {
                     </div>
 
                     <p>
-                      Following your successful screening and eligibility audits, we are pleased to offer you provisional admission to study at <strong>CrestOak College of Health Sciences Management and Technology</strong> (Badagry, Lagos campus) under the academic supervision and affiliation of <strong>Atiba University, Oyo</strong>.
+                      Following your successful screening and eligibility audits, we are pleased to offer you provisional admission to study at <strong>CrestOak College of Health Sciences Management and Technology</strong> (Badagry, Lagos campus) under the academic supervision and partnership of <strong>Atiba University, Oyo</strong>.
                     </p>
 
                     <p>

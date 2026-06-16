@@ -326,11 +326,16 @@ export default function BursaryPage() {
                       </div>
                       <div className="flex flex-col text-left">
                         <span className="font-display text-base font-black tracking-tight text-brand-blue-dark leading-none">CRESTOAK</span>
-                        <span className="text-[6px] tracking-wider font-extrabold text-brand-red uppercase leading-tight mt-0.5">
-                          College of Health Sciences Management and Technology
-                        </span>
-                        <span className="text-[5px] text-slate-400 leading-normal font-semibold">
-                          Affiliated & Supervised by Atiba University, Oyo.
+                        <div className="flex flex-col mt-0.5 gap-0.5">
+                          <span className="text-[6.5px] tracking-wider font-extrabold text-brand-red uppercase leading-none">
+                            College of Health Sciences
+                          </span>
+                          <span className="text-[5.5px] tracking-[0.05em] font-bold text-brand-blue uppercase leading-none">
+                            Management and Technology
+                          </span>
+                        </div>
+                        <span className="text-[5px] text-slate-400 leading-normal font-semibold mt-0.5">
+                          Partnered & Supervised by Atiba University, Oyo.
                         </span>
                       </div>
                     </div>

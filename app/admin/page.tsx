@@ -106,7 +106,7 @@ export default function AdminCMS() {
     // Load news
     const defaultNews = [
       { id: 1, title: "2025/2026 Admissions Screening Dates Released", desc: "First batch entrance screenings and interviews will commence at the Badagry campus.", category: "Screening", alert: "Urgent", date: "June 15, 2026" },
-      { id: 2, title: "Academic Affiliation Review by Atiba University Board", desc: "A delegation from Atiba University visited CCHSMT laboratories to certify the curriculum.", category: "Affiliation", alert: "Update", date: "June 02, 2026" }
+      { id: 2, title: "Academic Partnership Review by Atiba University Board", desc: "A delegation from Atiba University visited CCHSMT laboratories to certify the curriculum.", category: "Partnership", alert: "Update", date: "June 02, 2026" }
     ];
     const savedNews = localStorage.getItem("cchsmt_cms_news");
     if (savedNews) {
@@ -585,7 +585,7 @@ export default function AdminCMS() {
                         >
                           <option value="Screening">Admissions Screening</option>
                           <option value="Finance">Tuition & Financials</option>
-                          <option value="Affiliation">Atiba Affiliation</option>
+                          <option value="Partnership">Atiba Partnership</option>
                           <option value="Clinical">Clinical Placements</option>
                         </select>
                       </div>

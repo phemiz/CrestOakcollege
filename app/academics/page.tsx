@@ -402,7 +402,7 @@ const AcademicsContent: React.FC = () => {
                 </div>
               </div>
 
-              {/* University Affiliation Alert Banner */}
+              {/* University Partnership Alert Banner */}
               <div className="bg-white border border-slate-200/60 rounded-2xl p-4 sm:p-5 flex flex-col sm:flex-row items-start sm:items-center gap-4 shadow-sm relative overflow-hidden">
                 <div className="absolute left-0 top-0 bottom-0 w-1 bg-emerald-500" />
                 <div className="bg-white px-3 py-1.5 rounded-xl border border-slate-100 shadow-sm flex items-center justify-center shrink-0">
@@ -413,9 +413,9 @@ const AcademicsContent: React.FC = () => {
                   />
                 </div>
                 <div className="text-xs flex-grow">
-                  <p className="font-bold text-brand-blue-dark">Academic Partnership & Affiliation</p>
+                  <p className="font-bold text-brand-blue-dark">Academic Partnership</p>
                   <p className="text-slate-500 mt-1 leading-relaxed font-semibold">
-                    This programme is hosted under the academic affiliation and supervision of <strong>Atiba University, Oyo</strong>.
+                    This programme is hosted under the academic partnership and supervision of <strong>Atiba University, Oyo</strong>.
                   </p>
                 </div>
               </div>
@@ -622,7 +622,7 @@ const AcademicsContent: React.FC = () => {
                 </div>
               </div>
 
-              {/* Affiliation Alert Banner */}
+              {/* Partnership Alert Banner */}
               <div className="bg-white border border-slate-200/60 rounded-2xl p-4 sm:p-5 flex flex-col sm:flex-row items-start sm:items-center gap-4 shadow-sm relative overflow-hidden">
                 <div className="absolute left-0 top-0 bottom-0 w-1 bg-emerald-500" />
                 <div className="bg-white px-3 py-1.5 rounded-xl border border-slate-100 shadow-sm flex items-center justify-center shrink-0">
@@ -635,7 +635,7 @@ const AcademicsContent: React.FC = () => {
                 <div className="text-xs flex-grow">
                   <p className="font-bold text-brand-blue-dark">Postgraduate Academic Partnership</p>
                   <p className="text-slate-500 mt-1 leading-relaxed font-semibold">
-                    Offered under the academic affiliation and supervision of <strong>Atiba University, Oyo</strong>.
+                    Offered under the academic partnership and supervision of <strong>Atiba University, Oyo</strong>.
                   </p>
                 </div>
               </div>

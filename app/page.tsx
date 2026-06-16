@@ -5,6 +5,7 @@ import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
 import { Header } from "@/components/layout/header";
 import { Footer } from "@/components/layout/footer";
+import { PathwayFinder } from "@/components/ui/pathway-finder";
 import { 
   GraduationCap, 
   BookOpen, 
@@ -87,7 +88,7 @@ const chooseReasons = [
     icon: ShieldCheck
   },
   {
-    title: "Affiliated with Atiba University",
+    title: "Partnered with Atiba University",
     desc: "Formal degree supervision and academic paths endorsed by Atiba University, Oyo.",
     icon: GraduationCap
   },
@@ -124,7 +125,7 @@ const testimonialsData = {
     { name: "Amara Okoye", program: "Public Health Graduate", text: "The program focused heavily on community engagement and epidemiology. I was hired by a healthcare NGO immediately after graduation.", outcome: "Health Officer, UNICEF NG" }
   ],
   parents: [
-    { name: "Chief Gabriel Adebayo", relation: "Parent of Nursing Student", text: "Sending my daughter to CrestOak is the best decision I've made. The school fees are affordable, payments are structured, and the affiliation with Atiba University is reassuring.", outcome: "Satisfied Parent" },
+    { name: "Chief Gabriel Adebayo", relation: "Parent of Nursing Student", text: "Sending my daughter to CrestOak is the best decision I've made. The school fees are affordable, payments are structured, and the partnership with Atiba University is reassuring.", outcome: "Satisfied Parent" },
     { name: "Alhaji Ibrahim Musa", relation: "Guardian of Computer Science Student", text: "The focus on ethics and practical skills makes CrestOak stand out. My nephew is already designing websites and databases in his second year.", outcome: "Proud Uncle" }
   ],
   partners: [
@@ -144,10 +145,10 @@ const newsAndEvents = [
   },
   {
     id: 2,
-    title: "Academic Affiliation Review by Atiba University Board",
+    title: "Academic Partnership Review by Atiba University Board",
     date: "June 02, 2026",
     desc: "A delegation from Atiba University visited the CCHSMT laboratories to certify the updated digital curriculum.",
-    category: "Affiliation",
+    category: "Partnership",
     alert: "Update"
   },
   {
@@ -210,7 +211,7 @@ export default function Home() {
                     alt="Atiba University Logo"
                     className="w-4 h-4 rounded-full object-cover object-left"
                   />
-                  <span>Affiliated with Atiba University</span>
+                  <span>Partnered with Atiba University</span>
                 </motion.div>
               </div>
 
@@ -233,7 +234,7 @@ export default function Home() {
                 transition={{ duration: 0.6, delay: 0.2 }}
                 className="text-slate-300 text-base sm:text-lg leading-relaxed max-w-xl mx-auto lg:mx-0 font-medium"
               >
-                Igniting Changes Through Knowledge. Under the academic affiliation and supervision of Atiba University, Oyo, discover comprehensive professional programs to build your clinical and technical expertise.
+                Igniting Changes Through Knowledge. Under the academic partnership and supervision of Atiba University, Oyo, discover comprehensive professional programs to build your clinical and technical expertise.
               </motion.p>
 
               {/* CTAs */}
@@ -368,7 +369,7 @@ export default function Home() {
                 CrestOak College of Health Sciences, Management and Technology (CCHSMT) stands as a beacon of academic excellence in Lagos. Strategically located in the historic town of Badagry, our institution is dedicated to raising qualified healthcare practitioners, managers, legal practitioners, and technologists.
               </p>
               <p className="text-slate-600 leading-relaxed font-medium">
-                Our academic programmes are run under the <span className="font-display font-bold text-brand-blue-dark">academic affiliation and supervision of Atiba University, Oyo</span>, ensuring that all curricula meet rigorous national standards and degrees are widely recognized. We believe in standard hands-on clinical laboratories, digital workshops, and active mentoring.
+                Our academic programmes are run under the <span className="font-display font-bold text-brand-blue-dark">academic partnership and supervision of Atiba University, Oyo</span>, ensuring that all curricula meet rigorous national standards and degrees are widely recognized. We believe in standard hands-on clinical laboratories, digital workshops, and active mentoring.
               </p>
               
               {/* Academic Partnership Card */}
@@ -392,11 +393,11 @@ export default function Home() {
                   <div className="flex items-center gap-2">
                     <span className="inline-block w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
                     <h4 className="font-display text-xs font-extrabold text-brand-blue-dark uppercase tracking-wider">
-                      Official Academic Affiliation
+                      Official Academic Partnership
                     </h4>
                   </div>
                   <p className="text-xs sm:text-[13px] text-slate-600 mt-2 leading-relaxed font-semibold">
-                    Under the direct academic supervision and affiliation of <strong className="text-brand-blue-dark font-bold">Atiba University, Oyo, Nigeria</strong>.
+                    Under the direct academic supervision and partnership of <strong className="text-brand-blue-dark font-bold">Atiba University, Oyo, Nigeria</strong>.
                   </p>
                 </div>
               </div>
@@ -407,8 +408,8 @@ export default function Home() {
                     <ShieldCheck size={18} />
                   </div>
                   <div>
-                    <h4 className="font-display font-bold text-brand-blue-dark">University Affiliation</h4>
-                    <p className="text-slate-500 text-sm mt-0.5">Formal affiliation ensures transfer paths, academic oversight, and standard degree awarding frameworks.</p>
+                    <h4 className="font-display font-bold text-brand-blue-dark">University Partnership</h4>
+                    <p className="text-slate-500 text-sm mt-0.5">Formal partnership ensures transfer paths, academic oversight, and standard degree awarding frameworks.</p>
                   </div>
                 </div>
                 <div className="flex gap-3.5 items-start">
@@ -472,6 +473,9 @@ export default function Home() {
             </div>
           </div>
         </section>
+
+        {/* INTERACTIVE COURSE & CAREER PATHWAY FINDER */}
+        <PathwayFinder />
 
         {/* WHY CHOOSE CRESTOAK SECTION (UPGRADED) */}
         <section className="bg-brand-bg-light py-20 border-y border-slate-150">

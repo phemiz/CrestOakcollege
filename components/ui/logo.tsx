@@ -35,13 +35,32 @@ export const Logo: React.FC<LogoProps> = ({
         />
       </div>
       {showText && (
-        <div className="flex flex-col text-left max-w-[180px] sm:max-w-[260px] md:max-w-[320px] lg:max-w-none">
-          <span className={`font-display text-lg font-bold tracking-tight leading-none ${lightText ? "text-white" : "text-brand-blue-dark"}`}>
+        <div className="flex flex-col text-left max-w-[185px] sm:max-w-[280px] md:max-w-[320px] lg:max-w-none">
+          <span 
+            className={`font-display text-lg sm:text-xl font-black tracking-widest leading-none ${
+              lightText 
+                ? "text-white" 
+                : "text-transparent bg-clip-text bg-gradient-to-r from-brand-blue-dark via-brand-blue to-brand-blue-light"
+            }`}
+          >
             CRESTOAK
           </span>
-          <span className={`text-[8px] tracking-[0.05em] font-semibold leading-tight mt-1 uppercase ${lightText ? "text-slate-300" : "text-brand-red"}`}>
-            College of Health Sciences Management and Technology
-          </span>
+          <div className="flex flex-col mt-1 gap-0.5">
+            <span 
+              className={`text-[8.5px] sm:text-[9.5px] tracking-wider font-extrabold uppercase leading-none ${
+                lightText ? "text-red-300" : "text-brand-red"
+              }`}
+            >
+              College of Health Sciences
+            </span>
+            <span 
+              className={`text-[7.5px] sm:text-[8.5px] tracking-[0.07em] font-bold uppercase leading-none ${
+                lightText ? "text-slate-300" : "text-brand-blue"
+              }`}
+            >
+              Management and Technology
+            </span>
+          </div>
         </div>
       )}
     </div>
