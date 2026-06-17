@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Montserrat, Inter } from "next/font/google";
 import dynamic from "next/dynamic";
+import { SessionProvider } from "@/components/providers/session-provider";
 import "./globals.css";
 
 const AdmissionsChatbot = dynamic(
@@ -91,7 +92,9 @@ export default function RootLayout({
             })
           }}
         />
-        {children}
+        <SessionProvider>
+          {children}
+        </SessionProvider>
         <AdmissionsChatbot />
       </body>
     </html>

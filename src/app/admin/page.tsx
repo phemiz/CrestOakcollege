@@ -4,6 +4,8 @@ import React, { useState, useEffect } from "react";
 import { Header } from "@/components/layout/header";
 import { Footer } from "@/components/layout/footer";
 import { Logo } from "@/components/ui/logo";
+import { useSession, signOut } from "next-auth/react";
+import { useRouter } from "next/navigation";
 import { 
   ShieldCheck, 
   Wallet, 
@@ -27,14 +29,13 @@ const getLocalDateString = (): string => {
 };
 
 export default function AdminCMS() {
+  const { data: session, status } = useSession();
+  const router = useRouter();
+
   const [activeTab, setActiveTab] = useState<"admissions" | "fees" | "news" | "applications">("admissions");
 
-  // Authentication Mock State
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
-  const [username, setUsername] = useState("");
-  const [password, setPassword] = useState("");
-  const [loginError, setLoginError] = useState("");
-  const [userRole, setUserRole] = useState<"admin" | "staff">("admin");
+  // Authentication & Role mapping
+  const userRole = session?.user?.role === "Super Admin" || session?.user?.role === "Admin" ? "admin" : "staff";
 
   // CMS States
   const [sessionName, setSessionName] = useState("2026/2027");
@@ -68,8 +69,9 @@ export default function AdminCMS() {
   const [saveSuccess, setSaveSuccess] = useState(false);
 
   useEffect(() => {
-    // Check admin session profile
-    const savedProfile = localStorage.getItem("cchsmt_admin_profile");
+    // Only fetch config if authenticated
+    if (status !== "authenticated") return;
+
     // Load config from localStorage
     const savedSession = localStorage.getItem("cchsmt_cms_session");
     const savedCutoff = localStorage.getItem("cchsmt_cms_jamb_cutoff");
@@ -83,84 +85,38 @@ export default function AdminCMS() {
       { id: 2, title: "Academic Partnership Review by Atiba University Board", desc: "A delegation from Atiba University visited CCHSMT laboratories to certify the curriculum.", category: "Partnership", alert: "Update", date: "June 02, 2026" }
     ];
 
-    const timer = setTimeout(() => {
-      if (savedProfile) {
-        try {
-          const profile = JSON.parse(savedProfile);
-          setUserRole(profile.role);
-          setIsLoggedIn(true);
-        } catch {
-          // ignore
-        }
-      }
+    if (savedSession) setSessionName(savedSession);
+    if (savedCutoff) setJambCutoff(savedCutoff);
+    if (savedDeadline) setDeadlineText(savedDeadline);
 
-      if (savedSession) setSessionName(savedSession);
-      if (savedCutoff) setJambCutoff(savedCutoff);
-      if (savedDeadline) setDeadlineText(savedDeadline);
-
-      if (savedFees) {
-        try {
-          setFeesData(JSON.parse(savedFees));
-        } catch {
-          // ignore
-        }
-      }
-
+    if (savedFees) {
       try {
-        setSubmittedApps(JSON.parse(savedAppsStr));
+        setFeesData(JSON.parse(savedFees));
       } catch {
-        setSubmittedApps([]);
+        // ignore
       }
+    }
 
-      if (savedNews) {
-        try {
-          setNewsList(JSON.parse(savedNews));
-        } catch {
-          setNewsList(defaultNews);
-        }
-      } else {
+    try {
+      setSubmittedApps(JSON.parse(savedAppsStr));
+    } catch {
+      setSubmittedApps([]);
+    }
+
+    if (savedNews) {
+      try {
+        setNewsList(JSON.parse(savedNews));
+      } catch {
         setNewsList(defaultNews);
       }
-    }, 0);
-
-    return () => clearTimeout(timer);
-  }, []);
-
-  // Login Handler
-  const handleLogin = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!username.trim() || !password.trim()) {
-      setLoginError("Please enter both portal credentials.");
-      return;
-    }
-
-    const lowerUser = username.trim().toLowerCase();
-    const cleanPass = password.trim();
-
-    if (lowerUser === "admin" && cleanPass === "admin") {
-      const profile = { username: "admin", role: "admin" as const, name: "CMS Administrator" };
-      setUserRole("admin");
-      setIsLoggedIn(true);
-      setLoginError("");
-      localStorage.setItem("cchsmt_admin_profile", JSON.stringify(profile));
-    } else if (lowerUser === "staff" && (cleanPass === "admin" || cleanPass === "staff")) {
-      const profile = { username: "staff", role: "staff" as const, name: "Staff Registrar" };
-      setUserRole("staff");
-      setIsLoggedIn(true);
-      setLoginError("");
-      localStorage.setItem("cchsmt_admin_profile", JSON.stringify(profile));
     } else {
-      setLoginError("Invalid administrative credentials. Use admin or staff for testing.");
+      setNewsList(defaultNews);
     }
-  };
+  }, [status]);
 
   // Logout Handler
   const handleLogout = () => {
-    localStorage.removeItem("cchsmt_admin_profile");
-    setIsLoggedIn(false);
-    setUsername("");
-    setPassword("");
-    setLoginError("");
+    signOut({ callbackUrl: "/login" });
   };
 
   // Save General Admissions details
@@ -243,71 +199,31 @@ export default function AdminCMS() {
     setTimeout(() => setSaveSuccess(false), 2000);
   };
 
-  if (!isLoggedIn) {
+  if (status === "loading") {
     return (
-      <>
-        <Header />
-        <main className="flex-grow bg-slate-50 flex items-center justify-center py-24 px-4 min-h-[70vh]">
-          <div className="bg-white border border-slate-200 shadow-xl rounded-3xl p-8 w-full max-w-md relative overflow-hidden">
-            <div className="absolute top-0 left-0 right-0 h-1.5 bg-brand-blue-dark" />
-            
-            <div className="flex flex-col items-center text-center gap-6 mb-8">
-              <Logo variant="atiba" size={60} showText={false} />
-              <div>
-                <h3 className="font-display font-black text-2xl text-brand-blue-dark">Admin CMS Login</h3>
-                <p className="text-slate-400 text-xs mt-1.5 leading-relaxed font-semibold">
-                  Enter your administrative credentials to manage announcements, candidate applications, and session fees.
-                </p>
-              </div>
-            </div>
+      <div className="min-h-screen flex items-center justify-center bg-slate-900 text-white">
+        <div className="flex flex-col items-center gap-4">
+          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-indigo-500 border-r-2" />
+          <p className="text-slate-400 font-medium">Verifying authorization...</p>
+        </div>
+      </div>
+    );
+  }
 
-            {loginError && (
-              <div className="bg-red-50 text-red-700 p-4 rounded-xl text-xs font-bold mb-5 text-center">
-                {loginError}
-              </div>
-            )}
-
-            <form onSubmit={handleLogin} className="flex flex-col gap-5">
-              <div className="flex flex-col gap-1.5">
-                <label className="text-[10px] font-black uppercase text-slate-500 tracking-wider">Username</label>
-                <input
-                  type="text"
-                  placeholder="e.g. admin or staff"
-                  value={username}
-                  onChange={(e) => setUsername(e.target.value)}
-                  className="p-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:border-brand-blue font-bold text-sm"
-                />
-              </div>
-
-              <div className="flex flex-col gap-1.5 font-semibold">
-                <label className="text-[10px] font-black uppercase text-slate-500 tracking-wider">Portal Password</label>
-                <input
-                  type="password"
-                  placeholder="••••••••"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  className="p-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:border-brand-blue font-semibold text-sm"
-                />
-              </div>
-
-              <button
-                type="submit"
-                className="bg-brand-blue-dark hover:bg-brand-blue text-white font-display font-bold py-3.5 rounded-xl shadow-lg transition-colors flex items-center justify-center gap-2 cursor-pointer mt-2"
-              >
-                <span>Authenticate Console</span>
-                <Lock size={15} />
-              </button>
-            </form>
-
-            <div className="mt-6 border-t border-slate-100 pt-4 text-center">
-              <p className="text-[10px] text-slate-400 font-bold leading-relaxed">
-                * Note: Use username <strong className="text-brand-blue-dark">admin</strong> with password <strong className="text-brand-blue-dark">admin</strong> for Administrator role, or <strong className="text-brand-blue-dark">staff</strong> for Staff Member role.
-              </p>
-            </div>
-          </div>
-        </main>
-        <Footer />
-      </>
+  if (status === "unauthenticated" || !session || (session.user.role !== "Admin" && session.user.role !== "Super Admin")) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-slate-900 text-white p-6 text-center">
+        <div>
+          <h1 className="text-2xl font-bold text-red-400 font-display">Unauthorized Access</h1>
+          <p className="text-slate-400 mt-2">You do not have permissions to access this administrative console.</p>
+          <button 
+            onClick={() => router.push("/login")}
+            className="mt-6 bg-indigo-600 hover:bg-indigo-500 px-6 py-2 rounded-xl transition-all font-semibold cursor-pointer"
+          >
+            Go to Login
+          </button>
+        </div>
+      </div>
     );
   }
 

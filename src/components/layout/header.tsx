@@ -189,7 +189,7 @@ export const Header: React.FC = () => {
       >
         {/* Logo */}
         <Link href="/" className="flex items-center">
-          <Logo variant="atiba" size={scrolled ? 48 : 60} showText={true} />
+          <Logo variant="crestoak" size={scrolled ? 48 : 60} showText={true} />
         </Link>
 
         {/* Desktop Navigation */}
@@ -326,7 +326,7 @@ export const Header: React.FC = () => {
             >
               <div>
                 <div className="flex justify-between items-center border-b border-slate-100 pb-4 mb-6">
-                  <Logo variant="atiba" size={45} showText={true} />
+                  <Logo variant="crestoak" size={45} showText={true} />
                   <button
                     onClick={() => setMobileMenuOpen(false)}
                     className="p-2 text-slate-500 hover:bg-slate-100 rounded-lg cursor-pointer"

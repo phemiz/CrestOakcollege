@@ -6,6 +6,7 @@ import { Header } from "@/components/layout/header";
 import { Logo } from "@/components/ui/logo";
 import { portalAvailableCourses, portalResultsData, portalTimetableSlots } from "@/data/portalData";
 import { Admission } from "@/types";
+import { signOut } from "next-auth/react";
 
 import { motion, AnimatePresence } from "framer-motion";
 import { 
@@ -81,7 +82,7 @@ interface RequestItem {
 }
 
 
-export default function PortalDashboard() {
+export default function PortalDashboard({ initialUser }: { initialUser?: any }) {
   const [activeTab, setActiveTab] = useState<"dashboard" | "academics" | "billing" | "services">("dashboard");
   const [activeAcademicSubTab, setActiveAcademicSubTab] = useState<"registration" | "results" | "timetable">("registration");
 
@@ -129,6 +130,53 @@ export default function PortalDashboard() {
 
   // Initialize client side simulation data
   useEffect(() => {
+    if (initialUser) {
+      const mockProfile: StudentProfile = {
+        fullName: initialUser.name || "Adebayo Chukwuma",
+        regNumber: initialUser.registrationNumber || initialUser.username || "STU-2026-001",
+        email: initialUser.email || "student@crestoak.edu.ng",
+        phone: "+234 815 588 4804",
+        faculty: initialUser.faculty || "health",
+        semester: "1st Semester, 2026/2027",
+        level: "Year 1 / 100 Level",
+        gpa: "3.82"
+      };
+
+      setStudentProfile(mockProfile);
+      setIsLoggedIn(true);
+
+      let tuitionRate = 400000;
+      const loadedFaculty = mockProfile.faculty;
+      if (loadedFaculty === "natural" || loadedFaculty === "physical") tuitionRate = 300000;
+      else if (["arts_social_management", "education", "agriculture", "management", "social"].includes(loadedFaculty)) tuitionRate = 250000;
+      else if (loadedFaculty === "law") tuitionRate = 400000;
+
+      const defaultInvoices = [
+        { id: "INV-001", description: "Acceptance Fee *", amount: 50000, status: "Pending", category: "Acceptance", date: "June 01, 2026" },
+        { id: "INV-002", description: "First Semester Tuition (70% Upfront)", amount: tuitionRate * 0.70, status: "Pending", category: "School Fees", date: "June 02, 2026" },
+        { id: "INV-003", description: "Second Semester Tuition (30% Balance)", amount: tuitionRate * 0.30, status: "Pending", category: "School Fees", date: "June 03, 2026" },
+        { id: "INV-004", description: "Administrative & Academic Charges *", amount: loadedFaculty === "health" ? 175000 : (loadedFaculty === "natural" || loadedFaculty === "physical" ? 150000 : 120000), status: "Pending", category: "Administrative", date: "June 04, 2026" },
+        { id: "INV-005", description: "Hostel Accommodation Fee * (Optional)", amount: 200000, status: "Pending", category: "Hostel", date: "June 05, 2026" }
+      ];
+
+      const savedInvoices = localStorage.getItem("cchsmt_student_invoices");
+      const savedReceipts = localStorage.getItem("cchsmt_student_receipts");
+      const savedTickets = localStorage.getItem("cchsmt_student_tickets");
+      const savedRequests = localStorage.getItem("cchsmt_student_requests");
+
+      if (savedInvoices) {
+        setInvoices(JSON.parse(savedInvoices));
+      } else {
+        setInvoices(defaultInvoices);
+        localStorage.setItem("cchsmt_student_invoices", JSON.stringify(defaultInvoices));
+      }
+
+      if (savedReceipts) setReceipts(JSON.parse(savedReceipts));
+      if (savedTickets) setTickets(JSON.parse(savedTickets));
+      if (savedRequests) setRequestsList(JSON.parse(savedRequests));
+      return;
+    }
+
     // Check local storage logins
     const profile = localStorage.getItem("cchsmt_student_profile");
     // Default Invoices (Updated for 2026/2027 Approved Fee Structure)
@@ -189,7 +237,7 @@ export default function PortalDashboard() {
     }, 0);
 
     return () => clearTimeout(timer);
-  }, []);
+  }, [initialUser]);
 
   // Login Handler
   const handleLogin = (e: React.FormEvent) => {
@@ -256,6 +304,10 @@ export default function PortalDashboard() {
 
   // Logout Handler
   const handleLogout = () => {
+    if (initialUser) {
+      signOut({ callbackUrl: "/login" });
+      return;
+    }
     localStorage.removeItem("cchsmt_student_profile");
     setIsLoggedIn(false);
     setStudentProfile(null);
