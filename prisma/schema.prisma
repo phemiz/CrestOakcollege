@@ -1,0 +1,707 @@
+datasource db {
+  provider = "postgresql"
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+// ==========================================
+// 1. IDENTITY & ACCESS MANAGEMENT (IAM)
+// ==========================================
+
+model Role {
+  id          String           @id @default(uuid())
+  name        String           @unique // e.g. SUPER_ADMIN, REGISTRAR, BURSAR, LECTURER, STUDENT, APPLICANT
+  description String?
+  isDeleted   Boolean          @default(false)
+  deletedAt   DateTime?
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
+  users       User[]
+  permissions RolePermission[]
+
+  @@index([name])
+}
+
+model Permission {
+  id          String           @id @default(uuid())
+  name        String           @unique // e.g. read:students, write:results, approve:payments
+  description String?
+  isDeleted   Boolean          @default(false)
+  deletedAt   DateTime?
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
+  roles       RolePermission[]
+
+  @@index([name])
+}
+
+model RolePermission {
+  roleId       String
+  permissionId String
+  role         Role       @relation(fields: [roleId], references: [id], onDelete: Cascade)
+  permission   Permission @relation(fields: [permissionId], references: [id], onDelete: Cascade)
+
+  @@id([roleId, permissionId])
+}
+
+model User {
+  id           String         @id @default(uuid())
+  email        String         @unique
+  passwordHash String
+  firstName    String
+  lastName     String
+  middleName   String?
+  phoneNumber  String?        @unique
+  avatarUrl    String?
+  isActive     Boolean        @default(true)
+  isDeleted    Boolean        @default(false)
+  deletedAt    DateTime?
+  createdAt    DateTime       @default(now())
+  updatedAt    DateTime       @updatedAt
+  roleId       String
+  role         Role           @relation(fields: [roleId], references: [id])
+  
+  // Relations to Profile Sub-types
+  student      Student?
+  staff        Staff?
+
+  // Content & Audit relations
+  newsPublished News[]
+  announcements SentAnnouncements[]
+  galleryUploads Gallery[]
+  auditLogs     AuditLog[]
+  invoices      Invoice[]
+  applications  Application[]
+  notificationLogs NotificationLog[]
+
+  @@index([email])
+  @@index([roleId])
+}
+
+// ==========================================
+// 2. CORE ACADEMIC PROFILE ENTITIES
+// ==========================================
+
+enum StudentStatus {
+  ACTIVE
+  SUSPENDED
+  GRADUATED
+  WITHDRAWN
+  DEFERRED
+}
+
+model Student {
+  id                String             @id // Foreign key pointing to User.id (One-to-One)
+  user              User               @relation(fields: [id], references: [id], onDelete: Cascade)
+  matricNo          String             @unique
+  status            StudentStatus      @default(ACTIVE)
+  level             Int                @default(100) // e.g., 100, 200, 300, 400
+  cgpa              Decimal            @default(0.00) @db.Decimal(3, 2)
+  gpa               Decimal            @default(0.00) @db.Decimal(3, 2)
+  isDeleted         Boolean            @default(false)
+  deletedAt         DateTime?
+  createdAt         DateTime           @default(now())
+  updatedAt         DateTime           @updatedAt
+
+  // Academic Relations
+  departmentId      String
+  department        Department         @relation(fields: [departmentId], references: [id])
+  programmeId       String
+  programme         Programme          @relation(fields: [programmeId], references: [id])
+  
+  entrySessionId    String
+  entrySession      AcademicSession    @relation("EntrySession", fields: [entrySessionId], references: [id])
+  currentSessionId  String
+  currentSession    AcademicSession    @relation("CurrentSession", fields: [currentSessionId], references: [id])
+  currentSemesterId String
+  currentSemester   Semester           @relation(fields: [currentSemesterId], references: [id])
+
+  admissionId       String?            @unique
+  admission         Admission?         @relation(fields: [admissionId], references: [id])
+
+  registrations     CourseRegistration[]
+  results           Result[]
+
+  @@index([matricNo])
+  @@index([departmentId])
+  @@index([programmeId])
+  @@index([currentSessionId, currentSemesterId])
+}
+
+enum StaffStatus {
+  ACTIVE
+  ON_LEAVE
+  SUSPENDED
+  RETIRED
+  RESIGNED
+}
+
+model Staff {
+  id           String       @id // Foreign key pointing to User.id (One-to-One)
+  user         User         @relation(fields: [id], references: [id], onDelete: Cascade)
+  staffNo      String       @unique
+  designation  String       // e.g. Bursar, Registrar, Administrative Officer, HOD, Dean
+  status       StaffStatus  @default(ACTIVE)
+  joiningDate  DateTime
+  isDeleted    Boolean      @default(false)
+  deletedAt    DateTime?
+  createdAt    DateTime     @default(now())
+  updatedAt    DateTime     @updatedAt
+  
+  departmentId String
+  department   Department   @relation(fields: [departmentId], references: [id])
+
+  lecturer     Lecturer?
+  admissionsApproved Admission[] @relation("ApprovedByStaff")
+
+  @@index([staffNo])
+  @@index([departmentId])
+}
+
+enum LecturerRank {
+  ASSISTANT_LECTURER
+  LECTURER_II
+  LECTURER_I
+  SENIOR_LECTURER
+  READER
+  PROFESSOR
+}
+
+model Lecturer {
+  id             String         @id // Foreign key pointing to Staff.id (One-to-One)
+  staff          Staff          @relation(fields: [id], references: [id], onDelete: Cascade)
+  rank           LecturerRank   @default(LECTURER_II)
+  specialization String
+  isDeleted      Boolean        @default(false)
+  deletedAt      DateTime?
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime       @updatedAt
+
+  facultiesDeaned  Faculty[]    @relation("DeanOfFaculty")
+  departmentsLed   Department[] @relation("HODOfDepartment")
+  courseAllocations CourseAllocation[]
+  resultsGraded    Result[]     @relation("GradedByLecturer")
+  resultsApproved  Result[]     @relation("ApprovedByLecturer")
+}
+
+// ==========================================
+// 3. ADMISSION & APPLICATION ENTITIES
+// ==========================================
+
+enum ApplicationStatus {
+  DRAFT
+  SUBMITTED
+  UNDER_REVIEW
+  APPROVED
+  REJECTED
+}
+
+enum PaymentStatus {
+  PENDING
+  PAID
+  FAILED
+}
+
+model Application {
+  id            String                @id @default(uuid())
+  applicationNo String                @unique
+  status        ApplicationStatus     @default(DRAFT)
+  paymentStatus PaymentStatus         @default(PENDING)
+  isDeleted     Boolean               @default(false)
+  deletedAt     DateTime?
+  createdAt     DateTime              @default(now())
+  updatedAt     DateTime              @updatedAt
+
+  applicantId   String
+  applicant     User                  @relation(fields: [applicantId], references: [id])
+  programmeId   String
+  programme     Programme             @relation(fields: [programmeId], references: [id])
+  invoiceId     String?               @unique
+  invoice       Invoice?              @relation("ApplicationInvoice", fields: [invoiceId], references: [id])
+
+  documents     ApplicationDocument[]
+  admission     Admission?
+  screening     ScreeningSchedule?
+
+  @@index([applicationNo])
+  @@index([applicantId])
+  @@index([status])
+}
+
+model ApplicationDocument {
+  id            String      @id @default(uuid())
+  documentName  String      // e.g. WAEC certificate, Birth Certificate, Transcript
+  documentUrl   String
+  isDeleted     Boolean     @default(false)
+  deletedAt     DateTime?
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+
+  applicationId String
+  application   Application @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+}
+
+enum AdmissionStatus {
+  OFFERED
+  ACCEPTED
+  REJECTED
+  DECLINED
+}
+
+model Admission {
+  id                 String          @id @default(uuid())
+  status             AdmissionStatus @default(OFFERED)
+  admissionLetterUrl String
+  matricNoAssigned   String?         @unique
+  admittedAt         DateTime        @default(now())
+  isDeleted          Boolean         @default(false)
+  deletedAt          DateTime?
+  createdAt          DateTime        @default(now())
+  updatedAt          DateTime        @updatedAt
+
+  applicationId      String          @unique
+  application        Application     @relation(fields: [applicationId], references: [id])
+  admittedProgrammeId String
+  admittedProgramme  Programme       @relation(fields: [admittedProgrammeId], references: [id])
+  admittedById       String
+  admittedBy         Staff           @relation("ApprovedByStaff", fields: [admittedById], references: [id])
+
+  student            Student?
+
+  @@index([applicationId])
+}
+
+// ==========================================
+// 4. ACADEMIC STRUCTURE ENTITIES
+// ==========================================
+
+model Faculty {
+  id          String       @id @default(uuid())
+  name        String       @unique
+  code        String       @unique // e.g. SCI, SOC, ENG
+  description String?
+  isDeleted   Boolean      @default(false)
+  deletedAt   DateTime?
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+
+  deanId      String?
+  dean        Lecturer?    @relation("DeanOfFaculty", fields: [deanId], references: [id])
+  departments Department[]
+
+  @@index([code])
+}
+
+model Department {
+  id                  String       @id @default(uuid())
+  name                String
+  code                String       @unique // e.g. CSC, MTH, PHY
+  description         String?
+  isDeleted           Boolean      @default(false)
+  deletedAt           DateTime?
+  createdAt           DateTime     @default(now())
+  updatedAt           DateTime     @updatedAt
+
+  facultyId           String
+  faculty             Faculty      @relation(fields: [facultyId], references: [id])
+  headOfDepartmentId  String?
+  headOfDepartment    Lecturer?    @relation("HODOfDepartment", fields: [headOfDepartmentId], references: [id])
+
+  programmes          Programme[]
+  staff               Staff[]
+  students            Student[]
+  courses             Course[]
+
+  @@index([code])
+  @@index([facultyId])
+}
+
+model Programme {
+  id            String       @id @default(uuid())
+  name          String       // e.g. B.Sc. Computer Science
+  code          String       @unique // e.g. BSC-CSC
+  durationYears Int          @default(4)
+  degreeAwarded String       // e.g. B.Sc, B.Eng, M.Sc
+  isDeleted     Boolean      @default(false)
+  deletedAt     DateTime?
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
+
+  departmentId  String
+  department    Department   @relation(fields: [departmentId], references: [id])
+  
+  students      Student[]
+  applications  Application[]
+  admissions    Admission[]
+  courses       ProgrammeCourse[]
+
+  @@index([code])
+  @@index([departmentId])
+}
+
+model Course {
+  id           String             @id @default(uuid())
+  title        String
+  code         String             @unique // e.g. CSC101
+  creditUnits  Int
+  description  String?
+  level        Int                @default(100) // e.g. 100, 200
+  semesterName SemesterName
+  isDeleted    Boolean            @default(false)
+  deletedAt    DateTime?
+  createdAt    DateTime           @default(now())
+  updatedAt    DateTime           @updatedAt
+
+  departmentId String
+  department   Department         @relation(fields: [departmentId], references: [id])
+
+  programmes   ProgrammeCourse[]
+  registrations CourseRegistration[]
+  allocations  CourseAllocation[]
+  results      Result[]
+
+  @@index([code])
+  @@index([departmentId])
+  @@index([level])
+}
+
+// Join Table for Programme and Course Many-to-Many
+model ProgrammeCourse {
+  programmeId String
+  courseId    String
+  programme   Programme @relation(fields: [programmeId], references: [id], onDelete: Cascade)
+  course      Course    @relation(fields: [courseId], references: [id], onDelete: Cascade)
+
+  @@id([programmeId, courseId])
+}
+
+// ==========================================
+// 5. SESSIONS & SEMESTERS
+// ==========================================
+
+model AcademicSession {
+  id        String     @id @default(uuid())
+  name      String     @unique // e.g., 2025/2026
+  startDate DateTime
+  endDate   DateTime
+  isActive  Boolean    @default(false)
+  isDeleted Boolean    @default(false)
+  deletedAt DateTime?
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+
+  semesters         Semester[]
+  studentsEntry     Student[]          @relation("EntrySession")
+  studentsCurrent   Student[]          @relation("CurrentSession")
+  registrations     CourseRegistration[]
+  allocations       CourseAllocation[]
+  results           Result[]
+  invoices          Invoice[]
+
+  @@index([name])
+}
+
+enum SemesterName {
+  FIRST
+  SECOND
+  SUMMER
+}
+
+model Semester {
+  id          String          @id @default(uuid())
+  name        SemesterName
+  startDate   DateTime
+  endDate     DateTime
+  isActive    Boolean         @default(false)
+  isDeleted   Boolean         @default(false)
+  deletedAt   DateTime?
+  createdAt   DateTime        @default(now())
+  updatedAt   DateTime        @updatedAt
+
+  sessionId   String
+  session     AcademicSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+
+  students    Student[]
+  registrations CourseRegistration[]
+  allocations  CourseAllocation[]
+  results      Result[]
+  invoices     Invoice[]
+
+  @@index([sessionId])
+  @@index([isActive])
+}
+
+// ==========================================
+// 6. COURSE REGISTRATION & ALLOCATION
+// ==========================================
+
+enum RegistrationStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+model CourseRegistration {
+  id           String             @id @default(uuid())
+  status       RegistrationStatus @default(PENDING)
+  isDeleted    Boolean            @default(false)
+  deletedAt    DateTime?
+  createdAt    DateTime           @default(now())
+  updatedAt    DateTime           @updatedAt
+
+  studentId    String
+  student      Student            @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  courseId     String
+  course       Course             @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  sessionId    String
+  session      AcademicSession    @relation(fields: [sessionId], references: [id])
+  semesterId   String
+  semester     Semester           @relation(fields: [semesterId], references: [id])
+
+  @@unique([studentId, courseId, sessionId, semesterId])
+  @@index([studentId])
+  @@index([courseId])
+  @@index([sessionId, semesterId])
+}
+
+model CourseAllocation {
+  id         String          @id @default(uuid())
+  isDeleted  Boolean         @default(false)
+  deletedAt  DateTime?
+  createdAt  DateTime        @default(now())
+  updatedAt  DateTime        @updatedAt
+
+  lecturerId String
+  lecturer   Lecturer        @relation(fields: [lecturerId], references: [id], onDelete: Cascade)
+  courseId   String
+  course     Course          @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  sessionId  String
+  session    AcademicSession @relation(fields: [sessionId], references: [id])
+  semesterId String
+  semester   Semester        @relation(fields: [semesterId], references: [id])
+
+  @@unique([lecturerId, courseId, sessionId, semesterId])
+  @@index([lecturerId])
+  @@index([courseId])
+}
+
+// ==========================================
+// 7. EXAMINATIONS & RESULTS
+// ==========================================
+
+model Result {
+  id              String          @id @default(uuid())
+  caScore         Decimal?        @db.Decimal(5, 2) // e.g. 25.50
+  examScore       Decimal?        @db.Decimal(5, 2) // e.g. 55.00
+  totalScore      Decimal?        @db.Decimal(5, 2) // e.g. 80.50
+  grade           String?         // e.g. A, B, C, D, F
+  gp              Decimal?        @db.Decimal(3, 2) // e.g. 5.00, 4.00, 0.00
+  isPublished     Boolean         @default(false)
+  isDeleted       Boolean         @default(false)
+  deletedAt       DateTime?
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
+
+  studentId       String
+  student         Student         @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  courseId        String
+  course          Course          @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  sessionId       String
+  session         AcademicSession @relation(fields: [sessionId], references: [id])
+  semesterId      String
+  semester        Semester        @relation(fields: [semesterId], references: [id])
+  
+  gradedById      String
+  gradedBy        Lecturer        @relation("GradedByLecturer", fields: [gradedById], references: [id])
+  approvedById    String?
+  approvedBy      Lecturer?       @relation("ApprovedByLecturer", fields: [approvedById], references: [id])
+
+  @@unique([studentId, courseId, sessionId, semesterId])
+  @@index([studentId])
+  @@index([courseId])
+  @@index([sessionId, semesterId])
+}
+
+// ==========================================
+// 8. BILLING & FINANCIAL ENTITIES
+// ==========================================
+
+enum FeeType {
+  TUITION
+  ACCOMMODATION
+  APPLICATION
+  ACCEPTANCE
+  LATE_REGISTRATION
+  TRANSCRIPT
+  OTHER
+}
+
+enum InvoiceStatus {
+  UNPAID
+  PARTIALLY_PAID
+  PAID
+  CANCELLED
+}
+
+model Invoice {
+  id          String        @id @default(uuid())
+  invoiceNo   String        @unique // e.g. INV-2025-0001
+  amount      Decimal       @db.Decimal(12, 2)
+  description String
+  feeType     FeeType       @default(TUITION)
+  status      InvoiceStatus @default(UNPAID)
+  dueDate     DateTime
+  isDeleted   Boolean       @default(false)
+  deletedAt   DateTime?
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+
+  userId      String
+  user        User          @relation(fields: [userId], references: [id])
+  sessionId   String?
+  session     AcademicSession? @relation(fields: [sessionId], references: [id])
+  semesterId  String?
+  semester    Semester?      @relation(fields: [semesterId], references: [id])
+
+  payments    Payment[]
+  application Application? @relation("ApplicationInvoice")
+
+  @@index([invoiceNo])
+  @@index([userId])
+  @@index([status])
+}
+
+model Payment {
+  id          String        @id @default(uuid())
+  reference   String        @unique // Payment gateway reference
+  amountPaid  Decimal       @db.Decimal(12, 2)
+  method      String        // e.g. CARD, BANK_TRANSFER, REMITA
+  status      PaymentStatus @default(PENDING)
+  paidAt      DateTime?
+  metadata    Json?         // Custom payload from payment gateway
+  isDeleted   Boolean       @default(false)
+  deletedAt   DateTime?
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+
+  invoiceId   String
+  invoice     Invoice       @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+
+  @@index([reference])
+  @@index([invoiceId])
+  @@index([status])
+}
+
+// ==========================================
+// 9. COLLABORATION, COMMUNICATIONS & ASSETS
+// ==========================================
+
+model News {
+  id            String    @id @default(uuid())
+  title         String
+  slug          String    @unique
+  content       String    @db.Text
+  featuredImage String?
+  isPublished   Boolean   @default(false)
+  publishedAt   DateTime?
+  isDeleted     Boolean   @default(false)
+  deletedAt     DateTime?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  authorId      String
+  author        User      @relation(fields: [authorId], references: [id])
+
+  @@index([slug])
+  @@index([isPublished])
+}
+
+enum AudienceType {
+  ALL
+  STUDENTS
+  STAFF
+  LECTURERS
+}
+
+model SentAnnouncements {
+  id          String       @id @default(uuid())
+  title       String
+  content     String       @db.Text
+  audience    AudienceType @default(ALL)
+  expiryDate  DateTime?
+  isDeleted   Boolean      @default(false)
+  deletedAt   DateTime?
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+
+  senderId    String
+  sender      User         @relation(fields: [senderId], references: [id])
+
+  @@index([audience])
+  @@index([createdAt])
+}
+
+model Gallery {
+  id          String    @id @default(uuid())
+  title       String
+  description String?
+  imageUrl    String
+  album       String?   // e.g. Matriculation 2025, Convocation
+  isDeleted   Boolean   @default(false)
+  deletedAt   DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  uploadedById String
+  uploadedBy   User      @relation(fields: [uploadedById], references: [id])
+}
+
+// ==========================================
+// 10. SYSTEM AUDITING
+// ==========================================
+
+model AuditLog {
+  id        String   @id @default(uuid())
+  action    String   // e.g. CREATE, UPDATE, DELETE, LOGIN, EXPORT_RESULTS
+  entity    String   // e.g. Student, Result, Payment
+  entityId  String?  // UUID of the affected entity
+  oldValues Json?    // Previous state
+  newValues Json?    // Updated state
+  ipAddress String?
+  userAgent String?
+  createdAt DateTime @default(now())
+
+  userId    String?
+  user      User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([action])
+  @@index([entity, entityId])
+  @@index([userId])
+  @@index([createdAt])
+}
+
+model ScreeningSchedule {
+  id              String      @id @default(uuid())
+  applicationId   String      @unique
+  application     Application @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+  screeningDate   DateTime
+  venue           String
+  status          String      @default("PENDING") // PENDING, COMPLETED, MISSED
+  notes           String?
+  createdAt       DateTime    @default(now())
+  updatedAt       DateTime    @updatedAt
+}
+
+model NotificationLog {
+  id          String   @id @default(uuid())
+  userId      String?
+  user        User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+  type        String   // EMAIL, SMS
+  recipient   String
+  subject     String?
+  message     String
+  status      String   @default("SENT") // SENT, FAILED
+  createdAt   DateTime @default(now())
+}

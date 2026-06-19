@@ -1,9 +1,10 @@
 import { NextAuthOptions } from "next-auth";
 import CredentialsProvider from "next-auth/providers/credentials";
-import { mockUsers } from "@/data/users";
 import { verifyPassword } from "./hash";
 import { sanitizeInput } from "@/utils/sanitize";
 import { isRateLimited } from "./rate-limit";
+import db from "./db";
+import { mockUsers, User as MockUser } from "@/data/users";
 
 export const authOptions: NextAuthOptions = {
   providers: [
@@ -42,33 +43,91 @@ export const authOptions: NextAuthOptions = {
         const sanitizedUsername = sanitizeInput(credentials.username.trim());
         const sanitizedPassword = credentials.password; 
 
-        console.log(`[NextAuth Auth] Login attempt for username: "${sanitizedUsername}" (Sanitized from: "${credentials.username}") from IP: ${ip}`);
+        console.log(`[NextAuth Auth] Login attempt for username: "${sanitizedUsername}" from IP: ${ip}`);
 
-        // 3. Find user in the mock database (allow match on username or registration number)
+        // 3. Find user in the real database first
+        let dbUser = null;
+        try {
+          dbUser = await db.user.findFirst({
+            where: {
+              OR: [
+                { email: { equals: sanitizedUsername, mode: "insensitive" } },
+                { student: { matricNo: { equals: sanitizedUsername, mode: "insensitive" } } },
+                { staff: { staffNo: { equals: sanitizedUsername, mode: "insensitive" } } }
+              ]
+            },
+            include: {
+              role: true,
+              student: {
+                include: {
+                  department: {
+                    include: {
+                      faculty: true
+                    }
+                  },
+                  programme: true
+                }
+              },
+              staff: {
+                include: {
+                  department: true
+                }
+              }
+            }
+          });
+        } catch (dbErr) {
+          console.error("[NextAuth Auth] Database query error:", dbErr);
+        }
+
+        if (dbUser) {
+          console.log(`[NextAuth Auth] Found database user: "${dbUser.firstName} ${dbUser.lastName}" with role: "${dbUser.role.name}". Verifying password...`);
+          
+          const isValid = await verifyPassword(sanitizedPassword, dbUser.passwordHash);
+          if (!isValid) {
+            console.warn(`[NextAuth Auth] Authentication failed: Password verification failed for DB user "${sanitizedUsername}".`);
+            throw new Error("Invalid username or password.");
+          }
+
+          let mappedRole = dbUser.role.name;
+          if (dbUser.role.name === "SUPER_ADMIN") mappedRole = "Super Admin";
+          else if (dbUser.role.name === "STUDENT") mappedRole = "Student";
+          else if (dbUser.role.name === "LECTURER") mappedRole = "Lecturer";
+          else if (dbUser.role.name === "BURSAR") mappedRole = "Bursary";
+          else if (dbUser.role.name === "REGISTRAR") mappedRole = "Staff";
+
+          return {
+            id: dbUser.id,
+            name: `${dbUser.firstName} ${dbUser.lastName}`,
+            email: dbUser.email,
+            role: mappedRole as any,
+            registrationNumber: dbUser.student?.matricNo || dbUser.staff?.staffNo || undefined,
+            department: dbUser.student?.department?.name || dbUser.staff?.department?.name || undefined,
+            faculty: dbUser.student?.department?.faculty?.name || undefined,
+          };
+        }
+
+        // 4. Fallback search in the mock database
         const user = mockUsers.find(
-          (u) => 
+          (u: MockUser) => 
             u.username.toLowerCase() === sanitizedUsername.toLowerCase() ||
             (u.registrationNumber && u.registrationNumber.toLowerCase() === sanitizedUsername.toLowerCase())
         );
 
         if (!user) {
-          console.warn(`[NextAuth Auth] Authentication failed: User "${sanitizedUsername}" not found in mock database.`);
+          console.warn(`[NextAuth Auth] Authentication failed: User "${sanitizedUsername}" not found in DB or mock database.`);
           throw new Error("Invalid username or password.");
         }
 
-        console.log(`[NextAuth Auth] Found user: "${user.name}" with role: "${user.role}". Verifying password...`);
-
-        // 4. Verify password with Argon2id Wasm
+        console.log(`[NextAuth Auth] Found mock user: "${user.name}" with role: "${user.role}". Verifying password...`);
         const isValid = await verifyPassword(sanitizedPassword, user.passwordHash);
 
         if (!isValid) {
-          console.warn(`[NextAuth Auth] Authentication failed: Password verification failed for user "${sanitizedUsername}".`);
+          console.warn(`[NextAuth Auth] Authentication failed: Password verification failed for mock user "${sanitizedUsername}".`);
           throw new Error("Invalid username or password.");
         }
 
-        console.log(`[NextAuth Auth] Authentication successful for user: "${user.name}".`);
+        console.log(`[NextAuth Auth] Authentication successful for mock user: "${user.name}".`);
 
-        // Return user object without the password hash
         return {
           id: user.id,
           name: user.name,

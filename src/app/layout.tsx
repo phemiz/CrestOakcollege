@@ -21,22 +21,26 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
+  metadataBase: new URL("https://www.crestoak.com.ng"),
   title: {
     default: "CrestOak College | Health Sciences, Management & Technology",
     template: "%s | CrestOak College (CCHSMT)"
   },
   description: "CrestOak College of Health Sciences, Management and Technology (Badagry, Lagos) offers top-tier programs in Applied Health Sciences, Law, Social & Management Sciences, Agriculture, and Applied Sciences. Igniting changes through knowledge.",
   keywords: [
-    "CrestOak College", 
-    "Health Science College Nigeria", 
-    "Management and Technology College", 
-    "CrestOak College Badagry", 
-    "Applied Health Sciences Lagos", 
-    "Nursing Science Badagry", 
+    "CrestOak College",
+    "Health Science College Nigeria",
+    "Management and Technology College",
+    "CrestOak College Badagry",
+    "Applied Health Sciences Lagos",
+    "Nursing Science Badagry",
     "Criminology and Security Studies Nigeria",
     "Computer Science College Lagos",
     "CCHSMT"
   ],
+  alternates: {
+    canonical: "https://www.crestoak.com.ng"
+  },
   openGraph: {
     title: "CrestOak College of Health Sciences, Management and Technology",
     description: "Empowering future leaders through world-class health, management, and technology education. Located in Badagry, Lagos.",

@@ -23,10 +23,16 @@ export async function hashPassword(password: string): Promise<string> {
  */
 export async function verifyPassword(password: string, hash: string): Promise<boolean> {
   try {
-    return await argon2Verify({
-      password,
-      hash,
-    });
+    if (hash.startsWith("$argon2")) {
+      return await argon2Verify({
+        password,
+        hash,
+      });
+    } else {
+      // Fallback for database seeded users
+      const sha256Hash = crypto.createHash("sha256").update(password).digest("hex");
+      return sha256Hash === hash;
+    }
   } catch (error) {
     console.error("Argon2 Verification Error:", error);
     return false;

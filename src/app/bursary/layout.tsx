@@ -10,7 +10,10 @@ export const metadata: Metadata = {
     "Tuition Fee Nigeria",
     "Atiba University Partnered Fees",
     "Nursing School Fees Badagry"
-  ]
+  ],
+  alternates: {
+    canonical: "https://www.crestoak.com.ng/bursary"
+  }
 };
 
 export default function BursaryLayout({

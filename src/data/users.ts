@@ -59,10 +59,10 @@ export const mockUsers: User[] = [
   },
   {
     id: "user-sad-001",
-    username: "superadmin",
+    username: "admin",
     name: "Super Administrator",
-    email: "superadmin@crestoak.edu.ng",
-    passwordHash: "$argon2id$v=19$m=4096,t=3,p=1$SHtOLVK4lRtPwpd8BImY6Q$AV3n8ZQw3JOhFViAtOx8bNcaVC+uvXF2g7DSGzuhvQY", // password123
+    email: "admin@crestoakcollege.edu.ng",
+    passwordHash: "92e6cebcd5df35bf76aee5eb621aaf0c25c9252da48c1a4386d9de9e8e0f6947", // Adm1nSecureP@ss123!
     role: "Super Admin",
   },
 ];

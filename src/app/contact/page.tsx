@@ -1,12 +1,62 @@
 import React from "react";
+import type { Metadata } from "next";
 import { Header } from "@/components/layout/header";
 import { Footer } from "@/components/layout/footer";
 import { Phone, Mail, MapPin, Clock } from "lucide-react";
 import { ContactForm } from "@/components/contact/ContactForm";
+import { generateSEO } from "@/utils/seo";
+import { StructuredData } from "@/components/seo/StructuredData";
+
+export const metadata: Metadata = generateSEO({
+  title: "Contact Our Badagry Campus",
+  description: "Get in touch with the admissions and administrative offices at CrestOak College (CCHSMT) Badagry, Lagos. Find physical address, telephone contact numbers, and office hours.",
+  path: "/contact",
+  keywords: [
+    "Contact CrestOak",
+    "CCHSMT Badagry Address",
+    "CrestOak Phone Number",
+    "Health science college contact badagry"
+  ]
+});
 
 export default function Contact() {
+  const breadcrumbSchema = {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    "itemListElement": [
+      {
+        "@type": "ListItem",
+        "position": 1,
+        "name": "Home",
+        "item": "https://crestoakcollege.edu.ng"
+      },
+      {
+        "@type": "ListItem",
+        "position": 2,
+        "name": "Contact",
+        "item": "https://crestoakcollege.edu.ng/contact"
+      }
+    ]
+  };
+
+  const contactSchema = {
+    "@context": "https://schema.org",
+    "@type": "ContactPage",
+    "name": "Contact CrestOak College",
+    "description": "Contact channels and map location coordinates for CrestOak College of Health Sciences, Management & Technology.",
+    "mainEntity": {
+      "@type": "CollegeOrUniversity",
+      "name": "CrestOak College",
+      "url": "https://crestoakcollege.edu.ng",
+      "telephone": "+2348155884804",
+      "email": "info.crestoakcollege@gmail.com"
+    }
+  };
+
   return (
     <>
+      <StructuredData data={breadcrumbSchema} />
+      <StructuredData data={contactSchema} />
       <Header />
 
       <main className="flex-grow bg-slate-50">

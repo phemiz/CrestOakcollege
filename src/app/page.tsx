@@ -1,7 +1,10 @@
 import React, { Suspense } from "react";
+import type { Metadata } from "next";
 import dynamic from "next/dynamic";
 import { Header } from "@/components/layout/header";
 import { Footer } from "@/components/layout/footer";
+import { generateSEO } from "@/utils/seo";
+import { StructuredData } from "@/components/seo/StructuredData";
 import {
   HeroSection,
   QuickAccessPanel,
@@ -11,6 +14,19 @@ import {
   NewsSection,
   CTASection
 } from "@/components/home";
+
+export const metadata: Metadata = generateSEO({
+  title: "CrestOak College | Badagry Campus Health & Technology Programs",
+  description: "CrestOak College (CCHSMT) Badagry Lagos. Leading Health Sciences, Management, Law, and Technology programs partnered with Atiba University, Oyo. Start your online application today.",
+  path: "",
+  keywords: [
+    "CrestOak College Home",
+    "CCHSMT Badagry",
+    "Applied Health Lagos",
+    "Atiba University partnership",
+    "Nursing entry requirements Nigeria"
+  ]
+});
 
 const PathwayFinderSection = dynamic(
   () => import("@/components/home/PathwayFinderSection").then((mod) => mod.PathwayFinderSection),
@@ -37,6 +53,19 @@ const TestimonialsSection = dynamic(
 export default function Home() {
   return (
     <>
+      <StructuredData
+        data={{
+          "@context": "https://schema.org",
+          "@type": "WebSite",
+          "name": "CrestOak College",
+          "url": "https://crestoakcollege.edu.ng",
+          "potentialAction": {
+            "@type": "SearchAction",
+            "target": "https://crestoakcollege.edu.ng/academics?search={search_term_string}",
+            "query-input": "required name=search_term_string"
+          }
+        }}
+      />
       <Header />
       <main className="flex-grow">
         {/* Above-the-fold content rendered instantly on server */}

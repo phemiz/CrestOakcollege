@@ -1,8 +1,24 @@
 import React from "react";
+import type { Metadata } from "next";
 import Image from "next/image";
 import { Header } from "@/components/layout/header";
 import { Footer } from "@/components/layout/footer";
 import { Eye, Rocket, CheckCircle2 } from "lucide-react";
+import { generateSEO } from "@/utils/seo";
+import { StructuredData } from "@/components/seo/StructuredData";
+
+export const metadata: Metadata = generateSEO({
+  title: "About Our Institution & Accreditations",
+  description: "Learn about CrestOak College (CCHSMT) Badagry, Lagos. Read our provost letter, mission, core values, accreditations, and regulatory board partners with Atiba University Oyo.",
+  path: "/about",
+  keywords: [
+    "About CrestOak College",
+    "CCHSMT Badagry Lagos",
+    "Rector Dr Ajisefinni",
+    "Atiba University Badagry Partnership",
+    "Accredited Health Science Nigeria"
+  ]
+});
 
 const values = [
   { name: "Academic Excellence", desc: "Rigorous standards, expert lecturing, and licensed-focused practical mock reviews." },
@@ -12,8 +28,42 @@ const values = [
 ];
 
 export default function About() {
+  const breadcrumbSchema = {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    "itemListElement": [
+      {
+        "@type": "ListItem",
+        "position": 1,
+        "name": "Home",
+        "item": "https://crestoakcollege.edu.ng"
+      },
+      {
+        "@type": "ListItem",
+        "position": 2,
+        "name": "About Us",
+        "item": "https://crestoakcollege.edu.ng/about"
+      }
+    ]
+  };
+
+  const aboutSchema = {
+    "@context": "https://schema.org",
+    "@type": "AboutPage",
+    "name": "About CrestOak College",
+    "description": "About CrestOak College of Health Sciences, Management & Technology (Badagry, Lagos) and its partnership with Atiba University Oyo.",
+    "mainEntity": {
+      "@type": "CollegeOrUniversity",
+      "name": "CrestOak College",
+      "alternateName": "CCHSMT",
+      "url": "https://crestoakcollege.edu.ng"
+    }
+  };
+
   return (
     <>
+      <StructuredData data={breadcrumbSchema} />
+      <StructuredData data={aboutSchema} />
       <Header />
 
       <main className="flex-grow">

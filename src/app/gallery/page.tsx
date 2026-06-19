@@ -1,7 +1,22 @@
 import React, { Suspense } from "react";
+import type { Metadata } from "next";
 import dynamic from "next/dynamic";
 import { Header } from "@/components/layout/header";
 import { Footer } from "@/components/layout/footer";
+import { generateSEO } from "@/utils/seo";
+import { StructuredData } from "@/components/seo/StructuredData";
+
+export const metadata: Metadata = generateSEO({
+  title: "Campus Gallery & Media Center",
+  description: "Take a virtual tour of CrestOak College (CCHSMT) Badagry campus. Explore clinical wards, laboratory machinery, lecture theatres, and student activities.",
+  path: "/gallery",
+  keywords: [
+    "CrestOak Gallery",
+    "CCHSMT virtual tour",
+    "Badagry campus photos",
+    "Nursing lab equipment pictures Nigeria"
+  ]
+});
 
 const GalleryGrid = dynamic(
   () => import("@/components/gallery/GalleryGrid").then((mod) => mod.GalleryGrid),
@@ -15,8 +30,28 @@ const GalleryGrid = dynamic(
 );
 
 export default function Gallery() {
+  const breadcrumbSchema = {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    "itemListElement": [
+      {
+        "@type": "ListItem",
+        "position": 1,
+        "name": "Home",
+        "item": "https://www.crestoak.com.ng"
+      },
+      {
+        "@type": "ListItem",
+        "position": 2,
+        "name": "Gallery & Tour",
+        "item": "https://www.crestoak.com.ng/gallery"
+      }
+    ]
+  };
+
   return (
     <>
+      <StructuredData data={breadcrumbSchema} />
       <Header />
 
       <main className="flex-grow bg-slate-50">
