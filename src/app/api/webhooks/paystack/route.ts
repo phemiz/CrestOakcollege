@@ -2,6 +2,8 @@ import { NextResponse } from "next/server";
 import * as crypto from "crypto";
 import { verifyPaystackPayment } from "@/app/actions/paystack-actions";
 
+export const dynamic = "force-static";
+
 export async function POST(request: Request) {
   try {
     const bodyText = await request.text();

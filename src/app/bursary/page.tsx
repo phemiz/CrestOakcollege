@@ -3,14 +3,14 @@ import { Header } from "@/components/layout/header";
 import { Footer } from "@/components/layout/footer";
 import { Coins, Lock } from "lucide-react";
 import { BursaryCalculator } from "@/components/bursary/BursaryCalculator";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth";
+import { getSafeSession } from "@/lib/session";
 import db from "@/lib/db";
+import { redirect } from "next/navigation";
 import BursaryDashboardClient from "@/components/bursary/BursaryDashboardClient";
 import { StructuredData } from "@/components/seo/StructuredData";
 
-export default async function BursaryPage() {
-  const session = await getServerSession(authOptions);
+export default async function BursaryDashboardPage() {
+  const session = await getSafeSession();
 
   // Check if logged in user is a Bursar or general Administrator
   const isBursar = session && ["Bursary", "Admin", "Super Admin"].includes(session.user.role);
@@ -42,7 +42,7 @@ export default async function BursaryPage() {
       orderBy: { createdAt: "desc" }
     });
 
-    payments = paymentsList.map(p => ({
+    payments = paymentsList.map((p: any) => ({
       id: p.id,
       reference: p.reference,
       amountPaid: Number(p.amountPaid),
@@ -74,19 +74,20 @@ export default async function BursaryPage() {
           include: {
             student: true
           }
-        }
+        },
+        payments: true
       },
       orderBy: { createdAt: "desc" }
     });
 
-    invoices = invoicesList.map(i => ({
+    invoices = invoicesList.map((i: any) => ({
       id: i.id,
       invoiceNo: i.invoiceNo,
       amount: Number(i.amount),
       description: i.description,
       feeType: i.feeType,
       status: i.status,
-      dueDate: i.dueDate.toISOString().split("T")[0],
+      dueDate: i.dueDate ? i.dueDate.toISOString() : "",
       createdAt: i.createdAt.toISOString(),
       user: {
         firstName: i.user.firstName,
@@ -95,7 +96,12 @@ export default async function BursaryPage() {
         student: i.user.student ? {
           matricNo: i.user.student.matricNo
         } : null
-      }
+      },
+      payments: i.payments.map((p: any) => ({
+        id: p.id,
+        amountPaid: Number(p.amountPaid),
+        paidAt: p.paidAt ? p.paidAt.toISOString() : ""
+      }))
     }));
 
     // 3. Fetch financial audit logs
@@ -110,12 +116,11 @@ export default async function BursaryPage() {
       take: 150
     });
 
-    auditLogs = auditLogsList.map(log => ({
+    auditLogs = auditLogsList.map((log: any) => ({
       id: log.id,
       action: log.action,
       entity: log.entity,
-      entityId: log.entityId,
-      newValues: log.newValues,
+      details: log.details,
       createdAt: log.createdAt.toISOString(),
       user: log.user ? {
         firstName: log.user.firstName,
@@ -131,7 +136,7 @@ export default async function BursaryPage() {
       }
     });
 
-    students = studentsList.map(s => ({
+    students = studentsList.map((s: any) => ({
       id: s.user.id,
       firstName: s.user.firstName,
       lastName: s.user.lastName,

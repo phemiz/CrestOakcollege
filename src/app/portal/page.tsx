@@ -1,6 +1,5 @@
 import React from "react";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth";
+import { getSafeSession } from "@/lib/session";
 import { redirect } from "next/navigation";
 import db from "@/lib/db";
 import Link from "next/link";
@@ -16,7 +15,7 @@ import {
 } from "lucide-react";
 
 export default async function StudentPortalHome() {
-  const session = await getServerSession(authOptions);
+  const session = await getSafeSession();
 
   if (!session || session.user.role !== "Student") {
     redirect("/login");
@@ -50,7 +49,7 @@ export default async function StudentPortalHome() {
     }
   });
 
-  const totalRegisteredCredits = registrations.reduce((acc, reg) => acc + reg.course.creditUnits, 0);
+  const totalRegisteredCredits = registrations.reduce((acc: number, reg: any) => acc + reg.course.creditUnits, 0);
 
   // Fetch student results to compute GPAs
   const results = await db.result.findMany({
@@ -74,13 +73,13 @@ export default async function StudentPortalHome() {
   });
 
   const pendingAmount = invoices
-    .filter(inv => inv.status !== "PAID" && inv.status !== "CANCELLED")
-    .reduce((acc, inv) => Number(acc) + Number(inv.amount), 0);
+    .filter((inv: any) => inv.status !== "PAID" && inv.status !== "CANCELLED")
+    .reduce((acc: number, inv: any) => Number(acc) + Number(inv.amount), 0);
 
   // Group results by semester to compute semester-specific GPA trends
   const semesterGpMap: Record<string, { totalPoints: number; totalUnits: number }> = {};
   
-  results.forEach(res => {
+  results.forEach((res: any) => {
     const key = `${res.session.name} - ${res.semester.name}`;
     const gpValue = res.gp ? Number(res.gp) : 0;
     const unitsValue = res.course.creditUnits;
@@ -103,8 +102,8 @@ export default async function StudentPortalHome() {
 
   // Calculate dynamic GPA & CGPA
   const calculatedCgpa = results.length > 0 
-    ? Number((results.reduce((acc, r) => acc + (Number(r.gp || 0) * r.course.creditUnits), 0) / 
-      results.reduce((acc, r) => acc + r.course.creditUnits, 0)).toFixed(2))
+    ? Number((results.reduce((acc: number, r: any) => acc + (Number(r.gp || 0) * r.course.creditUnits), 0) / 
+      results.reduce((acc: number, r: any) => acc + r.course.creditUnits, 0)).toFixed(2))
     : Number(student.cgpa);
 
   const formatNaira = (amount: number) => {
@@ -336,7 +335,7 @@ export default async function StudentPortalHome() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100 font-semibold text-slate-700">
-                {results.slice(0, 3).map((r) => (
+                {results.slice(0, 3).map((r: any) => (
                   <tr key={r.id}>
                     <td className="p-3 font-bold text-brand-blue-dark">{r.course.code}</td>
                     <td className="p-3">{r.course.title}</td>

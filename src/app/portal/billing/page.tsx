@@ -1,13 +1,12 @@
 import React from "react";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth";
+import { getSafeSession } from "@/lib/session";
 import { redirect } from "next/navigation";
 import db from "@/lib/db";
 import BillingClientView from "./BillingClientView";
 import { ShieldCheck, Calendar } from "lucide-react";
 
 export default async function StudentBillingPage() {
-  const session = await getServerSession(authOptions);
+  const session = await getSafeSession();
 
   if (!session || session.user.role !== "Student") {
     redirect("/login");
@@ -53,7 +52,7 @@ export default async function StudentBillingPage() {
     }
   });
 
-  const serializedInvoices = invoices.map(inv => ({
+  const serializedInvoices = invoices.map((inv: any) => ({
     id: inv.id,
     invoiceNo: inv.invoiceNo,
     amount: Number(inv.amount),
@@ -63,7 +62,7 @@ export default async function StudentBillingPage() {
     dueDate: inv.dueDate.toLocaleDateString()
   }));
 
-  const serializedPayments = payments.map(p => ({
+  const serializedPayments = payments.map((p: any) => ({
     id: p.id,
     reference: p.reference,
     amountPaid: Number(p.amountPaid),

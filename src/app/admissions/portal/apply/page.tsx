@@ -1,13 +1,12 @@
 import React from "react";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth";
+import { getSafeSession } from "@/lib/session";
 import db from "@/lib/db";
 import ApplicantWizardClient from "@/components/admissions/ApplicantWizardClient";
 
-export const revalidate = 0; // Fresh pages always
+export const dynamic = "force-static";
 
 export default async function PortalApplyPage() {
-  const session = await getServerSession(authOptions);
+  const session = await getSafeSession();
 
   if (!session) return null; // Handled by layout redirect
 

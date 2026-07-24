@@ -2,6 +2,8 @@ import { NextResponse } from "next/server";
 import { verifyPaystackPayment } from "@/app/actions/paystack-actions";
 import db from "@/lib/db";
 
+export const dynamic = "force-static";
+
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
   const reference = searchParams.get("reference");

@@ -4,6 +4,8 @@ import { verifyPassword } from "@/lib/hash";
 import { sanitizeInput } from "@/utils/sanitize";
 import { isRateLimited } from "@/lib/rate-limit";
 
+export const dynamic = "force-static";
+
 export async function POST(request: Request) {
   try {
     const body = await request.json();

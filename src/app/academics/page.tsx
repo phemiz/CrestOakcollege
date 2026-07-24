@@ -7,18 +7,18 @@ import { generateSEO } from "@/utils/seo";
 import { StructuredData } from "@/components/seo/StructuredData";
 import { facultiesData, postgraduateData } from "@/data/academicsData";
 
-export const revalidate = 3600; // Cache pages hourly but allow ISR updates
+export const dynamic = "force-static";
 
 interface AcademicsPageProps {
-  searchParams: Promise<{ [key: string]: string | string[] | undefined }> | { [key: string]: string | string[] | undefined };
+  searchParams?: Promise<{ [key: string]: string | string[] | undefined }> | { [key: string]: string | string[] | undefined };
 }
 
 /**
  * Enterprise SEO Dynamic Metadata Generator.
  * Adapts page title, canonical alternates, and meta descriptions based on active query params.
  */
-export async function generateMetadata({ searchParams }: AcademicsPageProps): Promise<Metadata> {
-  const resolvedParams = searchParams instanceof Promise ? await searchParams : searchParams;
+export async function generateMetadata({ searchParams }: AcademicsPageProps = {}): Promise<Metadata> {
+  const resolvedParams = searchParams ? (searchParams instanceof Promise ? await searchParams : searchParams) : {};
   const faculty = resolvedParams?.faculty;
   const level = resolvedParams?.level || resolvedParams?.tab;
 
@@ -51,8 +51,8 @@ export async function generateMetadata({ searchParams }: AcademicsPageProps): Pr
   });
 }
 
-export default async function Academics({ searchParams }: AcademicsPageProps) {
-  const resolvedParams = searchParams instanceof Promise ? await searchParams : searchParams;
+export default async function Academics({ searchParams }: AcademicsPageProps = {}) {
+  const resolvedParams = searchParams ? (searchParams instanceof Promise ? await searchParams : searchParams) : {};
   const faculty = resolvedParams?.faculty;
   const level = resolvedParams?.level || resolvedParams?.tab;
 

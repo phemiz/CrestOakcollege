@@ -34,6 +34,7 @@ export const Footer: React.FC = () => {
               { label: "Bursary & Fees Guide", href: "/bursary" },
               { label: "Student Portal", href: "/portal" },
               { label: "Admin CMS Panel", href: "/admin" },
+              { label: "News & Publications", href: "/news" },
               { label: "Campus Gallery", href: "/gallery" },
               { label: "Contact College", href: "/contact" },
             ].map((lnk) => (

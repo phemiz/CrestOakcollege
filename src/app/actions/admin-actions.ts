@@ -1,14 +1,18 @@
-"use server";
-
 import db from "@/lib/db";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth";
+import { getSafeSession } from "@/lib/session";
 import { createAuditLog } from "@/lib/audit";
-import { revalidatePath } from "next/cache";
+
+const revalidatePath = (...args: any[]) => {
+  if (typeof window === "undefined") {
+    try {
+      require("next/cache").revalidatePath(...args);
+    } catch {}
+  }
+};
 
 // Helper to check if user has admin permissions
 async function checkAdminAuth() {
-  const session = await getServerSession(authOptions);
+  const session = await getSafeSession();
   if (!session || !["Super Admin", "Admin", "Bursary", "Staff"].includes(session.user.role)) {
     throw new Error("Unauthorized: Access denied");
   }

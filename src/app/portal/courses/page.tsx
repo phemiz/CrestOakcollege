@@ -1,13 +1,12 @@
 import React from "react";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth";
+import { getSafeSession } from "@/lib/session";
 import { redirect } from "next/navigation";
 import db from "@/lib/db";
 import CourseRegForm from "./CourseRegForm";
 import { BookOpen, Calendar, Clock, ShieldAlert } from "lucide-react";
 
 export default async function CourseRegistrationPage() {
-  const session = await getServerSession(authOptions);
+  const session = await getSafeSession();
 
   if (!session || session.user.role !== "Student") {
     redirect("/login");
@@ -53,8 +52,8 @@ export default async function CourseRegistrationPage() {
     }
   });
 
-  const registeredCourseIds = existingRegistrations.map(r => r.courseId);
-  const totalRegisteredCredits = existingRegistrations.reduce((acc, r) => acc + r.course.creditUnits, 0);
+  const registeredCourseIds = existingRegistrations.map((r: any) => r.courseId);
+  const totalRegisteredCredits = existingRegistrations.reduce((acc: number, r: any) => acc + r.course.creditUnits, 0);
 
   return (
     <div className="flex flex-col gap-8 animate-fade-in-up">
@@ -76,7 +75,7 @@ export default async function CourseRegistrationPage() {
         {/* Course registration form */}
         <div className="lg:col-span-8 bg-white border border-slate-200 rounded-2xl p-5 sm:p-6 shadow-sm">
           <CourseRegForm 
-            availableCourses={availableCourses.map(c => ({
+            availableCourses={availableCourses.map((c: any) => ({
               id: c.id,
               code: c.code,
               title: c.title,

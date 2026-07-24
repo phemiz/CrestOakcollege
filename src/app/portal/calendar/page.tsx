@@ -1,12 +1,11 @@
 import React from "react";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth";
+import { getSafeSession } from "@/lib/session";
 import { redirect } from "next/navigation";
 import db from "@/lib/db";
 import { Calendar, Clock, MapPin, AlertCircle } from "lucide-react";
 
 export default async function AcademicCalendarPage() {
-  const session = await getServerSession(authOptions);
+  const session = await getSafeSession();
 
   if (!session || session.user.role !== "Student") {
     redirect("/login");
@@ -39,8 +38,8 @@ export default async function AcademicCalendarPage() {
   const sessionEnd = student.currentSession.endDate.toLocaleDateString();
 
   // Mock calendar events linked to the database semesters' dates
-  const firstSem = semesters.find(s => s.name === "FIRST");
-  const secondSem = semesters.find(s => s.name === "SECOND");
+  const firstSem = semesters.find((s: any) => s.name === "FIRST");
+  const secondSem = semesters.find((s: any) => s.name === "SECOND");
 
   const events = [];
 

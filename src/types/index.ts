@@ -28,6 +28,7 @@ export interface Programme {
 export interface News {
   id: number;
   title: string;
+  slug?: string;
   date: string;
   desc: string;
   category: string;

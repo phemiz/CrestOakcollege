@@ -1,13 +1,12 @@
 import React from "react";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth";
+import { getSafeSession } from "@/lib/session";
 import { redirect } from "next/navigation";
 import db from "@/lib/db";
 import ClearanceClientView from "./ClearanceClientView";
 import { Award } from "lucide-react";
 
 export default async function StudentClearancePage() {
-  const session = await getServerSession(authOptions);
+  const session = await getSafeSession();
 
   if (!session || session.user.role !== "Student") {
     redirect("/login");
@@ -31,11 +30,11 @@ export default async function StudentClearancePage() {
   });
 
   // Acceptance invoice is PAID or not
-  const acceptanceInvoice = invoices.find(inv => inv.feeType === "ACCEPTANCE" || inv.description.toLowerCase().includes("acceptance"));
+  const acceptanceInvoice = invoices.find((inv: any) => inv.feeType === "ACCEPTANCE" || inv.description.toLowerCase().includes("acceptance"));
   const departmentCleared = acceptanceInvoice ? acceptanceInvoice.status === "PAID" : false;
 
   // Tuition invoice is PAID or not
-  const tuitionInvoice = invoices.find(inv => inv.feeType === "TUITION" || inv.description.toLowerCase().includes("tuition"));
+  const tuitionInvoice = invoices.find((inv: any) => inv.feeType === "TUITION" || inv.description.toLowerCase().includes("tuition"));
   const bursaryCleared = tuitionInvoice ? tuitionInvoice.status === "PAID" : false;
 
   // Query audit logs to check if they've submitted clearance requests
@@ -47,7 +46,7 @@ export default async function StudentClearancePage() {
     }
   });
 
-  const libraryRequested = auditLogs.some(log => {
+  const libraryRequested = auditLogs.some((log: any) => {
     try {
       const vals = log.newValues as any;
       return vals && vals.clearanceType === "Library";
@@ -56,7 +55,7 @@ export default async function StudentClearancePage() {
     }
   });
 
-  const healthRequested = auditLogs.some(log => {
+  const healthRequested = auditLogs.some((log: any) => {
     try {
       const vals = log.newValues as any;
       return vals && vals.clearanceType === "Health";
@@ -65,7 +64,7 @@ export default async function StudentClearancePage() {
     }
   });
 
-  const registryRequested = auditLogs.some(log => {
+  const registryRequested = auditLogs.some((log: any) => {
     try {
       const vals = log.newValues as any;
       return vals && vals.clearanceType === "Registry";

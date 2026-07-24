@@ -1,15 +1,19 @@
-"use server";
-
 import db from "@/lib/db";
 import { hashPassword } from "@/lib/hash";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth";
+import { getSafeSession } from "@/lib/session";
 import { createAuditLog } from "@/lib/audit";
-import { revalidatePath } from "next/cache";
+
+const revalidatePath = (...args: any[]) => {
+  if (typeof window === "undefined") {
+    try {
+      require("next/cache").revalidatePath(...args);
+    } catch {}
+  }
+};
 
 // Helper to check if applicant is authenticated
 async function checkApplicantAuth() {
-  const session = await getServerSession(authOptions);
+  const session = await getSafeSession();
   if (!session) {
     throw new Error("Unauthorized: Access denied");
   }
@@ -360,7 +364,7 @@ export async function adminUpdateScreening(data: {
   notes?: string;
 }) {
   try {
-    const session = await getServerSession(authOptions);
+    const session = await getSafeSession();
     if (!session || !["Super Admin", "Admin", "Staff"].includes(session.user.role)) {
       throw new Error("Unauthorized: Access denied");
     }

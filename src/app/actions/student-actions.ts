@@ -1,16 +1,20 @@
-"use server";
-
 import db from "@/lib/db";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth";
+import { getSafeSession } from "@/lib/session";
 import { createAuditLog } from "@/lib/audit";
-import { revalidatePath } from "next/cache";
+
+const revalidatePath = (...args: any[]) => {
+  if (typeof window === "undefined") {
+    try {
+      require("next/cache").revalidatePath(...args);
+    } catch {}
+  }
+};
 
 /**
  * Updates the contact details of the currently authenticated student.
  */
 export async function updateStudentProfile(formData: { phoneNumber: string; middleName: string }) {
-  const session = await getServerSession(authOptions);
+  const session = await getSafeSession();
   if (!session || session.user.role !== "Student") {
     return { success: false, error: "Unauthorized access" };
   }
@@ -52,7 +56,7 @@ export async function updateStudentProfile(formData: { phoneNumber: string; midd
  * Registers semester courses for the student, enforcing credit limits (12 to 24 units).
  */
 export async function registerStudentCourses(courseIds: string[]) {
-  const session = await getServerSession(authOptions);
+  const session = await getSafeSession();
   if (!session || session.user.role !== "Student") {
     return { success: false, error: "Unauthorized access" };
   }
@@ -77,7 +81,7 @@ export async function registerStudentCourses(courseIds: string[]) {
       where: { id: { in: courseIds } },
     });
 
-    const totalCredits = courses.reduce((acc, c) => acc + c.creditUnits, 0);
+    const totalCredits = courses.reduce((acc: number, c: any) => acc + c.creditUnits, 0);
     if (totalCredits < 12 || totalCredits > 24) {
       return {
         success: false,
@@ -130,7 +134,7 @@ export async function registerStudentCourses(courseIds: string[]) {
  * Simulates a card or transfer payment transaction, updates the invoice, and logs the payment.
  */
 export async function processStudentPayment(invoiceId: string, paymentMethod: string) {
-  const session = await getServerSession(authOptions);
+  const session = await getSafeSession();
   if (!session || session.user.role !== "Student") {
     return { success: false, error: "Unauthorized access" };
   }
@@ -192,7 +196,7 @@ export async function processStudentPayment(invoiceId: string, paymentMethod: st
  * Submits clearance verification requests. Logs requests into database auditing.
  */
 export async function requestClearance(clearanceType: string) {
-  const session = await getServerSession(authOptions);
+  const session = await getSafeSession();
   if (!session || session.user.role !== "Student") {
     return { success: false, error: "Unauthorized access" };
   }
@@ -219,7 +223,7 @@ export async function requestClearance(clearanceType: string) {
  * Creates dummy notifications or dismisses notifications.
  */
 export async function dismissNotification(announcementId: string) {
-  const session = await getServerSession(authOptions);
+  const session = await getSafeSession();
   if (!session || session.user.role !== "Student") {
     return { success: false, error: "Unauthorized access" };
   }

@@ -51,26 +51,26 @@ export default async function ReportsPage() {
   const totalStudents = students.length;
   
   const totalRevenue = payments.reduce(
-    (acc, pay) => acc + Number(pay.amountPaid),
+    (acc: number, pay: any) => acc + Number(pay.amountPaid),
     0
   );
 
   const avgCgpa =
     students.length > 0
-      ? students.reduce((acc, stu) => acc + Number(stu.cgpa), 0) / students.length
+      ? students.reduce((acc: number, stu: any) => acc + Number(stu.cgpa), 0) / students.length
       : 0;
 
   const unpaidAmount = unpaidInvoices.reduce(
-    (acc, inv) => acc + Number(inv.amount),
+    (acc: number, inv: any) => acc + Number(inv.amount),
     0
   );
 
   // Group departments demographics
   const deptMap: { [key: string]: number } = {};
-  departments.forEach((d) => {
+  departments.forEach((d: any) => {
     deptMap[d.name] = 0;
   });
-  students.forEach((s) => {
+  students.forEach((s: any) => {
     const deptName = s.department.name;
     deptMap[deptName] = (deptMap[deptName] || 0) + 1;
   });
@@ -87,7 +87,7 @@ export default async function ReportsPage() {
     APPLICATION: 0,
     OTHER: 0,
   };
-  payments.forEach((pay) => {
+  payments.forEach((pay: any) => {
     const type = pay.invoice.feeType;
     feeTypeMap[type] = (feeTypeMap[type] || 0) + Number(pay.amountPaid);
   });
@@ -97,7 +97,7 @@ export default async function ReportsPage() {
   }));
 
   // Map raw students list for CSV export
-  const rawStudents = students.map((s) => ({
+  const rawStudents = students.map((s: any) => ({
     matricNo: s.matricNo,
     name: `${s.user.firstName} ${s.user.lastName}`,
     department: s.department.name,
@@ -107,7 +107,7 @@ export default async function ReportsPage() {
   }));
 
   // Map raw payments list for CSV export
-  const rawPayments = payments.map((p) => ({
+  const rawPayments = payments.map((p: any) => ({
     reference: p.reference,
     amountPaid: Number(p.amountPaid),
     method: p.method,

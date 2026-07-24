@@ -1,15 +1,15 @@
 import React from "react";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth";
+import { getSafeSession } from "@/lib/session";
 import db from "@/lib/db";
 import { redirect } from "next/navigation";
-import { Printer, ArrowLeft, ShieldCheck } from "lucide-react";
+import { ArrowLeft, ShieldCheck } from "lucide-react";
 import Link from "next/link";
+import PrintButton from "./PrintButton";
 
-export const revalidate = 0; // Fresh offer details always
+export const dynamic = "force-static";
 
 export default async function AdmissionLetterPage() {
-  const session = await getServerSession(authOptions);
+  const session = await getSafeSession();
 
   if (!session) return null;
 
@@ -51,7 +51,9 @@ export default async function AdmissionLetterPage() {
   return (
     <div className="space-y-6">
       {/* Print stylesheet override */}
-      <style jsx global>{`
+      <style
+        dangerouslySetInnerHTML={{
+          __html: `
         @media print {
           body {
             background: white !important;
@@ -76,7 +78,9 @@ export default async function AdmissionLetterPage() {
             filter: grayscale(1) !important;
           }
         }
-      `}</style>
+      `,
+        }}
+      />
 
       {/* Header controls (hidden during print) */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 no-print bg-slate-950 p-6 rounded-2xl border border-slate-800">
@@ -95,13 +99,7 @@ export default async function AdmissionLetterPage() {
             <ArrowLeft className="h-4 w-4" />
             <span>Dashboard</span>
           </Link>
-          <button
-            onClick={() => window.print()}
-            className="bg-indigo-650 hover:bg-indigo-700 text-white font-display font-bold py-2.5 px-5 rounded-xl text-xs transition-all flex items-center gap-2 cursor-pointer shadow-md shadow-indigo-900/10"
-          >
-            <Printer className="h-4 w-4" />
-            <span>Print PDF Letter</span>
-          </button>
+          <PrintButton />
         </div>
       </div>
 

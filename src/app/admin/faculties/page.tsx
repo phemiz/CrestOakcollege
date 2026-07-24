@@ -74,13 +74,13 @@ export default async function FacultiesPage() {
   ]);
 
   // Map lecturers to simple dropdown items
-  const mappedLecturers = lecturers.map((lec) => ({
+  const mappedLecturers = lecturers.map((lec: any) => ({
     id: lec.id,
     name: `${lec.staff.user.firstName} ${lec.staff.user.lastName}`
   }));
 
   // Re-map types to prevent deep type nesting conflicts
-  const mappedFaculties = faculties.map((fac) => ({
+  const mappedFaculties = faculties.map((fac: any) => ({
     id: fac.id,
     name: fac.name,
     code: fac.code,
@@ -93,7 +93,7 @@ export default async function FacultiesPage() {
         }
       }
     } : null,
-    departments: fac.departments.map((dept) => ({
+    departments: fac.departments.map((dept: any) => ({
       id: dept.id,
       name: dept.name,
       code: dept.code,

@@ -1,6 +1,5 @@
 import { redirect } from "next/navigation";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth";
+import { getSafeSession } from "@/lib/session";
 import db from "@/lib/db";
 import PortalLayoutClient from "@/components/admissions/PortalLayoutClient";
 
@@ -9,7 +8,7 @@ export default async function PortalLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const session = await getServerSession(authOptions);
+  const session = await getSafeSession();
 
   if (!session) {
     redirect("/login");

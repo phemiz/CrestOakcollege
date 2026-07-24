@@ -90,6 +90,7 @@ export const newsAndEvents: News[] = [
   {
     id: 1,
     title: "2025/2026 Admissions Screening Dates Released",
+    slug: "admissions-screening-dates-2025-2026",
     date: "June 15, 2026",
     desc: "First batch entrance screenings and interviews will commence at the Badagry campus. Check requirements.",
     category: "Screening",
@@ -98,6 +99,7 @@ export const newsAndEvents: News[] = [
   {
     id: 2,
     title: "Academic Partnership Review by Atiba University Board",
+    slug: "academic-partnership-review-atiba-university",
     date: "June 02, 2026",
     desc: "A delegation from Atiba University visited the CCHSMT laboratories to certify the updated digital curriculum.",
     category: "Partnership",
@@ -106,6 +108,7 @@ export const newsAndEvents: News[] = [
   {
     id: 3,
     title: "Lagos State Healthcare Integration Placement Scheme",
+    slug: "lagos-state-healthcare-integration-placement-scheme",
     date: "May 28, 2026",
     desc: "New partnerships signed with Lagos State hospitals for student clinical postings and internship placements.",
     category: "Clinical",
@@ -114,6 +117,7 @@ export const newsAndEvents: News[] = [
   {
     id: 4,
     title: "Tuition Installment Payment Option Now Live",
+    slug: "tuition-installment-payment-option-live",
     date: "May 15, 2026",
     desc: "Students can now pay school fees in flexible installments using Paystack or local bank transfers via the portal.",
     category: "Finance",

@@ -53,7 +53,7 @@ export default async function FeesPage() {
   ]);
 
   // Convert aggregate Decimal values to standard JS numbers
-  const mappedInvoices = invoices.map((inv) => ({
+  const mappedInvoices = invoices.map((inv: any) => ({
     id: inv.id,
     invoiceNo: inv.invoiceNo,
     amount: Number(inv.amount),
@@ -63,14 +63,14 @@ export default async function FeesPage() {
     dueDate: inv.dueDate,
     createdAt: inv.createdAt,
     user: inv.user,
-    payments: inv.payments.map((pay) => ({
+    payments: inv.payments.map((pay: any) => ({
       reference: pay.reference,
       amountPaid: Number(pay.amountPaid),
       paidAt: pay.paidAt,
     })),
   }));
 
-  const mappedStudents = students.map((stu) => ({
+  const mappedStudents = students.map((stu: any) => ({
     id: stu.id,
     matricNo: stu.matricNo,
     user: {

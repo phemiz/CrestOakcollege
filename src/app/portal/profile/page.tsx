@@ -1,13 +1,12 @@
 import React from "react";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth";
+import { getSafeSession } from "@/lib/session";
 import { redirect } from "next/navigation";
 import db from "@/lib/db";
 import ProfileForm from "./ProfileForm";
 import { Shield, BookOpen, GraduationCap, Phone } from "lucide-react";
 
 export default async function StudentProfilePage() {
-  const session = await getServerSession(authOptions);
+  const session = await getSafeSession();
 
   if (!session || session.user.role !== "Student") {
     redirect("/login");

@@ -1,12 +1,11 @@
 import React from "react";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth";
+import { getSafeSession } from "@/lib/session";
 import { redirect } from "next/navigation";
 import db from "@/lib/db";
 import ClientPortalShell from "@/components/portal/ClientPortalShell";
 
 export default async function PortalLayout({ children }: { children: React.ReactNode }) {
-  const session = await getServerSession(authOptions);
+  const session = await getSafeSession();
 
   if (!session || session.user.role !== "Student") {
     redirect("/login");
@@ -51,7 +50,7 @@ export default async function PortalLayout({ children }: { children: React.React
     avatarUrl: student.user.avatarUrl,
   };
 
-  const serializedAnnouncements = announcements.map(a => ({
+  const serializedAnnouncements = announcements.map((a: any) => ({
     id: a.id,
     title: a.title,
     content: a.content,

@@ -66,7 +66,7 @@ export default async function StudentsPage() {
     })
   ]);
 
-  const mappedStudents = students.map((stu) => ({
+  const mappedStudents = students.map((stu: any) => ({
     id: stu.id,
     matricNo: stu.matricNo,
     level: stu.level,
@@ -81,7 +81,7 @@ export default async function StudentsPage() {
   }));
 
   // Re-map semester names to be human readable
-  const mappedSemesters = semesters.map((sem) => ({
+  const mappedSemesters = semesters.map((sem: any) => ({
     id: sem.id,
     name: sem.name
   }));

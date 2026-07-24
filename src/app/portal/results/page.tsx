@@ -1,13 +1,12 @@
 import React from "react";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth";
+import { getSafeSession } from "@/lib/session";
 import { redirect } from "next/navigation";
 import db from "@/lib/db";
 import ResultsClientView from "./ResultsClientView";
 import { Award, Calendar } from "lucide-react";
 
 export default async function ResultsCheckerPage() {
-  const session = await getServerSession(authOptions);
+  const session = await getSafeSession();
 
   if (!session || session.user.role !== "Student") {
     redirect("/login");
@@ -47,8 +46,8 @@ export default async function ResultsCheckerPage() {
   });
 
   // Calculate dynamic CGPA
-  const totalPoints = results.reduce((acc, r) => acc + (Number(r.gp || 0) * r.course.creditUnits), 0);
-  const totalUnits = results.reduce((acc, r) => acc + r.course.creditUnits, 0);
+  const totalPoints = results.reduce((acc: number, r: any) => acc + (Number(r.gp || 0) * r.course.creditUnits), 0);
+  const totalUnits = results.reduce((acc: number, r: any) => acc + r.course.creditUnits, 0);
   const calculatedCgpa = totalUnits > 0 ? (totalPoints / totalUnits) : Number(student.cgpa);
 
   const serializedStudent = {
@@ -59,7 +58,7 @@ export default async function ResultsCheckerPage() {
     programme: student.programme.name
   };
 
-  const serializedResults = results.map(r => ({
+  const serializedResults = results.map((r: any) => ({
     id: r.id,
     caScore: r.caScore ? Number(r.caScore) : null,
     examScore: r.examScore ? Number(r.examScore) : null,

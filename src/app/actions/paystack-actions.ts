@@ -1,10 +1,14 @@
-"use server";
-
 import db from "@/lib/db";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth";
+import { getSafeSession } from "@/lib/session";
 import { createAuditLog } from "@/lib/audit";
-import { revalidatePath } from "next/cache";
+
+const revalidatePath = (...args: any[]) => {
+  if (typeof window === "undefined") {
+    try {
+      require("next/cache").revalidatePath(...args);
+    } catch {}
+  }
+};
 
 /**
  * Initializes a transaction with the Paystack Payment Gateway.
@@ -12,7 +16,7 @@ import { revalidatePath } from "next/cache";
  * it returns a simulated checkout URL pointing to our sandbox callback.
  */
 export async function initializePaystackPayment(invoiceId: string) {
-  const session = await getServerSession(authOptions);
+  const session = await getSafeSession();
   if (!session) {
     return { success: false, error: "Unauthorized: authentication required." };
   }
@@ -206,7 +210,7 @@ export async function verifyPaystackPayment(reference: string) {
 
     if (isPaid) {
       // 3. Update Database states (Prisma Transaction)
-      await db.$transaction(async (tx) => {
+      await db.$transaction(async (tx: any) => {
         // Update Payment status
         await tx.payment.update({
           where: { reference },
@@ -286,7 +290,7 @@ export async function verifyPaystackPayment(reference: string) {
  * Manually queries and refreshes status of a payment (Failed Payment Recovery).
  */
 export async function queryTransactionStatus(paymentId: string) {
-  const session = await getServerSession(authOptions);
+  const session = await getSafeSession();
   if (!session) {
     return { success: false, error: "Unauthorized access." };
   }
@@ -317,7 +321,7 @@ export async function raiseBursaryInvoice(data: {
   feeType: "TUITION" | "ACCOMMODATION" | "APPLICATION" | "ACCEPTANCE" | "LATE_REGISTRATION" | "TRANSCRIPT" | "OTHER";
   dueDateString: string;
 }) {
-  const session = await getServerSession(authOptions);
+  const session = await getSafeSession();
   if (!session || !["Bursary", "Admin", "Super Admin"].includes(session.user.role)) {
     return { success: false, error: "Unauthorized access: admin permissions required." };
   }

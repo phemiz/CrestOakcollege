@@ -1,5 +1,6 @@
 import React from "react";
-import { Calendar } from "lucide-react";
+import Link from "next/link";
+import { Calendar, ArrowRight } from "lucide-react";
 import { newsAndEvents } from "@/data/homeData";
 
 export const NewsSection = () => {
@@ -18,9 +19,10 @@ export const NewsSection = () => {
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
           {newsAndEvents.map((news) => (
-            <div
+            <Link
+              href={`/news/${news.slug}`}
               key={news.id}
-              className="bg-white rounded-2xl border border-slate-100 p-6 flex flex-col justify-between shadow-sm hover:shadow-md transition-shadow group"
+              className="bg-white rounded-2xl border border-slate-100 p-6 flex flex-col justify-between shadow-sm hover:shadow-md hover:-translate-y-1 transition-all duration-300 group cursor-pointer"
             >
               <div className="flex flex-col gap-4">
                 <div className="flex items-center justify-between">
@@ -41,13 +43,25 @@ export const NewsSection = () => {
                   </p>
                 </div>
               </div>
-              <div className="mt-6 pt-4 border-t border-slate-50 text-right">
+              <div className="mt-6 pt-4 border-t border-slate-50 flex items-center justify-between">
+                <span className="text-[10px] font-black uppercase text-brand-blue hover:text-brand-red font-sans transition-colors flex items-center gap-1">
+                  Read More <ArrowRight size={10} className="group-hover:translate-x-0.5 transition-transform" />
+                </span>
                 <span className="text-[10px] font-black uppercase text-slate-400 tracking-wider">
                   {news.category}
                 </span>
               </div>
-            </div>
+            </Link>
           ))}
+        </div>
+
+        <div className="text-center mt-12">
+          <Link href="/news">
+            <button className="bg-brand-blue-dark hover:bg-brand-blue text-white font-display text-xs font-bold px-8 py-3 rounded-full shadow-lg shadow-brand-blue/15 transition-all cursor-pointer inline-flex items-center gap-2 group">
+              <span>View All News & Announcements</span>
+              <ArrowRight size={14} className="group-hover:translate-x-1 transition-transform" />
+            </button>
+          </Link>
         </div>
       </div>
     </section>

@@ -45,7 +45,7 @@ export default async function AdmissionsPage() {
     },
   });
 
-  const mappedApps = applications.map((app) => ({
+  const mappedApps = applications.map((app: any) => ({
     id: app.id,
     applicationNo: app.applicationNo,
     status: app.status,

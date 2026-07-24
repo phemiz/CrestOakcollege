@@ -30,11 +30,16 @@ const navigationItems = [
       { name: "Bursary & Tuition Fees", href: "/bursary" },
     ]
   },
+  { name: "News", href: "/news" },
   { name: "Gallery & Tour", href: "/gallery" },
   { name: "Contact", href: "/contact" },
 ];
 
 const searchDatabase = [
+  // News
+  { title: "Latest News & Bulletins", category: "News", href: "/news", details: "Official CrestOak announcements, updates, and news articles." },
+  { title: "Admissions Screening Dates", category: "News", href: "/news", details: "Check latest entrance screening dates and updates." },
+  
   // Undergraduate Programs
   { title: "Nursing Sciences (B.Sc.)", category: "Program", href: "/academics?faculty=health", details: "Faculty of Health Sciences nursing program." },
   { title: "Medical Laboratory Science (BMLs)", category: "Program", href: "/academics?faculty=health", details: "Medical Laboratory Science professional pathway." },

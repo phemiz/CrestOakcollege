@@ -239,7 +239,7 @@ export default async function AdminDashboard() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-800/40">
-                {recentAudits.map((audit) => {
+                {recentAudits.map((audit: any) => {
                   const actorName = audit.user
                     ? `${audit.user.firstName} ${audit.user.lastName}`
                     : "System Job";
