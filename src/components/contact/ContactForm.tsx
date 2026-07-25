@@ -2,7 +2,6 @@
 
 import React, { useState } from "react";
 import { MessageSquare, Send, CheckCircle, Loader2, AlertCircle } from "lucide-react";
-import { sendContactEnquiry } from "@/app/actions/contact-actions";
 
 export const ContactForm: React.FC = () => {
   const [formData, setFormData] = useState({
@@ -53,15 +52,24 @@ export const ContactForm: React.FC = () => {
     setServerError(null);
 
     try {
-      const res = await sendContactEnquiry(formData);
-      if (res.success) {
+      const response = await fetch("/send-mail.php", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(formData),
+      });
+
+      const res = await response.json();
+
+      if (response.ok && res.success) {
         setSent(true);
         setFormData({ name: "", email: "", subject: "", message: "" });
       } else {
-        setServerError(res.message);
+        setServerError(res.message || "Failed to send email via mail server.");
       }
     } catch {
-      setServerError("An unexpected error occurred while sending your message. Please try again.");
+      setServerError("Unable to connect to the mail server. Please check your connection or email info@crestoakcollege.com.ng directly.");
     } finally {
       setIsSubmitting(false);
     }
@@ -85,7 +93,7 @@ export const ContactForm: React.FC = () => {
             <div className="p-4 bg-red-50 border border-red-200 rounded-xl text-red-700 text-xs flex items-start gap-3">
               <AlertCircle size={18} className="text-red-500 shrink-0 mt-0.5" />
               <div>
-                <span className="font-bold block text-sm">Delivery Error</span>
+                <span className="font-bold block text-sm">Delivery Notice</span>
                 <p className="mt-0.5 leading-relaxed">{serverError}</p>
               </div>
             </div>
