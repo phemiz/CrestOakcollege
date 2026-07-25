@@ -1,7 +1,0 @@
-User-Agent: *
-Allow: /
-Disallow: /admin/
-Disallow: /portal/
-Disallow: /api/
-
-Sitemap: https://www.crestoak.com.ng/sitemap.xml
