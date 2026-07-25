@@ -7,7 +7,7 @@ import { generateSEO } from "@/utils/seo";
 import { newsAndEvents } from "@/data/homeData";
 import NewsList, { UnifiedNewsItem } from "@/components/news/NewsList";
 
-export const revalidate = 0; // Fresh publications always
+export const dynamic = "force-static";
 
 export const metadata: Metadata = generateSEO({
   title: "News & Publications",

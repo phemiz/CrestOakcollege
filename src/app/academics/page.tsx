@@ -17,32 +17,7 @@ interface AcademicsPageProps {
  * Enterprise SEO Dynamic Metadata Generator.
  * Adapts page title, canonical alternates, and meta descriptions based on active query params.
  */
-export async function generateMetadata({ searchParams }: AcademicsPageProps = {}): Promise<Metadata> {
-  const resolvedParams = searchParams ? (searchParams instanceof Promise ? await searchParams : searchParams) : {};
-  const faculty = resolvedParams?.faculty;
-  const level = resolvedParams?.level || resolvedParams?.tab;
-
-  if (level === "postgraduate") {
-    return generateSEO({
-      title: "Postgraduate Degrees & Programmes (PGD, M.Sc, MBA, Ph.D)",
-      description: "Explore NUC-approved postgraduate diploma, master, and doctoral degree programmes in Computer Science, Business Administration, Public Administration, Economics, and Nursing sciences at CrestOak College (CCHSMT) Badagry.",
-      path: "/academics?level=postgraduate",
-      keywords: ["CrestOak Postgraduate", "PGD Computer Science Lagos", "MBA badagry", "PhD public administration Nigeria", "Master of Nursing Lagos"]
-    });
-  }
-
-  if (faculty && typeof faculty === "string") {
-    const fac = facultiesData.find(f => f.id === faculty);
-    if (fac) {
-      return generateSEO({
-        title: `${fac.name} - Available Programs`,
-        description: `Explore courses, entry requirements, standard program duration, and career outcomes under the ${fac.name} at CrestOak College (CCHSMT) Badagry, Lagos.`,
-        path: `/academics?faculty=${faculty}`,
-        keywords: [fac.name, ...fac.courses]
-      });
-    }
-  }
-
+export async function generateMetadata(): Promise<Metadata> {
   return generateSEO({
     title: "Academic Programs & Curricula (2026/2027)",
     description: "Discover CrestOak College (CCHSMT) Badagry, Lagos approved undergraduate and postgraduate courses in Health Sciences, Management, Law, Agriculture, and Applied Sciences.",
@@ -51,10 +26,9 @@ export async function generateMetadata({ searchParams }: AcademicsPageProps = {}
   });
 }
 
-export default async function Academics({ searchParams }: AcademicsPageProps = {}) {
-  const resolvedParams = searchParams ? (searchParams instanceof Promise ? await searchParams : searchParams) : {};
-  const faculty = resolvedParams?.faculty;
-  const level = resolvedParams?.level || resolvedParams?.tab;
+export default async function Academics() {
+  const faculty: string = "health";
+  const level: string = "undergraduate";
 
   // 1. Dynamic Breadcrumbs List Schema
   const breadcrumbElements = [
