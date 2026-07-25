@@ -83,7 +83,15 @@ const roleOptions: RoleOption[] = [
 function LoginForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const { status, data: session } = useSession();
+  const [isClient, setIsClient] = useState(false);
+
+  useEffect(() => {
+    setIsClient(true);
+  }, []);
+
+  const sessionResult = useSession();
+  const session = sessionResult?.data;
+  const status = sessionResult?.status || (isClient ? "unauthenticated" : "loading");
 
   const [selectedRole, setSelectedRole] = useState<RoleType>("Student");
   const [username, setUsername] = useState("");
@@ -94,6 +102,7 @@ function LoginForm() {
 
   // Check URL parameters for errors
   useEffect(() => {
+    if (!isClient) return;
     const errorType = searchParams.get("error");
     if (errorType === "AccessDenied") {
       setErrorMsg("Access Denied: You do not have permissions to access that page. Please log in with the correct role.");
@@ -102,15 +111,15 @@ function LoginForm() {
     } else if (errorType) {
       setErrorMsg("An authentication error occurred. Please try again.");
     }
-  }, [searchParams]);
+  }, [isClient, searchParams]);
 
   // Redirect if already authenticated
   useEffect(() => {
-    if (status === "authenticated" && session?.user) {
+    if (isClient && status === "authenticated" && session?.user) {
       const userRole = session.user.role;
       redirectBasedOnRole(userRole);
     }
-  }, [status, session]);
+  }, [isClient, status, session]);
 
   const redirectBasedOnRole = (role: RoleType) => {
     switch (role) {

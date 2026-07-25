@@ -21,11 +21,18 @@ import {
 } from "lucide-react";
 
 export default function StaffDashboard() {
-  const { data: session, status } = useSession();
+  const [isClient, setIsClient] = useState(false);
+  const sessionResult = useSession();
+  const session = sessionResult?.data;
+  const status = sessionResult?.status || (isClient ? "unauthenticated" : "loading");
   const router = useRouter();
   const [activeTab, setActiveTab] = useState("overview");
 
-  if (status === "loading") {
+  React.useEffect(() => {
+    setIsClient(true);
+  }, []);
+
+  if (!isClient || status === "loading") {
     return (
       <div className="min-h-screen flex items-center justify-center bg-slate-900 text-white">
         <div className="flex flex-col items-center gap-4">

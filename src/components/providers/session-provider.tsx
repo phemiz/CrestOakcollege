@@ -4,5 +4,14 @@ import React from "react";
 import { SessionProvider as NextAuthSessionProvider } from "next-auth/react";
 
 export function SessionProvider({ children }: { children: React.ReactNode }) {
-  return <NextAuthSessionProvider>{children}</NextAuthSessionProvider>;
+  return (
+    <NextAuthSessionProvider
+      session={null}
+      refetchInterval={0}
+      refetchOnWindowFocus={false}
+      refetchWhenOffline={false}
+    >
+      {children}
+    </NextAuthSessionProvider>
+  );
 }
