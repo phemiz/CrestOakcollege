@@ -2,18 +2,23 @@ Options -MultiViews
 RewriteEngine On
 RewriteBase /
 
-# 1. If file or directory exists directly, serve it
+# 1. Auto-redirect directory requests without trailing slash to add trailing slash and preserve query strings (e.g., /academics?faculty=health -> /academics/?faculty=health)
+RewriteCond %{REQUEST_FILENAME} -d
+RewriteCond %{REQUEST_URI} !(.*)/$
+RewriteRule ^(.*)$ /$1/ [R=301,L,QSA]
+
+# 2. Map directory requests to their index.html file
+RewriteCond %{REQUEST_FILENAME}/index.html -f
+RewriteRule ^(.*)$ /$1/index.html [QSA,L]
+
+# 3. If file or directory exists directly, serve it
 RewriteCond %{REQUEST_FILENAME} -f [OR]
 RewriteCond %{REQUEST_FILENAME} -d
 RewriteRule ^ - [L]
 
-# 2. Map clean URL (e.g., /academics) to /academics/index.html
-RewriteCond %{DOCUMENT_ROOT}/$1/index.html -f
-RewriteRule ^(.*)$ /$1/index.html [QSA,L]
-
-# 3. Map clean URL (e.g., /academics) to /academics.html
+# 4. Map clean extensionless URLs (e.g. /about) to /about.html if available
 RewriteCond %{DOCUMENT_ROOT}/$1.html -f
 RewriteRule ^(.*)$ /$1.html [QSA,L]
 
-# 4. Fallback to main index.html or 404
+# 5. Fallback to 404
 ErrorDocument 404 /404.html
