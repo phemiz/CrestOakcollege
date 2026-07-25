@@ -115,7 +115,7 @@ export default async function AdmissionLetterPage() {
             Main Campus, Km 4 Badagry Expressway, Lagos State, Nigeria
           </p>
           <p className="text-[10px] text-slate-500 font-sans mt-0.5">
-            Web: www.crestoakcollege.edu.ng | Email: admissions@crestoakcollege.edu.ng
+            Web: www.crestoakcollege.edu.ng | Email: info@crestoakcollege.com.ng
           </p>
         </div>
 

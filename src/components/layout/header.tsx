@@ -159,9 +159,9 @@ export const Header: React.FC = () => {
             <span>+234 815 588 4804</span>
           </a>
           <span className="hidden sm:inline opacity-30">|</span>
-          <a href="mailto:info.crestoakcollege@gmail.com" className="flex items-center gap-1.5 hover:text-brand-gold transition-colors">
+          <a href="mailto:info@crestoakcollege.com.ng" className="flex items-center gap-1.5 hover:text-brand-gold transition-colors">
             <Mail size={13} className="text-brand-gold" />
-            <span>info.crestoakcollege@gmail.com</span>
+            <span>info@crestoakcollege.com.ng</span>
           </a>
         </div>
         
@@ -434,7 +434,9 @@ export const Header: React.FC = () => {
                 </Link>
                 <div className="flex flex-col gap-2 mt-6 text-xs text-slate-500 text-center">
                   <p>Igniting Changes Through Knowledge</p>
-                  <p className="font-semibold text-brand-blue-dark">info.crestoakcollege@gmail.com</p>
+                  <a href="mailto:info@crestoakcollege.com.ng" className="font-semibold text-brand-blue-dark hover:underline">
+                    info@crestoakcollege.com.ng
+                  </a>
                 </div>
               </div>
             </motion.div>

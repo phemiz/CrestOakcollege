@@ -85,7 +85,7 @@ export default function RootLayout({
                 "@type": "ContactPoint",
                 "telephone": "+2348155884804",
                 "contactType": "Admissions",
-                "email": "info.crestoakcollege@gmail.com",
+                "email": "info@crestoakcollege.com.ng",
                 "areaServed": "NG",
                 "availableLanguage": "en"
               },

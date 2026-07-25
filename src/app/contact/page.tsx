@@ -49,7 +49,7 @@ export default function Contact() {
       "name": "CrestOak College",
       "url": "https://crestoakcollege.edu.ng",
       "telephone": "+2348155884804",
-      "email": "info.crestoakcollege@gmail.com"
+      "email": "info@crestoakcollege.com.ng"
     }
   };
 
@@ -122,8 +122,8 @@ export default function Contact() {
                     </div>
                     <div>
                       <h4 className="font-display font-bold text-slate-700 text-sm">Email Coordinate</h4>
-                      <a href="mailto:info.crestoakcollege@gmail.com" className="text-xs sm:text-sm text-slate-500 font-semibold hover:text-brand-red transition-colors block mt-1">
-                        info.crestoakcollege@gmail.com
+                      <a href="mailto:info@crestoakcollege.com.ng" className="text-xs sm:text-sm text-slate-500 font-semibold hover:text-brand-red transition-colors block mt-1">
+                        info@crestoakcollege.com.ng
                       </a>
                     </div>
                   </div>

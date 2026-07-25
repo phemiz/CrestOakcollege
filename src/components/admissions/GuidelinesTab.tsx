@@ -134,7 +134,7 @@ export const GuidelinesTab: React.FC<GuidelinesTabProps> = ({ onStartApply }) =>
               📞 +234 (0) 815 588 4804, +234 (0) 803 861 7259
             </p>
             <p className="text-slate-400 text-xs mt-2 font-semibold">
-              Email: <a href="mailto:info.crestoakcollege@gmail.com" className="text-brand-red hover:underline">info.crestoakcollege@gmail.com</a>
+              Email: <a href="mailto:info@crestoakcollege.com.ng" className="text-brand-red hover:underline">info@crestoakcollege.com.ng</a>
             </p>
           </div>
         </div>

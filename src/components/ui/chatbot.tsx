@@ -106,7 +106,7 @@ export const AdmissionsChatbot: React.FC = () => {
     }
 
     if (text.includes("contact") || text.includes("phone") || text.includes("call") || text.includes("whatsapp") || text.includes("email") || text.includes("support")) {
-      return "You can contact our admissions registry team directly via phone at +234 815 588 4804 or +234 803 861 7259. You can also email us at info.crestoakcollege@gmail.com. We are happy to guide you through your registration!";
+      return "You can contact our admissions registry team directly via phone at +234 815 588 4804 or +234 803 861 7259. You can also email us at info@crestoakcollege.com.ng. We are happy to guide you through your registration!";
     }
 
     // Default fallback
