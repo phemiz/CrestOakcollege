@@ -1,7 +1,8 @@
 "use client";
 
 import React, { useState } from "react";
-import { MessageSquare, Send, CheckCircle } from "lucide-react";
+import { MessageSquare, Send, CheckCircle, Loader2, AlertCircle } from "lucide-react";
+import { sendContactEnquiry } from "@/app/actions/contact-actions";
 
 export const ContactForm: React.FC = () => {
   const [formData, setFormData] = useState({
@@ -12,6 +13,8 @@ export const ContactForm: React.FC = () => {
   });
   
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [serverError, setServerError] = useState<string | null>(null);
   const [sent, setSent] = useState(false);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
@@ -25,9 +28,10 @@ export const ContactForm: React.FC = () => {
         [e.target.name]: "",
       });
     }
+    if (serverError) setServerError(null);
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     const tempErrors: Record<string, string> = {};
 
@@ -45,8 +49,22 @@ export const ContactForm: React.FC = () => {
       return;
     }
 
-    setSent(true);
-    setFormData({ name: "", email: "", subject: "", message: "" });
+    setIsSubmitting(true);
+    setServerError(null);
+
+    try {
+      const res = await sendContactEnquiry(formData);
+      if (res.success) {
+        setSent(true);
+        setFormData({ name: "", email: "", subject: "", message: "" });
+      } else {
+        setServerError(res.message);
+      }
+    } catch {
+      setServerError("An unexpected error occurred while sending your message. Please try again.");
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -63,6 +81,16 @@ export const ContactForm: React.FC = () => {
             <p className="text-slate-400 text-xs mt-1">Our administrative desk will reply to your mail within 24 hours.</p>
           </div>
 
+          {serverError && (
+            <div className="p-4 bg-red-50 border border-red-200 rounded-xl text-red-700 text-xs flex items-start gap-3">
+              <AlertCircle size={18} className="text-red-500 shrink-0 mt-0.5" />
+              <div>
+                <span className="font-bold block text-sm">Delivery Error</span>
+                <p className="mt-0.5 leading-relaxed">{serverError}</p>
+              </div>
+            </div>
+          )}
+
           {/* Name */}
           <div className="flex flex-col gap-2">
             <label className="text-xs font-bold text-slate-600 uppercase tracking-wide">Full Name</label>
@@ -72,6 +100,7 @@ export const ContactForm: React.FC = () => {
               value={formData.name}
               onChange={handleChange}
               placeholder="John Doe"
+              disabled={isSubmitting}
               className={`w-full p-3.5 bg-slate-50 rounded-xl border text-sm font-semibold focus:outline-none transition-colors ${
                 errors.name ? "border-brand-red focus:border-brand-red" : "border-slate-200 focus:border-brand-blue"
               }`}
@@ -88,6 +117,7 @@ export const ContactForm: React.FC = () => {
               value={formData.email}
               onChange={handleChange}
               placeholder="example@mail.com"
+              disabled={isSubmitting}
               className={`w-full p-3.5 bg-slate-50 rounded-xl border text-sm font-semibold focus:outline-none transition-colors ${
                 errors.email ? "border-brand-red focus:border-brand-red" : "border-slate-200 focus:border-brand-blue"
               }`}
@@ -104,6 +134,7 @@ export const ContactForm: React.FC = () => {
               value={formData.subject}
               onChange={handleChange}
               placeholder="e.g., Question about admissions"
+              disabled={isSubmitting}
               className={`w-full p-3.5 bg-slate-50 rounded-xl border text-sm font-semibold focus:outline-none transition-colors ${
                 errors.subject ? "border-brand-red focus:border-brand-red" : "border-slate-200 focus:border-brand-blue"
               }`}
@@ -120,6 +151,7 @@ export const ContactForm: React.FC = () => {
               onChange={handleChange}
               rows={5}
               placeholder="How can we assist you?"
+              disabled={isSubmitting}
               className={`w-full p-3.5 bg-slate-50 rounded-xl border text-sm font-semibold focus:outline-none transition-colors resize-none ${
                 errors.message ? "border-brand-red focus:border-brand-red" : "border-slate-200 focus:border-brand-blue"
               }`}
@@ -129,10 +161,20 @@ export const ContactForm: React.FC = () => {
 
           <button
             type="submit"
-            className="w-full bg-brand-red hover:bg-brand-red/90 text-white font-display font-bold py-4 rounded-xl shadow-lg shadow-brand-red/20 transition-colors flex items-center justify-center gap-2 cursor-pointer mt-4"
+            disabled={isSubmitting}
+            className="w-full bg-brand-red hover:bg-brand-red/90 disabled:bg-slate-400 text-white font-display font-bold py-4 rounded-xl shadow-lg shadow-brand-red/20 transition-colors flex items-center justify-center gap-2 cursor-pointer mt-4"
           >
-            <span>Send Message</span>
-            <Send size={16} />
+            {isSubmitting ? (
+              <>
+                <Loader2 size={18} className="animate-spin" />
+                <span>Sending Message...</span>
+              </>
+            ) : (
+              <>
+                <span>Send Message</span>
+                <Send size={16} />
+              </>
+            )}
           </button>
         </form>
       ) : (
@@ -143,7 +185,7 @@ export const ContactForm: React.FC = () => {
           <div>
             <h3 className="font-display font-black text-2xl text-brand-blue-dark">Message Sent!</h3>
             <p className="text-slate-500 text-sm mt-2 leading-relaxed">
-              Thank you for contacting us. Your message has been sent successfully. We will follow up with you shortly.
+              Thank you for contacting us. Your message has been sent successfully to info@crestoakcollege.com.ng. We will follow up with you shortly.
             </p>
           </div>
           <button
