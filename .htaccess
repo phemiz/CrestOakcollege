@@ -1,0 +1,24 @@
+Options -MultiViews
+RewriteEngine On
+RewriteBase /
+
+# 1. Auto-redirect directory requests without trailing slash to add trailing slash and preserve query strings (e.g., /academics?faculty=health -> /academics/?faculty=health)
+RewriteCond %{REQUEST_FILENAME} -d
+RewriteCond %{REQUEST_URI} !(.*)/$
+RewriteRule ^(.*)$ /$1/ [R=301,L,QSA]
+
+# 2. Map directory requests to their index.html file
+RewriteCond %{REQUEST_FILENAME}/index.html -f
+RewriteRule ^(.*)$ /$1/index.html [QSA,L]
+
+# 3. If file or directory exists directly, serve it
+RewriteCond %{REQUEST_FILENAME} -f [OR]
+RewriteCond %{REQUEST_FILENAME} -d
+RewriteRule ^ - [L]
+
+# 4. Map clean extensionless URLs (e.g. /about) to /about.html if available
+RewriteCond %{DOCUMENT_ROOT}/$1.html -f
+RewriteRule ^(.*)$ /$1.html [QSA,L]
+
+# 5. Fallback to 404
+ErrorDocument 404 /404.html
