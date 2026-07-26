@@ -22,7 +22,7 @@ if (!$input) {
     $input = $_POST;
 }
 
-$name = isset($input['name']) ? trim($input['name']) : '';
+$name = isset($input['name']) ? trim($input['name']) : (isset($input['fullName']) ? trim($input['fullName']) : '');
 $email = isset($input['email']) ? trim($input['email']) : '';
 $subject = isset($input['subject']) ? trim($input['subject']) : '';
 $message = isset($input['message']) ? trim($input['message']) : '';
