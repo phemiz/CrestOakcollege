@@ -10,8 +10,9 @@ import { Logo } from "@/components/ui/logo";
 import {
   BookOpen,
   User,
-  Shield,
+  Briefcase,
   CreditCard,
+  Shield,
   Lock,
   Eye,
   EyeOff,
@@ -27,53 +28,86 @@ import {
   HelpCircle
 } from "lucide-react";
 
-const subdomainPortals = [
+type RoleType = "Student" | "Lecturer" | "Staff" | "Bursary" | "Admin" | "Super Admin";
+
+interface RoleOption {
+  id: RoleType;
+  title: string;
+  subdomain: string;
+  description: string;
+  icon: React.ComponentType<any>;
+  colorClass: string;
+  bgGlow: string;
+  redirectUrl: string;
+  demoUser: string;
+}
+
+const roleOptions: RoleOption[] = [
   {
     id: "Student",
-    title: "Student Portal",
+    title: "Student",
     subdomain: "portal.crestoakcollege.com.ng",
-    description: "Course registration, results & student dashboard",
+    description: "Course registration, semester results & academic dashboard",
     icon: GraduationCap,
-    isCurrent: true,
-    url: "/login",
-    colorClass: "border-brand-blue bg-brand-blue/5 text-brand-blue-dark",
-    badgeBg: "bg-brand-blue text-white",
+    colorClass: "text-blue-600 border-blue-500/40 bg-blue-50/80 hover:bg-blue-100/50",
+    bgGlow: "shadow-[0_0_15px_rgba(59,130,246,0.15)] ring-2 ring-blue-500/30",
+    redirectUrl: "/portal",
+    demoUser: "student1",
   },
   {
-    id: "Admin",
-    title: "Admin & Staff Portal",
-    subdomain: "admin.crestoakcollege.com.ng",
-    description: "Staff management, registry & administrative controls",
-    icon: Shield,
-    isCurrent: false,
-    url: "https://admin.crestoakcollege.com.ng",
-    localFallback: "/admin",
-    colorClass: "border-slate-200 bg-white hover:border-purple-300 hover:bg-purple-50/50 text-slate-700",
-    badgeBg: "bg-purple-600 text-white",
+    id: "Lecturer",
+    title: "Lecturer",
+    subdomain: "staff.crestoakcollege.com.ng",
+    description: "Manage courses, grades & student submissions",
+    icon: User,
+    colorClass: "text-emerald-600 border-emerald-500/40 bg-emerald-50/80 hover:bg-emerald-100/50",
+    bgGlow: "shadow-[0_0_15px_rgba(16,185,129,0.15)] ring-2 ring-emerald-500/30",
+    redirectUrl: "/staff",
+    demoUser: "lecturer1",
+  },
+  {
+    id: "Staff",
+    title: "Staff",
+    subdomain: "staff.crestoakcollege.com.ng",
+    description: "Registry administration, staff tools & institutional reports",
+    icon: Briefcase,
+    colorClass: "text-purple-600 border-purple-500/40 bg-purple-50/80 hover:bg-purple-100/50",
+    bgGlow: "shadow-[0_0_15px_rgba(168,85,247,0.15)] ring-2 ring-purple-500/30",
+    redirectUrl: "/staff",
+    demoUser: "staff1",
   },
   {
     id: "Bursary",
-    title: "Bursary & Payments",
+    title: "Bursary",
     subdomain: "pay.crestoakcollege.com.ng",
     description: "Tuition invoices, fee receipts & payment validation",
     icon: CreditCard,
-    isCurrent: false,
-    url: "https://pay.crestoakcollege.com.ng",
-    localFallback: "/bursary",
-    colorClass: "border-slate-200 bg-white hover:border-amber-300 hover:bg-amber-50/50 text-slate-700",
-    badgeBg: "bg-amber-600 text-white",
+    colorClass: "text-amber-600 border-amber-500/40 bg-amber-50/80 hover:bg-amber-100/50",
+    bgGlow: "shadow-[0_0_15px_rgba(245,158,11,0.15)] ring-2 ring-amber-500/30",
+    redirectUrl: "/bursary",
+    demoUser: "bursary1",
   },
   {
-    id: "Admissions",
-    title: "Admissions Portal",
-    subdomain: "admissions.crestoakcollege.com.ng",
-    description: "Online application, tracking & admission letters",
-    icon: BookOpen,
-    isCurrent: false,
-    url: "https://admissions.crestoakcollege.com.ng",
-    localFallback: "/admissions/apply",
-    colorClass: "border-slate-200 bg-white hover:border-emerald-300 hover:bg-emerald-50/50 text-slate-700",
-    badgeBg: "bg-emerald-600 text-white",
+    id: "Admin",
+    title: "Admin",
+    subdomain: "admin.crestoakcollege.com.ng",
+    description: "Oversee college operations, user accounts & settings",
+    icon: Shield,
+    colorClass: "text-rose-600 border-rose-500/40 bg-rose-50/80 hover:bg-rose-100/50",
+    bgGlow: "shadow-[0_0_15px_rgba(244,63,94,0.15)] ring-2 ring-rose-500/30",
+    redirectUrl: "/admin",
+    demoUser: "admin1",
+  },
+  {
+    id: "Super Admin",
+    title: "Super Admin",
+    subdomain: "admin.crestoakcollege.com.ng",
+    description: "Full system control, security policy & database governance",
+    icon: Lock,
+    colorClass: "text-red-700 border-red-500/40 bg-red-50/80 hover:bg-red-100/50",
+    bgGlow: "shadow-[0_0_15px_rgba(220,38,38,0.15)] ring-2 ring-red-500/30",
+    redirectUrl: "/admin",
+    demoUser: "admin",
   },
 ];
 
@@ -90,6 +124,7 @@ function LoginForm() {
   const session = sessionResult?.data;
   const status = sessionResult?.status || (isClient ? "unauthenticated" : "loading");
 
+  const [selectedRole, setSelectedRole] = useState<RoleType>("Student");
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
@@ -101,31 +136,42 @@ function LoginForm() {
     if (!isClient) return;
     const errorType = searchParams.get("error");
     if (errorType === "AccessDenied") {
-      setErrorMsg("Access Denied: You do not have permission to access that page. Please log in with valid student credentials.");
+      setErrorMsg("Access Denied: You do not have permission to access that page with your current role.");
     } else if (errorType === "CredentialsSignin") {
-      setErrorMsg("Invalid Student Registration Number or Password.");
+      setErrorMsg("Invalid Username / Registration Number or Password.");
     } else if (errorType) {
       setErrorMsg("An authentication error occurred. Please check your credentials and try again.");
     }
   }, [isClient, searchParams]);
 
-  // Redirect if already authenticated as student or admin
+  // Redirect if already authenticated
   useEffect(() => {
     if (isClient && status === "authenticated" && session?.user) {
-      const userRole = session.user.role;
-      if (userRole === "Student") {
-        router.push("/portal");
-      } else if (userRole === "Lecturer" || userRole === "Staff") {
-        router.push("/staff");
-      } else if (userRole === "Bursary") {
-        router.push("/bursary");
-      } else if (userRole === "Admin" || userRole === "Super Admin") {
-        router.push("/admin");
-      } else {
-        router.push("/portal");
-      }
+      const userRole = session.user.role as RoleType;
+      redirectBasedOnRole(userRole);
     }
-  }, [isClient, status, session, router]);
+  }, [isClient, status, session]);
+
+  const redirectBasedOnRole = (role: RoleType) => {
+    switch (role) {
+      case "Student":
+        router.push("/portal");
+        break;
+      case "Lecturer":
+      case "Staff":
+        router.push("/staff");
+        break;
+      case "Bursary":
+        router.push("/bursary");
+        break;
+      case "Admin":
+      case "Super Admin":
+        router.push("/admin");
+        break;
+      default:
+        router.push("/portal");
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -133,7 +179,7 @@ function LoginForm() {
     setErrorMsg(null);
 
     if (!username.trim() || !password) {
-      setErrorMsg("Please enter both your Student Registration Number and Password.");
+      setErrorMsg("Please enter both your Username / Registration Number and Password.");
       setLoading(false);
       return;
     }
@@ -150,7 +196,12 @@ function LoginForm() {
         setLoading(false);
       } else {
         router.refresh();
-        router.push("/portal");
+        const activeOption = roleOptions.find((r) => r.id === selectedRole);
+        if (activeOption) {
+          router.push(activeOption.redirectUrl);
+        } else {
+          router.push("/portal");
+        }
       }
     } catch (err) {
       console.error("Login unexpected error:", err);
@@ -159,24 +210,26 @@ function LoginForm() {
     }
   };
 
+  const currentRoleConfig = roleOptions.find((r) => r.id === selectedRole) || roleOptions[0];
+
   return (
     <>
       <Header />
       <main className="min-h-screen bg-slate-50 text-slate-800 font-sans pb-24">
-        {/* HERO BANNER - MATCHING ADMISSIONS/APPLY ELEGANT NAVY STYLING */}
+        {/* HERO BANNER */}
         <section className="bg-brand-blue-dark text-white py-14 sm:py-16 relative overflow-hidden">
           <div className="absolute inset-0 z-0 bg-[radial-gradient(ellipse_at_top_right,_var(--tw-gradient-stops))] from-brand-blue/40 via-slate-900 to-slate-950" />
 
           <div className="max-w-5xl mx-auto px-4 sm:px-6 relative z-10 text-center space-y-4">
             <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-brand-gold/10 border border-brand-gold/30 text-brand-gold text-xs font-semibold uppercase tracking-wider">
               <Sparkles className="w-3.5 h-3.5" />
-              Official Student Portal Gateway • portal.crestoakcollege.com.ng
+              Unified CrestOak Institutional Gateway
             </div>
             <h1 className="text-3xl sm:text-5xl font-display font-extrabold text-white tracking-tight">
-              Student Portal Sign In
+              Portal Sign In
             </h1>
             <p className="text-slate-300 text-sm sm:text-base max-w-2xl mx-auto leading-relaxed font-medium">
-              Access your academic dashboard, course registration, semester results, and student services.
+              Select your institutional role to log in to your designated subdomain gateway.
             </p>
           </div>
         </section>
@@ -184,70 +237,38 @@ function LoginForm() {
         {/* MAIN CONTAINER */}
         <div className="max-w-5xl mx-auto px-4 sm:px-6 -mt-8 relative z-20">
           
-          {/* SUBDOMAIN GATEWAY SWITCHER STRIP */}
+          {/* SUBDOMAIN GATEWAY INDICATOR BANNER */}
           <div className="bg-white border border-slate-200/80 rounded-2xl p-4 sm:p-5 shadow-xl shadow-slate-200/50 mb-8">
             <div className="flex flex-col sm:flex-row items-center justify-between gap-3 mb-3 pb-3 border-b border-slate-100">
               <div className="flex items-center gap-2">
                 <Building2 className="w-4 h-4 text-brand-blue" />
                 <span className="text-xs font-bold uppercase tracking-wider text-slate-500">
-                  Institutional Subdomain Gateways
+                  Subdomain Gateways Overview
                 </span>
               </div>
               <span className="text-[11px] text-slate-400 font-medium">
-                Each role has its designated domain portal
+                Official CrestOak College Domains
               </span>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-              {subdomainPortals.map((portal) => {
-                const IconComp = portal.icon;
-                if (portal.isCurrent) {
-                  return (
-                    <div
-                      key={portal.id}
-                      className="p-3 rounded-xl border-2 border-brand-blue bg-brand-blue/5 text-slate-900 shadow-sm relative flex flex-col justify-between"
-                    >
-                      <div className="flex items-center justify-between mb-1.5">
-                        <div className="w-8 h-8 rounded-lg bg-brand-blue text-white flex items-center justify-center font-bold">
-                          <IconComp className="w-4 h-4" />
-                        </div>
-                        <span className="text-[10px] font-extrabold uppercase tracking-widest px-2 py-0.5 rounded-full bg-brand-blue text-white">
-                          Current Portal
-                        </span>
-                      </div>
-                      <div>
-                        <h4 className="text-xs font-bold text-brand-blue-dark">{portal.title}</h4>
-                        <p className="text-[10px] font-mono text-brand-blue font-semibold truncate mt-0.5">
-                          {portal.subdomain}
-                        </p>
-                      </div>
-                    </div>
-                  );
-                }
-
-                return (
-                  <a
-                    key={portal.id}
-                    href={portal.url}
-                    className="p-3 rounded-xl border border-slate-200 bg-white hover:border-brand-blue/40 hover:bg-slate-50 transition-all duration-200 group flex flex-col justify-between no-underline"
-                  >
-                    <div className="flex items-center justify-between mb-1.5">
-                      <div className="w-8 h-8 rounded-lg bg-slate-100 text-slate-600 group-hover:bg-brand-blue group-hover:text-white transition-colors flex items-center justify-center">
-                        <IconComp className="w-4 h-4" />
-                      </div>
-                      <ExternalLink className="w-3.5 h-3.5 text-slate-400 group-hover:text-brand-blue transition-colors" />
-                    </div>
-                    <div>
-                      <h4 className="text-xs font-bold text-slate-800 group-hover:text-brand-blue transition-colors">
-                        {portal.title}
-                      </h4>
-                      <p className="text-[10px] font-mono text-slate-400 truncate mt-0.5 group-hover:text-slate-600">
-                        {portal.subdomain}
-                      </p>
-                    </div>
-                  </a>
-                );
-              })}
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2.5">
+              {[
+                { name: "Student Gateway", host: "portal.crestoakcollege.com.ng", role: "Student", badge: "bg-blue-600" },
+                { name: "Staff Gateway", host: "staff.crestoakcollege.com.ng", role: "Lecturer / Staff", badge: "bg-purple-600" },
+                { name: "Bursary Gateway", host: "pay.crestoakcollege.com.ng", role: "Bursary", badge: "bg-amber-600" },
+                { name: "Admin Gateway", host: "admin.crestoakcollege.com.ng", role: "Admin", badge: "bg-rose-600" },
+                { name: "Admissions Portal", host: "admissions.crestoakcollege.com.ng", role: "Applicants", badge: "bg-emerald-600" },
+              ].map((gateway) => (
+                <div key={gateway.name} className="bg-slate-50 border border-slate-200 rounded-xl p-2.5 flex flex-col justify-between">
+                  <span className={`text-[9px] font-extrabold uppercase text-white px-2 py-0.5 rounded-full ${gateway.badge} w-max`}>
+                    {gateway.role}
+                  </span>
+                  <div className="mt-1.5">
+                    <h5 className="text-[11px] font-bold text-slate-800">{gateway.name}</h5>
+                    <p className="text-[9px] font-mono text-slate-400 truncate">{gateway.host}</p>
+                  </div>
+                </div>
+              ))}
             </div>
           </div>
 
@@ -263,58 +284,54 @@ function LoginForm() {
 
                 <div>
                   <h2 className="text-xl sm:text-2xl font-display font-extrabold text-white tracking-tight leading-snug">
-                    Student Academic Gateway
+                    {currentRoleConfig.title} Gateway
                   </h2>
                   <p className="text-slate-300 text-xs sm:text-sm mt-2 leading-relaxed font-normal">
-                    Welcome to CrestOak College's official student environment. Manage your academic journey with security and speed.
+                    {currentRoleConfig.description}
                   </p>
                 </div>
 
                 <div className="space-y-3 pt-2 border-t border-white/10 text-xs">
                   <span className="text-[11px] uppercase tracking-wider font-bold text-brand-gold block">
-                    Student Services Available:
+                    Gateway Features:
                   </span>
                   
                   <div className="flex items-center gap-2.5 text-slate-200">
                     <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
-                    <span>Semester Course Registration</span>
+                    <span>Role-Based Access Control (RBAC)</span>
                   </div>
                   <div className="flex items-center gap-2.5 text-slate-200">
                     <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
-                    <span>Continuous Assessment & Exam Results</span>
+                    <span>Subdomain Security Isolation</span>
                   </div>
                   <div className="flex items-center gap-2.5 text-slate-200">
                     <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
-                    <span>Academic Transcripts & Statements</span>
+                    <span>Argon2id Encrypted Password Vault</span>
                   </div>
                   <div className="flex items-center gap-2.5 text-slate-200">
                     <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
-                    <span>Tuition Receipts & Bursary Clearances</span>
+                    <span>256-bit TLS Session Security</span>
                   </div>
                 </div>
               </div>
 
               <div className="relative z-10 mt-8 pt-4 border-t border-white/10 flex items-center justify-between text-[11px] text-slate-400">
                 <span className="flex items-center gap-1">
-                  <ShieldCheck className="w-3.5 h-3.5 text-emerald-400" /> 256-bit SSL Encrypted
+                  <ShieldCheck className="w-3.5 h-3.5 text-emerald-400" /> Secure Gateway
                 </span>
-                <span>CCHSMT Portal</span>
+                <span className="font-mono">{currentRoleConfig.subdomain}</span>
               </div>
             </div>
 
-            {/* RIGHT SIDE: DEDICATED STUDENT LOGIN FORM */}
+            {/* RIGHT SIDE: ROLE SELECTION & LOGIN FORM */}
             <div className="w-full md:w-7/12 flex flex-col justify-center space-y-6">
               
               <div>
-                <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-brand-blue/10 text-brand-blue text-xs font-bold mb-2">
-                  <GraduationCap className="w-4 h-4" />
-                  Student Portal Login Only
-                </div>
                 <h2 className="text-2xl sm:text-3xl font-display font-extrabold text-brand-blue-dark tracking-tight">
-                  Sign In to Student Account
+                  Sign In
                 </h2>
                 <p className="text-slate-500 text-xs sm:text-sm mt-1">
-                  Enter your matriculation or registration number and password.
+                  Select your institutional role and enter your credentials.
                 </p>
               </div>
 
@@ -327,64 +344,115 @@ function LoginForm() {
               )}
 
               {/* FORM */}
-              <form onSubmit={handleSubmit} className="space-y-5">
+              <form onSubmit={handleSubmit} className="space-y-6">
                 
-                {/* REGISTRATION NUMBER INPUT */}
-                <div>
-                  <label
-                    htmlFor="username"
-                    className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-2"
-                  >
-                    Matriculation / Student Reg. Number
+                {/* 1. ROLE SELECTION GRID */}
+                <div className="space-y-2">
+                  <label className="text-xs font-bold uppercase tracking-wider text-slate-700 block">
+                    Select Your Role Gateway
                   </label>
-                  <div className="relative">
-                    <span className="absolute inset-y-0 left-0 pl-3.5 flex items-center text-slate-400">
-                      <User className="w-5 h-5" />
-                    </span>
-                    <input
-                      id="username"
-                      name="username"
-                      type="text"
-                      required
-                      placeholder="e.g., student1 or CCHSMT/2026/001"
-                      value={username}
-                      onChange={(e) => setUsername(e.target.value)}
-                      className="w-full pl-11 pr-4 py-3 bg-slate-50 border border-slate-300 rounded-xl text-slate-900 placeholder-slate-400 focus:outline-none focus:bg-white focus:border-brand-blue focus:ring-2 focus:ring-brand-blue/20 transition-all text-sm font-medium"
-                    />
+                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5">
+                    {roleOptions.map((role) => {
+                      const IconComponent = role.icon;
+                      const isSelected = selectedRole === role.id;
+                      return (
+                        <button
+                          key={role.id}
+                          type="button"
+                          onClick={() => {
+                            setSelectedRole(role.id);
+                            setErrorMsg(null);
+                            if (role.id === "Student" && !username) setUsername("student1");
+                            else if (role.id === "Lecturer" && !username) setUsername("lecturer1");
+                            else if (role.id === "Staff" && !username) setUsername("staff1");
+                            else if (role.id === "Bursary" && !username) setUsername("bursary1");
+                            else if (role.id === "Admin" && !username) setUsername("admin1");
+                            else if (role.id === "Super Admin" && !username) setUsername("admin");
+                          }}
+                          className={`flex flex-col items-center justify-center p-3 rounded-xl border text-center transition-all duration-200 group cursor-pointer ${
+                            isSelected
+                              ? `${role.colorClass} ${role.bgGlow} scale-[1.02]`
+                              : "border-slate-200 bg-white hover:border-slate-300 hover:bg-slate-50 text-slate-600"
+                          }`}
+                        >
+                          <IconComponent
+                            className={`w-5 h-5 mb-1.5 transition-transform duration-200 ${
+                              isSelected ? "scale-110" : "text-slate-400 group-hover:text-slate-600"
+                            }`}
+                          />
+                          <span className="text-xs font-bold">{role.title}</span>
+                          <span className="text-[9px] font-mono text-slate-400 truncate max-w-full mt-0.5">
+                            {role.subdomain.split('.')[0]}
+                          </span>
+                        </button>
+                      );
+                    })}
                   </div>
                 </div>
 
-                {/* PASSWORD INPUT */}
-                <div>
-                  <div className="flex justify-between items-center mb-2">
+                {/* 2. CREDENTIALS INPUTS */}
+                <div className="space-y-4">
+                  <div>
                     <label
-                      htmlFor="password"
-                      className="block text-xs font-bold uppercase tracking-wider text-slate-700"
+                      htmlFor="username"
+                      className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-2"
                     >
-                      Portal Password
+                      {selectedRole === "Student"
+                        ? "Matriculation / Student Reg. Number"
+                        : "Staff ID / Username / Email"}
                     </label>
+                    <div className="relative">
+                      <span className="absolute inset-y-0 left-0 pl-3.5 flex items-center text-slate-400">
+                        <User className="w-5 h-5" />
+                      </span>
+                      <input
+                        id="username"
+                        name="username"
+                        type="text"
+                        required
+                        placeholder={
+                          selectedRole === "Student"
+                            ? "e.g., student1 or STU-2026-001"
+                            : `e.g., ${currentRoleConfig.demoUser}`
+                        }
+                        value={username}
+                        onChange={(e) => setUsername(e.target.value)}
+                        className="w-full pl-11 pr-4 py-3 bg-slate-50 border border-slate-300 rounded-xl text-slate-900 placeholder-slate-400 focus:outline-none focus:bg-white focus:border-brand-blue focus:ring-2 focus:ring-brand-blue/20 transition-all text-sm font-medium"
+                      />
+                    </div>
                   </div>
-                  <div className="relative">
-                    <span className="absolute inset-y-0 left-0 pl-3.5 flex items-center text-slate-400">
-                      <Lock className="w-5 h-5" />
-                    </span>
-                    <input
-                      id="password"
-                      name="password"
-                      type={showPassword ? "text" : "password"}
-                      required
-                      placeholder="••••••••"
-                      value={password}
-                      onChange={(e) => setPassword(e.target.value)}
-                      className="w-full pl-11 pr-11 py-3 bg-slate-50 border border-slate-300 rounded-xl text-slate-900 placeholder-slate-400 focus:outline-none focus:bg-white focus:border-brand-blue focus:ring-2 focus:ring-brand-blue/20 transition-all text-sm font-medium"
-                    />
-                    <button
-                      type="button"
-                      onClick={() => setShowPassword(!showPassword)}
-                      className="absolute inset-y-0 right-0 pr-3.5 flex items-center text-slate-400 hover:text-slate-600 transition-colors"
-                    >
-                      {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
-                    </button>
+
+                  <div>
+                    <div className="flex justify-between items-center mb-2">
+                      <label
+                        htmlFor="password"
+                        className="block text-xs font-bold uppercase tracking-wider text-slate-700"
+                      >
+                        Password
+                      </label>
+                    </div>
+                    <div className="relative">
+                      <span className="absolute inset-y-0 left-0 pl-3.5 flex items-center text-slate-400">
+                        <Lock className="w-5 h-5" />
+                      </span>
+                      <input
+                        id="password"
+                        name="password"
+                        type={showPassword ? "text" : "password"}
+                        required
+                        placeholder="••••••••"
+                        value={password}
+                        onChange={(e) => setPassword(e.target.value)}
+                        className="w-full pl-11 pr-11 py-3 bg-slate-50 border border-slate-300 rounded-xl text-slate-900 placeholder-slate-400 focus:outline-none focus:bg-white focus:border-brand-blue focus:ring-2 focus:ring-brand-blue/20 transition-all text-sm font-medium"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowPassword(!showPassword)}
+                        className="absolute inset-y-0 right-0 pr-3.5 flex items-center text-slate-400 hover:text-slate-600 transition-colors"
+                      >
+                        {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                      </button>
+                    </div>
                   </div>
                 </div>
 
@@ -397,11 +465,11 @@ function LoginForm() {
                   {loading ? (
                     <>
                       <Loader2 className="w-5 h-5 animate-spin" />
-                      <span>Authenticating Student Account...</span>
+                      <span>Authenticating {selectedRole}...</span>
                     </>
                   ) : (
                     <>
-                      <span>Access Student Dashboard</span>
+                      <span>Access {selectedRole} Gateway</span>
                       <ArrowRight className="w-4 h-4" />
                     </>
                   )}
@@ -412,16 +480,16 @@ function LoginForm() {
               <div className="bg-amber-50/80 border border-amber-200/80 rounded-xl p-4 text-xs text-slate-700 space-y-1.5 shadow-sm">
                 <div className="font-bold text-amber-900 flex items-center gap-1.5">
                   <HelpCircle className="w-4 h-4 text-amber-600" />
-                  Testing & Demo Account:
+                  Test Credentials for {selectedRole}:
                 </div>
                 <p className="text-slate-600 leading-relaxed">
-                  Enter username <code className="bg-white border border-amber-300 text-amber-900 font-mono font-bold px-1.5 py-0.5 rounded">student1</code> with password <code className="bg-white border border-amber-300 text-amber-900 font-mono font-bold px-1.5 py-0.5 rounded">password123</code>.
+                  Username: <code className="bg-white border border-amber-300 text-amber-900 font-mono font-bold px-1.5 py-0.5 rounded">{currentRoleConfig.demoUser}</code> | Password: <code className="bg-white border border-amber-300 text-amber-900 font-mono font-bold px-1.5 py-0.5 rounded">{selectedRole === "Super Admin" ? "Adm1nSecureP@ss123!" : "password123"}</code>
                 </p>
               </div>
 
               {/* APPLICANT & HELP LINKS */}
               <div className="pt-4 border-t border-slate-200 flex flex-col sm:flex-row items-center justify-between text-xs text-slate-500 gap-2">
-                <span>Not registered yet?</span>
+                <span>Prospective student?</span>
                 <Link
                   href="/admissions/apply"
                   className="font-bold text-brand-blue hover:text-brand-blue-dark hover:underline flex items-center gap-1"

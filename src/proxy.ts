@@ -5,8 +5,33 @@ export default withAuth(
   function proxy(req) {
     const token = req.nextauth.token;
     const path = req.nextUrl.pathname;
+    const hostname = req.headers.get("host") || "";
 
-    // RBAC Authorization rules:
+    // Subdomain host mapping checks
+    if (hostname.startsWith("admin.")) {
+      if (token?.role !== "Admin" && token?.role !== "Super Admin") {
+        return NextResponse.redirect(new URL("/login?error=AccessDenied", req.url));
+      }
+    } else if (hostname.startsWith("pay.")) {
+      if (
+        token?.role !== "Bursary" &&
+        token?.role !== "Admin" &&
+        token?.role !== "Super Admin"
+      ) {
+        return NextResponse.redirect(new URL("/login?error=AccessDenied", req.url));
+      }
+    } else if (hostname.startsWith("staff.")) {
+      if (
+        token?.role !== "Lecturer" &&
+        token?.role !== "Staff" &&
+        token?.role !== "Admin" &&
+        token?.role !== "Super Admin"
+      ) {
+        return NextResponse.redirect(new URL("/login?error=AccessDenied", req.url));
+      }
+    }
+
+    // Explicit Route RBAC Authorization Rules:
     // 1. Admin & Super Admin can access /admin
     if (path.startsWith("/admin")) {
       if (token?.role !== "Admin" && token?.role !== "Super Admin") {
@@ -61,3 +86,4 @@ export const config = {
     "/staff/:path*",
   ],
 };
+
