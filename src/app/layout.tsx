@@ -2,6 +2,8 @@ import type { Metadata } from "next";
 import { Montserrat, Inter } from "next/font/google";
 import dynamic from "next/dynamic";
 import { SessionProvider } from "@/components/providers/session-provider";
+import { JsonLd } from "@/components/JsonLd";
+import { Analytics } from "@/components/Analytics";
 import "./globals.css";
 
 const AdmissionsChatbot = dynamic(
@@ -25,38 +27,46 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  metadataBase: new URL("https://www.crestoak.com.ng"),
+  metadataBase: new URL("https://crestoakcollege.com.ng"),
   title: {
-    default: "CrestOak College | Health Sciences, Management & Technology",
-    template: "%s | CrestOak College (CCHSMT)"
+    default: "CrestOak College of Health Sciences, Management & Technology",
+    template: "%s | CrestOak College of Health Sciences, Management & Technology"
   },
-  description: "CrestOak College of Health Sciences, Management and Technology (Badagry, Lagos) offers top-tier programs in Applied Health Sciences, Law, Social & Management Sciences, Agriculture, and Applied Sciences. Igniting changes through knowledge.",
+  description: "Official portal for CrestOak College of Health Sciences, Management & Technology. Offering accredited programs in health sciences, technology, and management.",
   keywords: [
     "CrestOak College",
-    "Health Science College Nigeria",
-    "Management and Technology College",
-    "CrestOak College Badagry",
-    "Applied Health Sciences Lagos",
-    "Nursing Science Badagry",
-    "Criminology and Security Studies Nigeria",
-    "Computer Science College Lagos",
+    "health sciences",
+    "management",
+    "technology",
+    "college admissions",
+    "Badagry college",
+    "Nigeria higher education",
     "CCHSMT"
   ],
   alternates: {
-    canonical: "https://www.crestoak.com.ng"
+    canonical: "https://crestoakcollege.com.ng"
   },
   openGraph: {
-    title: "CrestOak College of Health Sciences, Management and Technology",
-    description: "Empowering future leaders through world-class health, management, and technology education. Located in Badagry, Lagos.",
-    url: "https://www.crestoak.com.ng",
-    siteName: "CrestOak College",
+    title: "CrestOak College of Health Sciences, Management & Technology",
+    description: "Official portal for CrestOak College of Health Sciences, Management & Technology. Offering accredited programs in health sciences, technology, and management.",
+    url: "https://crestoakcollege.com.ng",
+    siteName: "CrestOak College of Health Sciences, Management & Technology",
+    images: [
+      {
+        url: "/atiba-crestoak-logo.png",
+        width: 1200,
+        height: 630,
+        alt: "CrestOak College Logo"
+      }
+    ],
     locale: "en_NG",
-    type: "website",
+    type: "website"
   },
   twitter: {
     card: "summary_large_image",
-    title: "CrestOak College of Health Sciences, Management and Technology",
-    description: "Igniting changes through knowledge. Admissions open for Applied Health, Law, Management, and Applied Sciences.",
+    title: "CrestOak College of Health Sciences, Management & Technology",
+    description: "Official portal for CrestOak College of Health Sciences, Management & Technology. Offering accredited programs in health sciences, technology, and management.",
+    images: ["/atiba-crestoak-logo.png"]
   }
 };
 
@@ -71,35 +81,8 @@ export default function RootLayout({
       className={`${montserrat.variable} ${inter.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col font-sans bg-white text-slate-900">
-        <script
-          type="application/ld+json"
-          dangerouslySetInnerHTML={{
-            __html: JSON.stringify({
-              "@context": "https://schema.org",
-              "@type": "CollegeOrUniversity",
-              "name": "CrestOak College of Health Sciences, Management and Technology",
-              "alternateName": "CCHSMT",
-              "url": "https://www.crestoak.com.ng",
-              "logo": "https://www.crestoak.com.ng/logo.png",
-              "contactPoint": {
-                "@type": "ContactPoint",
-                "telephone": "+2348155884804",
-                "contactType": "Admissions",
-                "email": "info@crestoakcollege.com.ng",
-                "areaServed": "NG",
-                "availableLanguage": "en"
-              },
-              "address": {
-                "@type": "PostalAddress",
-                "streetAddress": "6/8 Isaac Street, Ibereko",
-                "addressLocality": "Badagry",
-                "addressRegion": "Lagos",
-                "addressCountry": "NG"
-              },
-              "slogan": "Igniting Changes Through Knowledge"
-            })
-          }}
-        />
+        <JsonLd />
+        <Analytics />
         <SessionProvider>
           {children}
         </SessionProvider>
@@ -108,5 +91,6 @@ export default function RootLayout({
     </html>
   );
 }
+
 
 
