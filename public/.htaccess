@@ -1,14 +1,18 @@
-Options -MultiViews
+Options -Indexes -MultiViews
+DirectoryIndex index.html index.php
+
 RewriteEngine On
 RewriteBase /
 
-# 1. If a matching .html file exists at root (e.g., contact.html), serve it for both /contact and /contact/
-RewriteCond %{DOCUMENT_ROOT}/$1.html -f
-RewriteRule ^(.*)/?$ /$1.html [QSA,L]
-
-# 2. Map directory requests to their index.html file if index.html actually exists
+# 1. Map directory requests containing index.html (e.g., /contact/ or /contact)
+RewriteCond %{REQUEST_FILENAME} -d
 RewriteCond %{REQUEST_FILENAME}/index.html -f
 RewriteRule ^(.*)$ /$1/index.html [QSA,L]
+
+# 2. If a matching .html file exists at root (e.g., contact.html), serve it
+RewriteCond %{REQUEST_FILENAME} !-d
+RewriteCond %{DOCUMENT_ROOT}/$1.html -f
+RewriteRule ^(.*)$ /$1.html [QSA,L]
 
 # 3. If file or directory exists directly, serve it
 RewriteCond %{REQUEST_FILENAME} -f [OR]
