@@ -244,59 +244,59 @@ function LoginForm() {
       <main className="min-h-screen bg-slate-50 text-slate-800 font-sans pb-24 flex flex-col justify-between">
         
         {/* TOP HERO BANNER */}
-        <section className={`bg-gradient-to-br ${gatewayConfig.themeColor} text-white py-14 sm:py-16 relative overflow-hidden`}>
+        <section className={`bg-gradient-to-br ${gatewayConfig.themeColor} text-white py-12 sm:py-16 md:py-20 relative overflow-hidden`}>
           <div className="absolute inset-0 z-0 bg-[radial-gradient(ellipse_at_top_right,_var(--tw-gradient-stops))] from-white/10 via-transparent to-transparent pointer-events-none" />
 
-          <div className="max-w-4xl mx-auto px-4 sm:px-6 relative z-10 text-center space-y-3">
-            <div className={`inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full border text-xs font-semibold uppercase tracking-wider ${gatewayConfig.badgeBg}`}>
-              <Sparkles className="w-3.5 h-3.5" />
+          <div className="max-w-4xl mx-auto px-4 sm:px-6 relative z-10 text-center space-y-3 sm:space-y-4">
+            <div className={`inline-flex items-center gap-2 px-4 py-1.5 rounded-full border text-xs sm:text-sm font-bold uppercase tracking-wider ${gatewayConfig.badgeBg}`}>
+              <Sparkles className="w-4 h-4" />
               {gatewayConfig.badge}
             </div>
-            <h1 className="text-3xl sm:text-5xl font-display font-extrabold text-white tracking-tight">
+            <h1 className="text-2xl sm:text-4xl md:text-5xl font-display font-extrabold text-white tracking-tight leading-tight">
               {gatewayConfig.title}
             </h1>
-            <p className="text-slate-300 text-sm sm:text-base max-w-2xl mx-auto leading-relaxed font-medium">
+            <p className="text-sm sm:text-base md:text-lg text-slate-200 max-w-2xl mx-auto leading-relaxed font-medium">
               {gatewayConfig.subtitle}
             </p>
           </div>
         </section>
 
-        {/* RE-CENTERED ELEGANT SIGN-IN CONTAINER */}
-        <div className="max-w-xl mx-auto px-4 sm:px-6 -mt-8 relative z-20 w-full">
+        {/* RE-CENTERED ELEGANT SIGN-IN CONTAINER (RESPONSIVE ON MOBILE & TABLET) */}
+        <div className="max-w-md sm:max-w-xl mx-auto px-4 sm:px-6 -mt-6 sm:-mt-10 relative z-20 w-full">
           
-          <div className="bg-white border border-slate-200/80 rounded-3xl p-6 sm:p-10 shadow-2xl shadow-slate-200/80 space-y-6">
+          <div className="bg-white border border-slate-200/90 rounded-2xl sm:rounded-3xl p-5 sm:p-8 md:p-10 shadow-2xl shadow-slate-200/80 space-y-6 sm:space-y-7">
             
             {/* BRANDING HEADER */}
             <div className="flex items-center justify-between border-b border-slate-100 pb-5">
-              <Logo showText={true} lightText={false} size={42} />
-              <div className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-slate-100 text-slate-700 text-xs font-bold">
-                <GatewayIcon className="w-4 h-4 text-brand-blue" />
+              <Logo showText={true} lightText={false} size={44} />
+              <div className="flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-slate-100 text-slate-800 text-xs sm:text-sm font-extrabold shadow-sm">
+                <GatewayIcon className="w-4.5 h-4.5 text-brand-blue" />
                 <span>{gatewayConfig.role}</span>
               </div>
             </div>
 
             {/* ERROR MESSAGE ALERT */}
             {errorMsg && (
-              <div className="flex items-start gap-3 bg-red-50 border border-red-200 text-red-700 p-4 rounded-xl text-xs sm:text-sm animate-in fade-in">
+              <div className="flex items-start gap-3 bg-red-50 border border-red-200 text-red-700 p-4 rounded-xl text-xs sm:text-sm md:text-base animate-in fade-in">
                 <AlertCircle className="w-5 h-5 shrink-0 mt-0.5 text-brand-red" />
                 <span className="font-semibold">{errorMsg}</span>
               </div>
             )}
 
             {/* FORM */}
-            <form onSubmit={handleSubmit} className="space-y-5">
+            <form onSubmit={handleSubmit} className="space-y-5 sm:space-y-6">
               
               {/* USERNAME / REG NO INPUT */}
               <div>
                 <label
                   htmlFor="username"
-                  className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-2"
+                  className="block text-xs sm:text-sm font-bold uppercase tracking-wider text-slate-800 mb-2"
                 >
                   {gatewayConfig.usernameLabel}
                 </label>
                 <div className="relative">
-                  <span className="absolute inset-y-0 left-0 pl-3.5 flex items-center text-slate-400">
-                    <User className="w-5 h-5" />
+                  <span className="absolute inset-y-0 left-0 pl-3.5 sm:pl-4 flex items-center text-slate-400">
+                    <User className="w-5 h-5 sm:w-6 sm:h-6" />
                   </span>
                   <input
                     id="username"
@@ -306,7 +306,7 @@ function LoginForm() {
                     placeholder={gatewayConfig.placeholder}
                     value={username}
                     onChange={(e) => setUsername(e.target.value)}
-                    className="w-full pl-11 pr-4 py-3.5 bg-slate-50 border border-slate-300 rounded-xl text-slate-900 placeholder-slate-400 focus:outline-none focus:bg-white focus:border-brand-blue focus:ring-2 focus:ring-brand-blue/20 transition-all text-sm font-medium"
+                    className="w-full pl-11 sm:pl-12 pr-4 sm:pr-5 py-3.5 sm:py-4 bg-slate-50 border border-slate-300 rounded-xl sm:rounded-2xl text-slate-900 placeholder-slate-400 focus:outline-none focus:bg-white focus:border-brand-blue focus:ring-2 focus:ring-brand-blue/20 transition-all text-base sm:text-lg font-medium"
                   />
                 </div>
               </div>
@@ -316,14 +316,14 @@ function LoginForm() {
                 <div className="flex justify-between items-center mb-2">
                   <label
                     htmlFor="password"
-                    className="block text-xs font-bold uppercase tracking-wider text-slate-700"
+                    className="block text-xs sm:text-sm font-bold uppercase tracking-wider text-slate-800"
                   >
                     Password
                   </label>
                 </div>
                 <div className="relative">
-                  <span className="absolute inset-y-0 left-0 pl-3.5 flex items-center text-slate-400">
-                    <Lock className="w-5 h-5" />
+                  <span className="absolute inset-y-0 left-0 pl-3.5 sm:pl-4 flex items-center text-slate-400">
+                    <Lock className="w-5 h-5 sm:w-6 sm:h-6" />
                   </span>
                   <input
                     id="password"
@@ -333,14 +333,14 @@ function LoginForm() {
                     placeholder="••••••••"
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
-                    className="w-full pl-11 pr-11 py-3.5 bg-slate-50 border border-slate-300 rounded-xl text-slate-900 placeholder-slate-400 focus:outline-none focus:bg-white focus:border-brand-blue focus:ring-2 focus:ring-brand-blue/20 transition-all text-sm font-medium"
+                    className="w-full pl-11 sm:pl-12 pr-11 sm:pr-12 py-3.5 sm:py-4 bg-slate-50 border border-slate-300 rounded-xl sm:rounded-2xl text-slate-900 placeholder-slate-400 focus:outline-none focus:bg-white focus:border-brand-blue focus:ring-2 focus:ring-brand-blue/20 transition-all text-base sm:text-lg font-medium"
                   />
                   <button
                     type="button"
                     onClick={() => setShowPassword(!showPassword)}
-                    className="absolute inset-y-0 right-0 pr-3.5 flex items-center text-slate-400 hover:text-slate-600 transition-colors"
+                    className="absolute inset-y-0 right-0 pr-3.5 sm:pr-4 flex items-center text-slate-400 hover:text-slate-600 transition-colors"
                   >
-                    {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                    {showPassword ? <EyeOff className="w-5 h-5 sm:w-6 sm:h-6" /> : <Eye className="w-5 h-5 sm:w-6 sm:h-6" />}
                   </button>
                 </div>
               </div>
@@ -349,56 +349,56 @@ function LoginForm() {
               <button
                 type="submit"
                 disabled={loading}
-                className={`w-full py-3.5 px-5 bg-gradient-to-r ${gatewayConfig.btnGradient} text-white rounded-xl font-bold transition-all disabled:opacity-50 disabled:pointer-events-none flex items-center justify-center gap-2 border border-white/10 shadow-lg text-sm cursor-pointer`}
+                className={`w-full py-4 sm:py-4.5 px-6 bg-gradient-to-r ${gatewayConfig.btnGradient} text-white rounded-xl sm:rounded-2xl font-extrabold transition-all disabled:opacity-50 disabled:pointer-events-none flex items-center justify-center gap-2.5 border border-white/10 shadow-xl text-base sm:text-lg cursor-pointer`}
               >
                 {loading ? (
                   <>
-                    <Loader2 className="w-5 h-5 animate-spin" />
+                    <Loader2 className="w-5 h-5 sm:w-6 sm:h-6 animate-spin" />
                     <span>Authenticating...</span>
                   </>
                 ) : (
                   <>
                     <span>Sign In to {gatewayConfig.role} Portal</span>
-                    <ArrowRight className="w-4 h-4" />
+                    <ArrowRight className="w-5 h-5 sm:w-6 sm:h-6" />
                   </>
                 )}
               </button>
             </form>
 
             {/* DEMO CREDENTIALS BOX */}
-            <div className="bg-amber-50/80 border border-amber-200/80 rounded-xl p-4 text-xs text-slate-700 space-y-1.5 shadow-sm">
-              <div className="font-bold text-amber-900 flex items-center gap-1.5">
-                <HelpCircle className="w-4 h-4 text-amber-600" />
+            <div className="bg-amber-50/90 border border-amber-200/90 rounded-xl sm:rounded-2xl p-4 sm:p-5 text-xs sm:text-sm text-slate-800 space-y-2 shadow-sm">
+              <div className="font-extrabold text-amber-950 text-sm sm:text-base flex items-center gap-2">
+                <HelpCircle className="w-4.5 h-4.5 text-amber-600" />
                 Demo Credentials:
               </div>
-              <p className="text-slate-600 leading-relaxed">
-                Username: <code className="bg-white border border-amber-300 text-amber-900 font-mono font-bold px-1.5 py-0.5 rounded">{gatewayConfig.demoUser}</code> | Password: <code className="bg-white border border-amber-300 text-amber-900 font-mono font-bold px-1.5 py-0.5 rounded">{gatewayConfig.demoPass}</code>
+              <p className="text-slate-700 leading-relaxed font-medium">
+                Username: <code className="bg-white border border-amber-300 text-amber-950 font-mono font-bold px-2 py-0.5 rounded text-xs sm:text-sm">{gatewayConfig.demoUser}</code> | Password: <code className="bg-white border border-amber-300 text-amber-950 font-mono font-bold px-2 py-0.5 rounded text-xs sm:text-sm">{gatewayConfig.demoPass}</code>
               </p>
             </div>
 
             {/* SECURITY ASSURANCE & HELPDESK FOOTER */}
-            <div className="pt-4 border-t border-slate-100 flex flex-col sm:flex-row items-center justify-between text-xs text-slate-500 gap-3">
-              <span className="flex items-center gap-1.5 text-slate-500">
-                <ShieldCheck className="w-4 h-4 text-emerald-600" />
+            <div className="pt-5 border-t border-slate-100 flex flex-col sm:flex-row items-center justify-between text-xs sm:text-sm text-slate-600 gap-3 text-center sm:text-left">
+              <span className="flex items-center gap-2 font-semibold text-slate-700">
+                <ShieldCheck className="w-4.5 h-4.5 text-emerald-600 shrink-0" />
                 {gatewayConfig.securityNotice}
               </span>
               {gatewayConfig.role === "Student" ? (
                 <Link
                   href="/admissions/apply"
-                  className="font-bold text-brand-blue hover:text-brand-blue-dark hover:underline flex items-center gap-1 shrink-0"
+                  className="font-extrabold text-brand-blue hover:text-brand-blue-dark hover:underline flex items-center gap-1.5 shrink-0 text-sm sm:text-base"
                 >
                   Apply for Admission
-                  <ArrowRight className="w-3.5 h-3.5" />
+                  <ArrowRight className="w-4 h-4" />
                 </Link>
               ) : (
-                <span className="font-mono text-[11px] text-slate-400">Argon2id & SSL Encrypted</span>
+                <span className="font-mono text-xs sm:text-sm text-slate-400">Argon2id & SSL Encrypted</span>
               )}
             </div>
 
           </div>
         </div>
 
-        <div className="py-6" />
+        <div className="py-6 sm:py-8" />
       </main>
       <Footer />
     </>
@@ -418,4 +418,5 @@ export default function LoginPage() {
     </Suspense>
   );
 }
+
 
