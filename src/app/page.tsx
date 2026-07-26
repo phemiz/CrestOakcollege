@@ -12,7 +12,8 @@ import {
   AboutSection,
   PartnershipSection,
   NewsSection,
-  CTASection
+  CTASection,
+  SubdomainRedirectGate
 } from "@/components/home";
 
 export const metadata: Metadata = generateSEO({
@@ -53,7 +54,9 @@ const TestimonialsSection = dynamic(
 export default function Home() {
   return (
     <>
+      <SubdomainRedirectGate />
       <StructuredData
+
         data={{
           "@context": "https://schema.org",
           "@type": "WebSite",
