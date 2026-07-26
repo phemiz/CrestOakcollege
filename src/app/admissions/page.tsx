@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
+import Link from "next/link";
 import { Header } from "@/components/layout/header";
 import { Footer } from "@/components/layout/footer";
 import {
@@ -11,6 +12,7 @@ import {
   AdmissionLetterTab
 } from "@/components/admissions";
 import { Admission } from "@/types";
+import { ArrowRight, FileText, Search, Sparkles, GraduationCap, ShieldCheck } from "lucide-react";
 
 export default function Admissions() {
   const [activeTab, setActiveTab] = useState<"guidelines" | "fees" | "apply" | "track" | "letter">("guidelines");
@@ -74,16 +76,66 @@ export default function Admissions() {
       <Header />
       <main className="flex-grow bg-slate-50">
         {/* HERO HEADER */}
-        <section className="bg-brand-blue-dark text-white py-20 relative overflow-hidden">
+        <section className="bg-brand-blue-dark text-white py-16 sm:py-20 relative overflow-hidden">
           <div className="absolute inset-0 z-0 bg-[radial-gradient(ellipse_at_top_right,_var(--tw-gradient-stops))] from-brand-blue/40 via-slate-900 to-slate-950" />
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 md:px-8 relative z-10 text-center flex flex-col gap-4">
-            <span className="text-brand-gold font-bold text-xs uppercase tracking-widest">Enrollment Portal</span>
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 md:px-8 relative z-10 text-center flex flex-col gap-6 items-center">
+            <span className="inline-flex items-center gap-1.5 text-brand-gold font-bold text-xs uppercase tracking-widest bg-brand-gold/10 px-3.5 py-1.5 rounded-full border border-brand-gold/20">
+              <Sparkles className="w-3.5 h-3.5" /> 2026/2027 Enrollment Portal
+            </span>
             <h1 className="font-display text-4xl sm:text-5xl font-extrabold tracking-tight">
               Admissions Office
             </h1>
-            <p className="text-slate-300 text-sm sm:text-base leading-relaxed max-w-xl mx-auto font-medium">
-              Start your journey today. Apply online for Undergraduate (2026/2027) or Postgraduate (2025/2026) cycles, track your status, and print offer letters.
+            <p className="text-slate-300 text-sm sm:text-base leading-relaxed max-w-2xl mx-auto font-medium">
+              Start your journey today. Apply online for Health Sciences and Medical Technology programs, check your status, and view document verification steps.
             </p>
+
+            {/* PROMINENT DIRECT ACTION CTA BUTTONS */}
+            <div className="flex flex-col sm:flex-row gap-4 pt-2 w-full max-w-md justify-center">
+              <Link
+                href="/admissions/apply"
+                className="py-3.5 px-6 bg-gradient-to-r from-brand-red to-red-700 hover:from-red-600 hover:to-red-800 text-white rounded-xl font-bold flex items-center justify-center gap-2 shadow-xl shadow-red-900/30 transition-all text-sm no-underline border border-red-500/20 hover:scale-[1.02]"
+              >
+                <GraduationCap className="w-5 h-5" />
+                Apply Online Now
+                <ArrowRight className="w-4 h-4" />
+              </Link>
+              <Link
+                href="/admissions/status"
+                className="py-3.5 px-6 bg-slate-800/90 hover:bg-slate-800 text-white rounded-xl font-bold flex items-center justify-center gap-2 border border-slate-700 transition-all text-sm no-underline hover:scale-[1.02]"
+              >
+                <Search className="w-4.5 h-4.5 text-brand-gold" />
+                Check Application Status
+              </Link>
+            </div>
+          </div>
+        </section>
+
+        {/* QUICK PORTAL ACCESS BANNER */}
+        <section className="bg-gradient-to-r from-slate-900 to-indigo-950 text-white py-6 border-b border-slate-800">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 md:px-8 flex flex-col sm:flex-row items-center justify-between gap-4 text-center sm:text-left">
+            <div className="flex items-center gap-3">
+              <div className="p-2.5 bg-indigo-600/20 text-indigo-400 rounded-xl border border-indigo-500/30">
+                <ShieldCheck className="w-5 h-5" />
+              </div>
+              <div>
+                <h3 className="font-bold text-sm text-white">Direct Application Routes Active</h3>
+                <p className="text-slate-400 text-xs">Access dedicated multi-step application form & status verification portal.</p>
+              </div>
+            </div>
+            <div className="flex gap-3 text-xs font-semibold">
+              <Link
+                href="/admissions/apply"
+                className="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg transition-colors no-underline"
+              >
+                Start Multi-Step Application
+              </Link>
+              <Link
+                href="/admissions/status"
+                className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-lg transition-colors no-underline"
+              >
+                Status Checker Portal
+              </Link>
+            </div>
           </div>
         </section>
 
