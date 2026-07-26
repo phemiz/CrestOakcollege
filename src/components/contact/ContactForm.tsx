@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
-import { MessageSquare, Send, CheckCircle, Loader2, AlertCircle } from "lucide-react";
+import { MessageSquare, Send, CheckCircle, Loader2 } from "lucide-react";
 
 export const ContactForm: React.FC = () => {
   const [formData, setFormData] = useState({
@@ -13,8 +13,7 @@ export const ContactForm: React.FC = () => {
   
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [serverError, setServerError] = useState<string | null>(null);
-  const [sent, setSent] = useState(false);
+  const [isSubmitted, setIsSubmitted] = useState(false);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     setFormData({
@@ -27,13 +26,12 @@ export const ContactForm: React.FC = () => {
         [e.target.name]: "",
       });
     }
-    if (serverError) setServerError(null);
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    const tempErrors: Record<string, string> = {};
 
+    const tempErrors: Record<string, string> = {};
     if (!formData.name.trim()) tempErrors.name = "Full Name is required";
     if (!formData.email.trim()) {
       tempErrors.email = "Email is required";
@@ -49,27 +47,26 @@ export const ContactForm: React.FC = () => {
     }
 
     setIsSubmitting(true);
-    setServerError(null);
+
+    const dataPayload = new FormData(e.currentTarget);
 
     try {
-      const response = await fetch("/send-mail.php", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(formData),
+      const res = await fetch('/send-mail.php', {
+        method: 'POST',
+        body: dataPayload,
       });
 
-      const data = await response.json();
+      const data = await res.json();
 
-      if (response.ok && (data.status === "success" || data.success === true)) {
-        setSent(true);
+      if (res.ok && data.status === 'success') {
+        setIsSubmitted(true);
         setFormData({ name: "", email: "", subject: "", message: "" });
       } else {
-        setServerError(data.message || "Failed to send message via mail server.");
+        alert(data.message || 'Failed to send message. Please try again.');
       }
-    } catch {
-      setServerError("Unable to connect to the mail server. Please check your connection or email info@crestoakcollege.com.ng directly.");
+    } catch (error) {
+      console.error('Submission error:', error);
+      alert('An error occurred while sending your message.');
     } finally {
       setIsSubmitting(false);
     }
@@ -79,7 +76,7 @@ export const ContactForm: React.FC = () => {
     <div className="bg-white p-8 rounded-3xl border border-slate-200 shadow-sm relative overflow-hidden">
       <div className="absolute top-0 left-0 right-0 h-1.5 bg-brand-red" />
       
-      {!sent ? (
+      {!isSubmitted ? (
         <form onSubmit={handleSubmit} className="flex flex-col gap-6">
           <div className="border-b border-slate-100 pb-4">
             <h3 className="font-display font-extrabold text-brand-blue-dark text-lg sm:text-xl flex items-center gap-2">
@@ -88,16 +85,6 @@ export const ContactForm: React.FC = () => {
             </h3>
             <p className="text-slate-400 text-xs mt-1">Our administrative desk will reply to your mail within 24 hours.</p>
           </div>
-
-          {serverError && (
-            <div className="p-4 bg-red-50 border border-red-200 rounded-xl text-red-700 text-xs flex items-start gap-3">
-              <AlertCircle size={18} className="text-red-500 shrink-0 mt-0.5" />
-              <div>
-                <span className="font-bold block text-sm">Delivery Notice</span>
-                <p className="mt-0.5 leading-relaxed">{serverError}</p>
-              </div>
-            </div>
-          )}
 
           {/* Name */}
           <div className="flex flex-col gap-2">
@@ -197,7 +184,7 @@ export const ContactForm: React.FC = () => {
             </p>
           </div>
           <button
-            onClick={() => setSent(false)}
+            onClick={() => setIsSubmitted(false)}
             className="text-brand-blue hover:text-brand-blue-light text-xs font-bold uppercase tracking-wider cursor-pointer"
           >
             Send another message

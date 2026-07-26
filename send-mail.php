@@ -11,7 +11,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
 
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     http_response_code(405);
-    echo json_encode(['success' => false, 'message' => 'Method Not Allowed']);
+    echo json_encode(['status' => 'error', 'success' => false, 'message' => 'Method Not Allowed']);
     exit();
 }
 
@@ -29,13 +29,13 @@ $message = isset($input['message']) ? trim($input['message']) : '';
 
 if (empty($name) || empty($email) || empty($subject) || empty($message)) {
     http_response_code(400);
-    echo json_encode(['success' => false, 'message' => 'Please fill in all required fields (Name, Email, Subject, Message).']);
+    echo json_encode(['status' => 'error', 'success' => false, 'message' => 'Please fill in all required fields (Name, Email, Subject, Message).']);
     exit();
 }
 
 if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
     http_response_code(400);
-    echo json_encode(['success' => false, 'message' => 'Invalid email address provided.']);
+    echo json_encode(['status' => 'error', 'success' => false, 'message' => 'Invalid email address provided.']);
     exit();
 }
 
@@ -83,8 +83,16 @@ $sent = @mail($to, $emailSubject, $body, implode("\r\n", $headers));
 
 if ($sent) {
     http_response_code(200);
-    echo json_encode(['success' => true, 'message' => 'Your message has been sent successfully to info@crestoakcollege.com.ng.']);
+    echo json_encode([
+        'status' => 'success',
+        'success' => true,
+        'message' => 'Your message has been sent successfully to info@crestoakcollege.com.ng.'
+    ]);
 } else {
     http_response_code(500);
-    echo json_encode(['success' => false, 'message' => 'Unable to send email via mail server. Please try again later or contact us directly.']);
+    echo json_encode([
+        'status' => 'error',
+        'success' => false,
+        'message' => 'Unable to send email via mail server. Please try again later or contact us directly.'
+    ]);
 }
