@@ -2,7 +2,7 @@ import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
   output: "export",
-  trailingSlash: true,
+  trailingSlash: true, // Creates actual contact/index.html instead of contact.html
   images: {
     unoptimized: true,
   },
