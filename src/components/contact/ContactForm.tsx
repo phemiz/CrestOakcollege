@@ -60,13 +60,13 @@ export const ContactForm: React.FC = () => {
         body: JSON.stringify(formData),
       });
 
-      const res = await response.json();
+      const data = await response.json();
 
-      if (response.ok && res.success) {
+      if (response.ok && (data.status === "success" || data.success === true)) {
         setSent(true);
         setFormData({ name: "", email: "", subject: "", message: "" });
       } else {
-        setServerError(res.message || "Failed to send email via mail server.");
+        setServerError(data.message || "Failed to send message via mail server.");
       }
     } catch {
       setServerError("Unable to connect to the mail server. Please check your connection or email info@crestoakcollege.com.ng directly.");
