@@ -38,13 +38,13 @@ export default function Gallery() {
         "@type": "ListItem",
         "position": 1,
         "name": "Home",
-        "item": "https://www.crestoak.com.ng"
+        "item": "https://crestoakcollege.com.ng"
       },
       {
         "@type": "ListItem",
         "position": 2,
         "name": "Gallery & Tour",
-        "item": "https://www.crestoak.com.ng/gallery"
+        "item": "https://crestoakcollege.com.ng/gallery"
       }
     ]
   };

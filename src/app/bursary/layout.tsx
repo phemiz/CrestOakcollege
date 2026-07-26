@@ -12,7 +12,7 @@ export const metadata: Metadata = {
     "Nursing School Fees Badagry"
   ],
   alternates: {
-    canonical: "https://www.crestoak.com.ng/bursary"
+    canonical: "https://crestoakcollege.com.ng/bursary"
   }
 };
 

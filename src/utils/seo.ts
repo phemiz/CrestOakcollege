@@ -1,6 +1,6 @@
 import { Metadata } from "next";
 
-export const siteUrl = process.env.NEXT_PUBLIC_APP_URL || "https://www.crestoak.com.ng";
+export const siteUrl = process.env.NEXT_PUBLIC_APP_URL || "https://crestoakcollege.com.ng";
 
 interface SEOProps {
   title: string;

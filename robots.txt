@@ -4,4 +4,4 @@ Disallow: /admin/
 Disallow: /portal/
 Disallow: /api/
 
-Sitemap: https://www.crestoak.com.ng/sitemap.xml
+Sitemap: https://crestoakcollege.com.ng/sitemap.xml

@@ -153,13 +153,13 @@ export default async function BursaryDashboardPage() {
         "@type": "ListItem",
         "position": 1,
         "name": "Home",
-        "item": "https://www.crestoak.com.ng"
+        "item": "https://crestoakcollege.com.ng"
       },
       {
         "@type": "ListItem",
         "position": 2,
         "name": "Bursary Guide",
-        "item": "https://www.crestoak.com.ng/bursary"
+        "item": "https://crestoakcollege.com.ng/bursary"
       }
     ]
   };
