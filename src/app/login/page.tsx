@@ -115,21 +115,78 @@ function LoginForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [isClient, setIsClient] = useState(false);
+  const [hostname, setHostname] = useState("");
+  const [currentPath, setCurrentPath] = useState("");
 
   useEffect(() => {
     setIsClient(true);
+    if (typeof window !== "undefined") {
+      setHostname(window.location.hostname);
+      setCurrentPath(window.location.pathname);
+    }
   }, []);
 
   const sessionResult = useSession();
   const session = sessionResult?.data;
   const status = sessionResult?.status || (isClient ? "unauthenticated" : "loading");
 
-  const [selectedRole, setSelectedRole] = useState<RoleType>("Student");
-  const [username, setUsername] = useState("");
+  // Domain & Gateway Context Detection
+  const urlGateway = searchParams.get("gateway") || searchParams.get("role");
+
+  const isSuperAdminGateway =
+    hostname.includes("superadmin") ||
+    currentPath.includes("/superadmin") ||
+    urlGateway?.toLowerCase() === "superadmin";
+
+  const isAdminGateway =
+    hostname.includes("admin.") ||
+    currentPath.includes("/admin") ||
+    urlGateway?.toLowerCase() === "admin";
+
+  const isBursaryGateway =
+    hostname.includes("pay.") ||
+    hostname.includes("bursary.") ||
+    currentPath.includes("/bursary") ||
+    urlGateway?.toLowerCase() === "bursary" ||
+    urlGateway?.toLowerCase() === "pay";
+
+  const isStaffGateway =
+    hostname.includes("staff.") ||
+    currentPath.includes("/staff") ||
+    urlGateway?.toLowerCase() === "staff" ||
+    urlGateway?.toLowerCase() === "lecturer";
+
+  // Dynamic Role Filtering: Administrative roles (Bursary, Admin, Super Admin)
+  // ARE HIDDEN from the main public portal and only visible on their dedicated gateways
+  const visibleRoleTypes: RoleType[] = (() => {
+    if (isSuperAdminGateway) return ["Super Admin"];
+    if (isAdminGateway) return ["Admin", "Super Admin"];
+    if (isBursaryGateway) return ["Bursary"];
+    if (isStaffGateway) return ["Lecturer", "Staff"];
+    return ["Student", "Lecturer", "Staff"]; // Hides Admin, Super Admin, and Bursary from public view
+  })();
+
+  const availableRoleOptions = roleOptions.filter((r) => visibleRoleTypes.includes(r.id));
+
+  const [selectedRole, setSelectedRole] = useState<RoleType>(availableRoleOptions[0]?.id || "Student");
+  const [username, setUsername] = useState(availableRoleOptions[0]?.demoUser || "student1");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
+
+  // Sync selectedRole when gateway context changes
+  useEffect(() => {
+    if (availableRoleOptions.length > 0) {
+      if (!availableRoleOptions.some((r) => r.id === selectedRole)) {
+        const defaultRole = availableRoleOptions[0].id;
+        setSelectedRole(defaultRole);
+        if (availableRoleOptions[0]?.demoUser) {
+          setUsername(availableRoleOptions[0].demoUser);
+        }
+      }
+    }
+  }, [availableRoleOptions, selectedRole]);
 
   // Check URL parameters for errors
   useEffect(() => {
@@ -210,7 +267,7 @@ function LoginForm() {
     }
   };
 
-  const currentRoleConfig = roleOptions.find((r) => r.id === selectedRole) || roleOptions[0];
+  const currentRoleConfig = roleOptions.find((r) => r.id === selectedRole) || availableRoleOptions[0] || roleOptions[0];
 
   return (
     <>
@@ -223,13 +280,25 @@ function LoginForm() {
           <div className="max-w-5xl mx-auto px-4 sm:px-6 relative z-10 text-center space-y-4">
             <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-brand-gold/10 border border-brand-gold/30 text-brand-gold text-xs font-semibold uppercase tracking-wider">
               <Sparkles className="w-3.5 h-3.5" />
-              Unified CrestOak Institutional Gateway
+              {isAdminGateway || isSuperAdminGateway
+                ? "Official CrestOak Administrative Gateway"
+                : isBursaryGateway
+                ? "Official CrestOak Bursary & Payments Gateway"
+                : isStaffGateway
+                ? "Official CrestOak Academic Staff Gateway"
+                : "Official CrestOak Student & Academic Gateway"}
             </div>
             <h1 className="text-3xl sm:text-5xl font-display font-extrabold text-white tracking-tight">
-              Portal Sign In
+              {isAdminGateway || isSuperAdminGateway
+                ? "Administrative Sign In"
+                : isBursaryGateway
+                ? "Bursary Portal Sign In"
+                : isStaffGateway
+                ? "Academic Staff Sign In"
+                : "Student Portal Sign In"}
             </h1>
             <p className="text-slate-300 text-sm sm:text-base max-w-2xl mx-auto leading-relaxed font-medium">
-              Select your institutional role to log in to your designated subdomain gateway.
+              Secure single sign-on authentication gateway for CrestOak College of Health Sciences, Management & Technology.
             </p>
           </div>
         </section>
@@ -243,21 +312,20 @@ function LoginForm() {
               <div className="flex items-center gap-2">
                 <Building2 className="w-4 h-4 text-brand-blue" />
                 <span className="text-xs font-bold uppercase tracking-wider text-slate-500">
-                  Subdomain Gateways Overview
+                  Institutional Domain Gateways
                 </span>
               </div>
               <span className="text-[11px] text-slate-400 font-medium">
-                Official CrestOak College Domains
+                Administrative roles are isolated to dedicated subdomains
               </span>
             </div>
 
-            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2.5">
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2.5">
               {[
                 { name: "Student Gateway", host: "portal.crestoakcollege.com.ng", role: "Student", badge: "bg-blue-600" },
                 { name: "Staff Gateway", host: "staff.crestoakcollege.com.ng", role: "Lecturer / Staff", badge: "bg-purple-600" },
                 { name: "Bursary Gateway", host: "pay.crestoakcollege.com.ng", role: "Bursary", badge: "bg-amber-600" },
-                { name: "Admin Gateway", host: "admin.crestoakcollege.com.ng", role: "Admin", badge: "bg-rose-600" },
-                { name: "Admissions Portal", host: "admissions.crestoakcollege.com.ng", role: "Applicants", badge: "bg-emerald-600" },
+                { name: "Admin Gateway", host: "admin.crestoakcollege.com.ng", role: "Admin / Super Admin", badge: "bg-rose-600" },
               ].map((gateway) => (
                 <div key={gateway.name} className="bg-slate-50 border border-slate-200 rounded-xl p-2.5 flex flex-col justify-between">
                   <span className={`text-[9px] font-extrabold uppercase text-white px-2 py-0.5 rounded-full ${gateway.badge} w-max`}>
@@ -317,7 +385,7 @@ function LoginForm() {
 
               <div className="relative z-10 mt-8 pt-4 border-t border-white/10 flex items-center justify-between text-[11px] text-slate-400">
                 <span className="flex items-center gap-1">
-                  <ShieldCheck className="w-3.5 h-3.5 text-emerald-400" /> Secure Gateway
+                  <ShieldCheck className="w-3.5 h-3.5 text-emerald-400" /> Isolated Domain
                 </span>
                 <span className="font-mono">{currentRoleConfig.subdomain}</span>
               </div>
@@ -328,10 +396,10 @@ function LoginForm() {
               
               <div>
                 <h2 className="text-2xl sm:text-3xl font-display font-extrabold text-brand-blue-dark tracking-tight">
-                  Sign In
+                  Sign In to {currentRoleConfig.title}
                 </h2>
                 <p className="text-slate-500 text-xs sm:text-sm mt-1">
-                  Select your institutional role and enter your credentials.
+                  Enter your credentials to access the {currentRoleConfig.title.toLowerCase()} portal.
                 </p>
               </div>
 
@@ -346,49 +414,43 @@ function LoginForm() {
               {/* FORM */}
               <form onSubmit={handleSubmit} className="space-y-6">
                 
-                {/* 1. ROLE SELECTION GRID */}
-                <div className="space-y-2">
-                  <label className="text-xs font-bold uppercase tracking-wider text-slate-700 block">
-                    Select Your Role Gateway
-                  </label>
-                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5">
-                    {roleOptions.map((role) => {
-                      const IconComponent = role.icon;
-                      const isSelected = selectedRole === role.id;
-                      return (
-                        <button
-                          key={role.id}
-                          type="button"
-                          onClick={() => {
-                            setSelectedRole(role.id);
-                            setErrorMsg(null);
-                            if (role.id === "Student" && !username) setUsername("student1");
-                            else if (role.id === "Lecturer" && !username) setUsername("lecturer1");
-                            else if (role.id === "Staff" && !username) setUsername("staff1");
-                            else if (role.id === "Bursary" && !username) setUsername("bursary1");
-                            else if (role.id === "Admin" && !username) setUsername("admin1");
-                            else if (role.id === "Super Admin" && !username) setUsername("admin");
-                          }}
-                          className={`flex flex-col items-center justify-center p-3 rounded-xl border text-center transition-all duration-200 group cursor-pointer ${
-                            isSelected
-                              ? `${role.colorClass} ${role.bgGlow} scale-[1.02]`
-                              : "border-slate-200 bg-white hover:border-slate-300 hover:bg-slate-50 text-slate-600"
-                          }`}
-                        >
-                          <IconComponent
-                            className={`w-5 h-5 mb-1.5 transition-transform duration-200 ${
-                              isSelected ? "scale-110" : "text-slate-400 group-hover:text-slate-600"
+                {/* 1. DYNAMIC ROLE SELECTOR (ONLY SHOWS PERMITTED ROLES FOR THIS GATEWAY) */}
+                {availableRoleOptions.length > 1 && (
+                  <div className="space-y-2">
+                    <label className="text-xs font-bold uppercase tracking-wider text-slate-700 block">
+                      Select Role Gateway
+                    </label>
+                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5">
+                      {availableRoleOptions.map((role) => {
+                        const IconComponent = role.icon;
+                        const isSelected = selectedRole === role.id;
+                        return (
+                          <button
+                            key={role.id}
+                            type="button"
+                            onClick={() => {
+                              setSelectedRole(role.id);
+                              setErrorMsg(null);
+                              setUsername(role.demoUser);
+                            }}
+                            className={`flex flex-col items-center justify-center p-3 rounded-xl border text-center transition-all duration-200 group cursor-pointer ${
+                              isSelected
+                                ? `${role.colorClass} ${role.bgGlow} scale-[1.02]`
+                                : "border-slate-200 bg-white hover:border-slate-300 hover:bg-slate-50 text-slate-600"
                             }`}
-                          />
-                          <span className="text-xs font-bold">{role.title}</span>
-                          <span className="text-[9px] font-mono text-slate-400 truncate max-w-full mt-0.5">
-                            {role.subdomain.split('.')[0]}
-                          </span>
-                        </button>
-                      );
-                    })}
+                          >
+                            <IconComponent
+                              className={`w-5 h-5 mb-1.5 transition-transform duration-200 ${
+                                isSelected ? "scale-110" : "text-slate-400 group-hover:text-slate-600"
+                              }`}
+                            />
+                            <span className="text-xs font-bold">{role.title}</span>
+                          </button>
+                        );
+                      })}
+                    </div>
                   </div>
-                </div>
+                )}
 
                 {/* 2. CREDENTIALS INPUTS */}
                 <div className="space-y-4">
@@ -469,7 +531,7 @@ function LoginForm() {
                     </>
                   ) : (
                     <>
-                      <span>Access {selectedRole} Gateway</span>
+                      <span>Access {selectedRole} Portal</span>
                       <ArrowRight className="w-4 h-4" />
                     </>
                   )}
@@ -480,7 +542,7 @@ function LoginForm() {
               <div className="bg-amber-50/80 border border-amber-200/80 rounded-xl p-4 text-xs text-slate-700 space-y-1.5 shadow-sm">
                 <div className="font-bold text-amber-900 flex items-center gap-1.5">
                   <HelpCircle className="w-4 h-4 text-amber-600" />
-                  Test Credentials for {selectedRole}:
+                  Demo Credentials for {selectedRole}:
                 </div>
                 <p className="text-slate-600 leading-relaxed">
                   Username: <code className="bg-white border border-amber-300 text-amber-900 font-mono font-bold px-1.5 py-0.5 rounded">{currentRoleConfig.demoUser}</code> | Password: <code className="bg-white border border-amber-300 text-amber-900 font-mono font-bold px-1.5 py-0.5 rounded">{selectedRole === "Super Admin" ? "Adm1nSecureP@ss123!" : "password123"}</code>
