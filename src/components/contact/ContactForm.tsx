@@ -48,24 +48,23 @@ export const ContactForm: React.FC = () => {
 
     setIsSubmitting(true);
 
-    const dataPayload = new FormData(e.currentTarget);
-
     try {
-      const res = await fetch('/send-mail.php', {
+      const dataPayload = new FormData(e.currentTarget);
+      const response = await fetch('/send-mail.php', {
         method: 'POST',
         body: dataPayload,
       });
 
-      const data = await res.json();
+      const result = await response.json();
 
-      if (res.ok && data.status === 'success') {
+      if (result.success || result.status === 'success') {
         setIsSubmitted(true);
         setFormData({ name: "", email: "", subject: "", message: "" });
       } else {
-        alert(data.message || 'Failed to send message. Please try again.');
+        alert(result.message || 'Failed to send message.');
       }
     } catch (error) {
-      console.error('Submission error:', error);
+      console.error('Error sending message:', error);
       alert('An error occurred while sending your message.');
     } finally {
       setIsSubmitting(false);
