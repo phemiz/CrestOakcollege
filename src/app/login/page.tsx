@@ -244,6 +244,7 @@ function LoginForm() {
         headers: {
           "Content-Type": "application/json",
         },
+        credentials: "include",
         body: JSON.stringify({
           username: username.trim(),
           password,
@@ -257,8 +258,15 @@ function LoginForm() {
         throw new Error(data.message || "Invalid username or password.");
       }
 
-      // Direct hard browser navigation to target portal
-      window.location.assign(data.redirectUrl);
+      if (typeof window !== "undefined") {
+        localStorage.setItem("user", JSON.stringify(data.user));
+        localStorage.setItem("isAuthenticated", "true");
+        localStorage.setItem("userRole", data.user?.role || "");
+        localStorage.setItem("cchsmt_user_session", JSON.stringify(data.user));
+      }
+
+      const redirectTarget = data.redirectUrl || data.redirect || gatewayConfig.redirectUrl || "/admin/";
+      window.location.assign(redirectTarget);
     } catch (err: any) {
       setErrorMsg(err.message || "Authentication failed. Please check your credentials.");
     } finally {
