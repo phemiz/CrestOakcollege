@@ -23,7 +23,7 @@ try {
     $host = 'localhost';
     $db   = 'crestoa2_crestoak_db';
     $user = 'crestoa2_crestoak_db';
-    $pass = 'Tvr2Rv6...'; // MUST MATCH YOUR DIRECTADMIN DB PASSWORD EXACTLY
+    $pass = 'Crest@9kDB2026!'; // MUST MATCH YOUR DIRECTADMIN DB PASSWORD EXACTLY
 
     // Suppress warning during connection attempt to handle via JSON
     $conn = @new mysqli($host, $user, $pass, $db);
