@@ -54,7 +54,11 @@ export default function AdminLayoutClient({ children, user }: AdminLayoutClientP
   );
 
   const handleSignOut = () => {
-    signOut({ callbackUrl: "/login" });
+    if (typeof window !== "undefined") {
+      localStorage.removeItem("cchsmt_user_session");
+      localStorage.removeItem("cchsmt_demo_role");
+      window.location.href = "/login";
+    }
   };
 
   return (
