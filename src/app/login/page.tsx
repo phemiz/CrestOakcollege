@@ -249,31 +249,29 @@ function LoginForm() {
       let targetRole = gatewayConfig.role || "Student";
       let redirectPath = gatewayConfig.redirectUrl ? `${gatewayConfig.redirectUrl}/` : "/portal/";
 
-      const isSubdomain = (currentHost.endsWith("crestoakcollege.com.ng") || currentHost.includes("localhost")) && 
-                          (currentHost.startsWith("admin.") || currentHost.startsWith("superadmin.") || currentHost.startsWith("pay.") || currentHost.startsWith("bursary.") || currentHost.startsWith("staff.") || currentHost.startsWith("portal."));
-
       if (currentHost.startsWith("superadmin.") || searchGateway === "superadmin" || currentHost.includes("superadmin")) {
         targetRole = "Super Admin";
-        redirectPath = currentHost.startsWith("superadmin.") || currentHost.startsWith("admin.") ? "/" : "/admin/";
+        redirectPath = "/admin/";
       } else if (currentHost.startsWith("admin.") || searchGateway === "admin") {
         targetRole = "Admin";
-        redirectPath = currentHost.startsWith("admin.") ? "/" : "/admin/";
+        redirectPath = "/admin/";
       } else if (currentHost.startsWith("pay.") || currentHost.startsWith("bursary.") || searchGateway === "bursary" || searchGateway === "pay") {
         targetRole = "Bursary";
-        redirectPath = (currentHost.startsWith("pay.") || currentHost.startsWith("bursary.")) ? "/" : "/bursary/";
+        redirectPath = "/bursary/";
       } else if (currentHost.startsWith("staff.") || searchGateway === "staff" || searchGateway === "lecturer") {
         targetRole = "Staff";
-        redirectPath = currentHost.startsWith("staff.") ? "/" : "/staff/";
+        redirectPath = "/staff/";
       } else if (currentHost.startsWith("portal.") || searchGateway === "portal" || searchGateway === "student") {
         targetRole = "Student";
-        redirectPath = currentHost.startsWith("portal.") ? "/" : "/portal/";
+        redirectPath = "/portal/";
       }
 
       // 2. Validate & store session in localStorage for static client guards
       const mockSession = {
+        user: username.trim() || "admin1",
         username: username.trim() || "admin1",
         role: targetRole,
-        token: `mock-jwt-token-${Date.now()}`,
+        token: `admin-token-${Date.now()}`,
         authenticated: true,
         timestamp: Date.now(),
       };
@@ -283,7 +281,7 @@ function LoginForm() {
       localStorage.setItem("cchsmt_demo_role", targetRole);
 
       // 3. Force hard browser navigation to avoid 301/302 Next.js soft-fetch loops
-      window.location.href = redirectPath;
+      window.location.assign(redirectPath);
     } catch (error) {
       console.error("Authentication Error:", error);
       setErrorMsg("An unexpected authentication error occurred. Please try again.");

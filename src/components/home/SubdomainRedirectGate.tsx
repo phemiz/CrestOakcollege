@@ -12,77 +12,64 @@ export function SubdomainRedirectGate() {
 
     const hostname = window.location.hostname.toLowerCase();
 
-    // DO NOT REDIRECT if already inside an active route or dashboard path
-    if (
-      pathname.startsWith("/admin") ||
-      pathname.startsWith("/portal") ||
-      pathname.startsWith("/bursary") ||
-      pathname.startsWith("/staff") ||
-      pathname.startsWith("/admissions")
-    ) {
-      return;
-    }
-
-    const hasSession = !!(
-      localStorage.getItem("cchsmt_auth_session") ||
-      localStorage.getItem("cchsmt_user_session")
-    );
-
-    // 1. Admissions Subdomain
-    if (hostname.startsWith("admissions.")) {
-      if (pathname === "/" || pathname === "/login" || pathname === "/login/") {
-        router.replace("/admissions/");
-      }
-      return;
-    }
-
-    // 2. Super Admin / Admin Subdomain
+    // ----------------------------------------------------
+    // 1. ADMIN DOMAIN (admin.crestoakcollege.com.ng)
+    // ----------------------------------------------------
     if (hostname.startsWith("admin.") || hostname.startsWith("superadmin.")) {
-      if (pathname === "/" || pathname === "/login" || pathname === "/login/") {
-        if (hasSession) {
+      const targetGateway = hostname.startsWith("superadmin.") ? "superadmin" : "admin";
+
+      // If user is accessing /login without expected gateway parameter, fix it
+      if (pathname.startsWith("/login")) {
+        const urlParams = new URLSearchParams(window.location.search);
+        if (urlParams.get("gateway") !== targetGateway) {
+          router.replace(`/login/?gateway=${targetGateway}`);
+          return;
+        }
+      }
+      // If on root '/', send to admin login gateway (or /admin/ if session exists)
+      if (pathname === "/") {
+        const session = localStorage.getItem("cchsmt_auth_session") || localStorage.getItem("cchsmt_user_session");
+        if (session) {
           router.replace("/admin/");
-        } else if (pathname === "/") {
-          const gatewayParam = hostname.startsWith("superadmin.") ? "superadmin" : "admin";
-          router.replace(`/login/?gateway=${gatewayParam}`);
+          return;
         }
+        router.replace(`/login/?gateway=${targetGateway}`);
+        return;
       }
-      return;
     }
 
-    // 3. Bursary / Payment Subdomain
+    // ----------------------------------------------------
+    // 2. PAY / BURSARY DOMAIN (pay.crestoakcollege.com.ng)
+    // ----------------------------------------------------
     if (hostname.startsWith("pay.") || hostname.startsWith("bursary.")) {
+      // Unauthenticated visits to /login or root MUST stay on Bursary Login
       if (pathname === "/" || pathname === "/login" || pathname === "/login/") {
-        if (hasSession) {
+        const session = localStorage.getItem("cchsmt_auth_session") || localStorage.getItem("cchsmt_user_session");
+        if (session && pathname === "/") {
           router.replace("/bursary/");
-        } else if (pathname === "/") {
+          return;
+        }
+        const urlParams = new URLSearchParams(window.location.search);
+        if (urlParams.get("gateway") !== "bursary") {
           router.replace("/login/?gateway=bursary");
+          return;
         }
       }
-      return;
     }
 
-    // 4. Staff Subdomain
-    if (hostname.startsWith("staff.")) {
-      if (pathname === "/" || pathname === "/login" || pathname === "/login/") {
-        if (hasSession) {
-          router.replace("/staff/");
-        } else if (pathname === "/") {
-          router.replace("/login/?gateway=staff");
-        }
-      }
-      return;
-    }
-
-    // 5. Student Portal Subdomain
+    // ----------------------------------------------------
+    // 3. STUDENT PORTAL DOMAIN (portal.crestoakcollege.com.ng)
+    // ----------------------------------------------------
     if (hostname.startsWith("portal.")) {
-      if (pathname === "/" || pathname === "/login" || pathname === "/login/") {
-        if (hasSession) {
+      if (pathname === "/") {
+        const session = localStorage.getItem("cchsmt_auth_session") || localStorage.getItem("cchsmt_user_session");
+        if (session) {
           router.replace("/portal/");
-        } else if (pathname === "/") {
-          router.replace("/login/?gateway=portal");
+          return;
         }
+        router.replace("/login/?gateway=portal");
+        return;
       }
-      return;
     }
   }, [pathname, router]);
 
