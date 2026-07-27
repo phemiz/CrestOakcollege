@@ -88,8 +88,6 @@ function LoginForm() {
         badge: "Official CrestOak Super Admin Gateway",
         usernameLabel: "Super Admin Username / ID",
         placeholder: "e.g., admin or superadmin",
-        demoUser: "admin",
-        demoPass: "Adm1nSecureP@ss123!",
         redirectUrl: "/admin",
         icon: Shield,
         securityNotice: "Strictly restricted to authorized Super Admin personnel.",
@@ -107,8 +105,6 @@ function LoginForm() {
         badge: "Official CrestOak Admin Gateway",
         usernameLabel: "Administrative Staff ID / Username",
         placeholder: "e.g., admin1",
-        demoUser: "admin1",
-        demoPass: "password123",
         redirectUrl: "/admin",
         icon: Shield,
         securityNotice: "Unauthorized access is strictly prohibited and monitored.",
@@ -126,8 +122,6 @@ function LoginForm() {
         badge: "Official CrestOak Bursary Gateway",
         usernameLabel: "Bursary Staff ID / Username",
         placeholder: "e.g., bursary1",
-        demoUser: "bursary1",
-        demoPass: "password123",
         redirectUrl: "/bursary",
         icon: CreditCard,
         securityNotice: "Secured financial gateway with 256-bit encryption.",
@@ -145,8 +139,6 @@ function LoginForm() {
         badge: "Official CrestOak Staff Gateway",
         usernameLabel: "Lecturer / Staff ID / Username",
         placeholder: "e.g., lecturer1 or staff1",
-        demoUser: "lecturer1",
-        demoPass: "password123",
         redirectUrl: "/staff",
         icon: Briefcase,
         securityNotice: "Internal academic portal for verified CrestOak staff.",
@@ -164,8 +156,6 @@ function LoginForm() {
       badge: "Official CrestOak Student Portal Gateway",
       usernameLabel: "Matriculation / Student Reg. Number",
       placeholder: "e.g., student1 or CCHSMT/2026/001",
-      demoUser: "student1",
-      demoPass: "password123",
       redirectUrl: "/portal",
       icon: GraduationCap,
       securityNotice: "Official student gateway for CrestOak College (CCHSMT).",
@@ -175,18 +165,11 @@ function LoginForm() {
     };
   })();
 
-  const [username, setUsername] = useState(gatewayConfig.demoUser);
+  const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
-
-  // Sync username default when gateway config loads
-  useEffect(() => {
-    if (gatewayConfig.demoUser) {
-      setUsername(gatewayConfig.demoUser);
-    }
-  }, [gatewayConfig.demoUser]);
 
   // Check URL parameters for errors
   useEffect(() => {
@@ -242,49 +225,42 @@ function LoginForm() {
     }
 
     try {
-      // 1. Determine active domain or role context
       const currentHost = typeof window !== "undefined" ? window.location.hostname.toLowerCase() : "";
       const searchGateway = (searchParams.get("gateway") || searchParams.get("role") || "").toLowerCase();
 
-      let targetRole = gatewayConfig.role || "Student";
-      let redirectPath = gatewayConfig.redirectUrl ? `${gatewayConfig.redirectUrl}/` : "/portal/";
-
+      let roleContext = "student";
       if (currentHost.startsWith("superadmin.") || searchGateway === "superadmin" || currentHost.includes("superadmin")) {
-        targetRole = "Super Admin";
-        redirectPath = "/admin/";
-      } else if (currentHost.startsWith("admin.") || searchGateway === "admin") {
-        targetRole = "Admin";
-        redirectPath = "/admin/";
+        roleContext = "superadmin";
+      } else if (currentHost.startsWith("admin.") || searchGateway === "admin" || currentHost.includes("admin")) {
+        roleContext = "admin";
       } else if (currentHost.startsWith("pay.") || currentHost.startsWith("bursary.") || searchGateway === "bursary" || searchGateway === "pay") {
-        targetRole = "Bursary";
-        redirectPath = "/bursary/";
+        roleContext = "bursary";
       } else if (currentHost.startsWith("staff.") || searchGateway === "staff" || searchGateway === "lecturer") {
-        targetRole = "Staff";
-        redirectPath = "/staff/";
-      } else if (currentHost.startsWith("portal.") || searchGateway === "portal" || searchGateway === "student") {
-        targetRole = "Student";
-        redirectPath = "/portal/";
+        roleContext = "staff";
       }
 
-      // 2. Validate & store session in localStorage for static client guards
-      const mockSession = {
-        user: username.trim() || "admin1",
-        username: username.trim() || "admin1",
-        role: targetRole,
-        token: `admin-token-${Date.now()}`,
-        authenticated: true,
-        timestamp: Date.now(),
-      };
+      const response = await fetch("/api/login.php", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          username: username.trim(),
+          password,
+          role: roleContext,
+        }),
+      });
 
-      localStorage.setItem("cchsmt_auth_session", JSON.stringify(mockSession));
-      localStorage.setItem("cchsmt_user_session", JSON.stringify(mockSession));
-      localStorage.setItem("cchsmt_demo_role", targetRole);
+      const data = await response.json();
 
-      // 3. Force hard browser navigation to avoid 301/302 Next.js soft-fetch loops
-      window.location.assign(redirectPath);
-    } catch (error) {
-      console.error("Authentication Error:", error);
-      setErrorMsg("An unexpected authentication error occurred. Please try again.");
+      if (!response.ok || !data.success) {
+        throw new Error(data.message || "Invalid username or password.");
+      }
+
+      // Direct hard browser navigation to target portal
+      window.location.assign(data.redirectUrl);
+    } catch (err: any) {
+      setErrorMsg(err.message || "Authentication failed. Please check your credentials.");
     } finally {
       setLoading(false);
     }
@@ -419,16 +395,7 @@ function LoginForm() {
               </button>
             </form>
 
-            {/* DEMO CREDENTIALS BOX */}
-            <div className="bg-amber-50/90 border border-amber-200/90 rounded-xl sm:rounded-2xl p-4 sm:p-5 text-xs sm:text-sm text-slate-800 space-y-2 shadow-sm">
-              <div className="font-extrabold text-amber-950 text-sm sm:text-base flex items-center gap-2">
-                <HelpCircle className="w-4.5 h-4.5 text-amber-600" />
-                Demo Credentials:
-              </div>
-              <p className="text-slate-700 leading-relaxed font-medium">
-                Username: <code className="bg-white border border-amber-300 text-amber-950 font-mono font-bold px-2 py-0.5 rounded text-xs sm:text-sm">{gatewayConfig.demoUser}</code> | Password: <code className="bg-white border border-amber-300 text-amber-950 font-mono font-bold px-2 py-0.5 rounded text-xs sm:text-sm">{gatewayConfig.demoPass}</code>
-              </p>
-            </div>
+
 
             {/* SECURITY ASSURANCE & HELPDESK FOOTER */}
             <div className="pt-5 border-t border-slate-100 flex flex-col sm:flex-row items-center justify-between text-xs sm:text-sm text-slate-600 gap-3 text-center sm:text-left">
