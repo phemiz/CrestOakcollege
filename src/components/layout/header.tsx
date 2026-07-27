@@ -167,12 +167,12 @@ export const Header: React.FC = () => {
         
         <div className="flex items-center gap-4">
           <div className="flex items-center gap-3 font-semibold">
-            <Link href="/portal" className="text-white hover:text-brand-gold hover:underline transition-all flex items-center gap-1">
+            <Link href="/portal" prefetch={false} className="text-white hover:text-brand-gold hover:underline transition-all flex items-center gap-1">
               <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-ping" />
               Student Portal
             </Link>
             <span className="opacity-30">|</span>
-            <Link href="/admin" className="text-slate-300 hover:text-brand-gold hover:underline transition-all">
+            <Link href="/admin" prefetch={false} className="text-slate-300 hover:text-brand-gold hover:underline transition-all">
               Admin CMS
             </Link>
           </div>
@@ -234,6 +234,7 @@ export const Header: React.FC = () => {
                             <Link
                               key={subItem.name}
                               href={subItem.href}
+                              prefetch={false}
                               className="block px-5 py-2.5 text-sm font-medium text-slate-700 hover:bg-slate-50 hover:text-brand-red transition-all duration-200"
                             >
                               {subItem.name}
@@ -250,6 +251,7 @@ export const Header: React.FC = () => {
                 <li key={item.name}>
                   <Link
                     href={item.href}
+                    prefetch={false}
                     className={`py-2 font-display text-[15px] font-semibold transition-colors duration-200 ${
                       isActive ? "text-brand-red" : "text-brand-blue-dark hover:text-brand-red"
                     }`}
@@ -271,7 +273,7 @@ export const Header: React.FC = () => {
               <Search size={19} />
             </button>
 
-            <Link href="/admissions">
+            <Link href="/admissions" prefetch={false}>
               <motion.button
                 whileHover={{ scale: 1.03 }}
                 whileTap={{ scale: 0.98 }}
@@ -407,6 +409,7 @@ export const Header: React.FC = () => {
                   <li className="pt-2">
                     <Link
                       href="/portal"
+                      prefetch={false}
                       onClick={() => setMobileMenuOpen(false)}
                       className="flex items-center gap-2 py-2 font-display text-base font-extrabold border-b border-slate-50 text-emerald-600"
                     >
@@ -417,6 +420,7 @@ export const Header: React.FC = () => {
                   <li>
                     <Link
                       href="/admin"
+                      prefetch={false}
                       onClick={() => setMobileMenuOpen(false)}
                       className="block py-2 font-display text-base font-semibold border-b border-slate-50 text-slate-600 hover:text-brand-red"
                     >

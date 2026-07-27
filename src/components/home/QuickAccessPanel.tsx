@@ -21,6 +21,7 @@ export const QuickAccessPanel = () => {
               <Link
                 key={idx}
                 href={link.href}
+                prefetch={false}
                 className="flex flex-col gap-3 p-4 bg-slate-50 hover:bg-brand-red-light/20 border border-slate-100 hover:border-brand-red/25 rounded-2xl text-left transition-all duration-300 group hover:-translate-y-1 shadow-sm"
               >
                 <div className="flex justify-between items-start">

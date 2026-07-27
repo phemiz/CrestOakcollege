@@ -41,6 +41,7 @@ export const Footer: React.FC = () => {
               <li key={lnk.label}>
                 <Link
                   href={lnk.href}
+                  prefetch={false}
                   className="text-xs font-semibold hover:text-white transition-colors flex items-center gap-1 group w-fit"
                 >
                   <span>{lnk.label}</span>
