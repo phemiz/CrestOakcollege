@@ -45,6 +45,14 @@ export default function ClientPortalShell({ children, user, announcements }: Cli
   const [notificationsOpen, setNotificationsOpen] = useState(false);
   const [readNotifIds, setReadNotifIds] = useState<string[]>([]);
 
+  const handleSignOut = () => {
+    if (typeof window !== "undefined") {
+      localStorage.removeItem("cchsmt_user_session");
+      localStorage.removeItem("cchsmt_demo_role");
+      window.location.href = "/login";
+    }
+  };
+
   const menuItems = [
     { name: "Dashboard", href: "/portal", icon: User },
     { name: "Academic Profile", href: "/portal/profile", icon: UserCheck },
@@ -111,7 +119,7 @@ export default function ClientPortalShell({ children, user, announcements }: Cli
 
           {/* Logout Button */}
           <button
-            onClick={() => signOut({ callbackUrl: "/login" })}
+            onClick={handleSignOut}
             className="w-full mt-4 flex items-center justify-center gap-2 p-3 border border-slate-200 rounded-xl hover:bg-red-50 hover:text-red-700 text-xs font-bold text-slate-500 transition-colors cursor-pointer"
           >
             <LogOut size={14} />
@@ -212,7 +220,7 @@ export default function ClientPortalShell({ children, user, announcements }: Cli
 
               {/* Logout Button */}
               <button
-                onClick={() => signOut({ callbackUrl: "/login" })}
+                onClick={handleSignOut}
                 className="w-full mt-6 flex items-center justify-center gap-2 p-3 border border-slate-200 rounded-xl hover:bg-red-50 hover:text-red-700 text-xs font-bold text-slate-500 transition-colors cursor-pointer"
               >
                 <LogOut size={14} />
