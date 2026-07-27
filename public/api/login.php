@@ -1,64 +1,104 @@
 <?php
-header('Content-Type: application/json');
-header('Access-Control-Allow-Origin: *');
-header('Access-Control-Allow-Headers: Content-Type');
+// Prevent PHP warnings from polluting JSON output
+ini_set('display_errors', 0);
+error_reporting(E_ALL);
 
-$host = 'localhost';
-$db   = 'crestoa2_crestoak_db';
-$user = 'crestoa2_crestoak_db';
-$pass = 'Tvr2Rv6...'; // Ensure your full DirectAdmin password from image_af5b63.png is here
+// Safe CORS Header Handler (prevents duplicate headers)
+if (!headers_sent()) {
+    header('Content-Type: application/json; charset=utf-8');
+    if (!isset($_SERVER['HTTP_ORIGIN'])) {
+        header('Access-Control-Allow-Origin: *');
+    }
+    header('Access-Control-Allow-Headers: Content-Type, Authorization');
+    header('Access-Control-Allow-Methods: POST, OPTIONS');
+}
 
-$conn = new mysqli($host, $user, $pass, $db);
-
-if ($conn->connect_error) {
-    http_response_code(500);
-    echo json_encode(['success' => false, 'message' => 'Database connection failed.']);
+if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
+    http_response_code(200);
     exit();
 }
 
-$input = json_decode(file_get_contents('php://input'), true);
+try {
+    // DirectAdmin MySQL Connection Credentials
+    $host = 'localhost';
+    $db   = 'crestoa2_crestoak_db';
+    $user = 'crestoa2_crestoak_db';
+    $pass = 'Tvr2Rv6...'; // MUST MATCH YOUR DIRECTADMIN DB PASSWORD EXACTLY
 
-$username = trim($input['username'] ?? '');
-$password = trim($input['password'] ?? '');
-$contextRole = trim($input['role'] ?? 'student');
+    // Suppress warning during connection attempt to handle via JSON
+    $conn = @new mysqli($host, $user, $pass, $db);
 
-if (empty($username) || empty($password)) {
-    http_response_code(400);
-    echo json_encode(['success' => false, 'message' => 'Username and password are required.']);
-    exit();
-}
-
-$stmt = $conn->prepare("SELECT id, username, password_hash, role FROM users WHERE username = ? AND role = ?");
-$stmt->bind_param("ss", $username, $contextRole);
-$stmt->execute();
-$result = $stmt->get_result();
-
-if ($row = $result->fetch_assoc()) {
-    if (password_verify($password, $row['password_hash'])) {
-        setcookie("cchsmt_session", session_id(), [
-            'expires' => time() + 86400,
-            'path' => '/',
-            'httponly' => true,
-            'samesite' => 'Lax'
-        ]);
-
-        $redirectUrl = '/portal/';
-        if ($row['role'] === 'admin') $redirectUrl = '/admin/dashboard/';
-        if ($row['role'] === 'bursary') $redirectUrl = '/bursary/';
-
+    if ($conn->connect_error) {
+        http_response_code(200); // Return 200 with success=false so frontend displays error safely
         echo json_encode([
-            'success' => true,
-            'message' => 'Authentication successful.',
-            'redirectUrl' => $redirectUrl,
-            'user' => [
-                'username' => $row['username'],
-                'role' => $row['role']
-            ]
+            'success' => false, 
+            'message' => 'Database connection failed: ' . $conn->connect_error
         ]);
         exit();
     }
-}
 
-http_response_code(401);
-echo json_encode(['success' => false, 'message' => 'Invalid username or password for this portal.']);
+    $rawInput = file_get_contents('php://input');
+    $input = json_decode($rawInput, true);
+
+    $username = trim($input['username'] ?? '');
+    $password = trim($input['password'] ?? '');
+    $contextRole = trim($input['role'] ?? 'admin');
+
+    if (empty($username) || empty($password)) {
+        http_response_code(200);
+        echo json_encode(['success' => false, 'message' => 'Username and password are required.']);
+        exit();
+    }
+
+    $stmt = $conn->prepare("SELECT id, username, password_hash, role FROM users WHERE username = ? AND role = ?");
+    
+    if (!$stmt) {
+        http_response_code(200);
+        echo json_encode(['success' => false, 'message' => 'Query error: ' . $conn->error]);
+        exit();
+    }
+
+    $stmt->bind_param("ss", $username, $contextRole);
+    $stmt->execute();
+    $result = $stmt->get_result();
+
+    if ($row = $result->fetch_assoc()) {
+        if (password_verify($password, $row['password_hash'])) {
+            if (session_status() === PHP_SESSION_NONE) {
+                @session_start();
+            }
+
+            setcookie("cchsmt_session", session_id(), [
+                'expires' => time() + 86400,
+                'path' => '/',
+                'httponly' => true,
+                'samesite' => 'Lax'
+            ]);
+
+            $redirectUrl = '/portal/';
+            if ($row['role'] === 'admin') $redirectUrl = '/admin/dashboard/';
+            if ($row['role'] === 'bursary') $redirectUrl = '/bursary/';
+
+            echo json_encode([
+                'success' => true,
+                'message' => 'Authentication successful.',
+                'redirectUrl' => $redirectUrl,
+                'user' => [
+                    'username' => $row['username'],
+                    'role' => $row['role']
+                ]
+            ]);
+            exit();
+        }
+    }
+
+    http_response_code(200);
+    echo json_encode(['success' => false, 'message' => 'Invalid username or password for this portal.']);
+    exit();
+
+} catch (Throwable $e) {
+    http_response_code(200);
+    echo json_encode(['success' => false, 'message' => 'Server error: ' . $e->getMessage()]);
+    exit();
+}
 ?>
