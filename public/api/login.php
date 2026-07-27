@@ -48,7 +48,7 @@ try {
     $dbHost = 'localhost';
     $dbName = 'crestoa2_crestoak_db';
     $dbUser = 'crestoa2_crestoak_db';
-    $dbPass = 'Crest@9kDB2026!'; // MUST MATCH YOUR DIRECTADMIN DB PASSWORD EXACTLY
+    $dbPass = 'CrestOak2026!DB'; // MUST MATCH YOUR DIRECTADMIN DB PASSWORD EXACTLY
 
     // Suppress warning during connection attempt to handle via JSON
     $conn = @new mysqli($dbHost, $dbUser, $dbPass, $dbName);
