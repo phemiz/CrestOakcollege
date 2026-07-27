@@ -49,16 +49,22 @@ function LoginForm() {
   const urlGateway = (searchParams.get("gateway") || searchParams.get("role") || "").toLowerCase();
 
   const isSuperAdminGateway =
+    hostname.startsWith("superadmin.") ||
     hostname.includes("superadmin") ||
     currentPath.includes("/superadmin") ||
     urlGateway === "superadmin";
 
   const isAdminGateway =
-    hostname.includes("admin.") ||
-    currentPath.includes("/admin") ||
-    urlGateway === "admin";
+    !isSuperAdminGateway && (
+      hostname.startsWith("admin.") ||
+      hostname.includes("admin.") ||
+      currentPath.includes("/admin") ||
+      urlGateway === "admin"
+    );
 
   const isBursaryGateway =
+    hostname.startsWith("pay.") ||
+    hostname.startsWith("bursary.") ||
     hostname.includes("pay.") ||
     hostname.includes("bursary.") ||
     currentPath.includes("/bursary") ||
@@ -66,6 +72,7 @@ function LoginForm() {
     urlGateway === "pay";
 
   const isStaffGateway =
+    hostname.startsWith("staff.") ||
     hostname.includes("staff.") ||
     currentPath.includes("/staff") ||
     urlGateway === "staff" ||
@@ -73,16 +80,35 @@ function LoginForm() {
 
   // Strict Single-Role Access Configuration
   const gatewayConfig = (() => {
-    if (isAdminGateway || isSuperAdminGateway) {
+    if (isSuperAdminGateway) {
       return {
-        role: (isSuperAdminGateway ? "Super Admin" : "Admin") as RoleType,
+        role: "Super Admin" as RoleType,
+        title: "Super Admin Control Center",
+        subtitle: "Master administrative authorization. Enter Super Admin credentials to access global institutional controls.",
+        badge: "Official CrestOak Super Admin Gateway",
+        usernameLabel: "Super Admin Username / ID",
+        placeholder: "e.g., admin or superadmin",
+        demoUser: "admin",
+        demoPass: "Adm1nSecureP@ss123!",
+        redirectUrl: "/admin",
+        icon: Shield,
+        securityNotice: "Strictly restricted to authorized Super Admin personnel.",
+        themeColor: "from-red-950 via-slate-950 to-slate-900",
+        badgeBg: "bg-red-500/10 border-red-500/30 text-red-400",
+        btnGradient: "from-red-700 to-slate-900 hover:from-red-600 hover:to-slate-800",
+      };
+    }
+
+    if (isAdminGateway) {
+      return {
+        role: "Admin" as RoleType,
         title: "Administrative Control Panel",
         subtitle: "Authorized institutional administrative personnel only. Enter your Admin ID and password to proceed.",
         badge: "Official CrestOak Admin Gateway",
         usernameLabel: "Administrative Staff ID / Username",
         placeholder: "e.g., admin1",
-        demoUser: isSuperAdminGateway ? "admin" : "admin1",
-        demoPass: isSuperAdminGateway ? "Adm1nSecureP@ss123!" : "password123",
+        demoUser: "admin1",
+        demoPass: "password123",
         redirectUrl: "/admin",
         icon: Shield,
         securityNotice: "Unauthorized access is strictly prohibited and monitored.",
@@ -223,8 +249,11 @@ function LoginForm() {
       let targetRole = gatewayConfig.role || "Student";
       let redirectPath = gatewayConfig.redirectUrl ? `${gatewayConfig.redirectUrl}/` : "/portal/";
 
-      if (currentHost.startsWith("admin.") || searchGateway === "admin" || searchGateway === "superadmin") {
-        targetRole = searchGateway === "superadmin" || currentHost.includes("superadmin") ? "Super Admin" : "Admin";
+      if (currentHost.startsWith("superadmin.") || searchGateway === "superadmin" || currentHost.includes("superadmin")) {
+        targetRole = "Super Admin";
+        redirectPath = "/admin/";
+      } else if (currentHost.startsWith("admin.") || searchGateway === "admin") {
+        targetRole = "Admin";
         redirectPath = "/admin/";
       } else if (currentHost.startsWith("pay.") || currentHost.startsWith("bursary.") || searchGateway === "bursary" || searchGateway === "pay") {
         targetRole = "Bursary";

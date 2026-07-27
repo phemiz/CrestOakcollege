@@ -30,13 +30,19 @@ export function SubdomainRedirectGate() {
     }
 
     // 4. Bursary / Payment Gateway -> Redirect to /login/?gateway=bursary
-    if (hostname.startsWith("pay.")) {
+    if (hostname.startsWith("pay.") || hostname.startsWith("bursary.")) {
       router.replace("/login/?gateway=bursary");
       return;
     }
 
-    // 5. Admin / Super Admin Subdomains -> Redirect to /login/?gateway=admin
-    if (hostname.startsWith("admin.") || hostname.startsWith("superadmin.")) {
+    // 5. Super Admin Gateway -> Redirect to /login/?gateway=superadmin
+    if (hostname.startsWith("superadmin.")) {
+      router.replace("/login/?gateway=superadmin");
+      return;
+    }
+
+    // 6. Admin Gateway -> Redirect to /login/?gateway=admin
+    if (hostname.startsWith("admin.")) {
       router.replace("/login/?gateway=admin");
       return;
     }
