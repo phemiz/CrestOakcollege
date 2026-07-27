@@ -12,66 +12,48 @@ export function SubdomainRedirectGate() {
 
     const hostname = window.location.hostname.toLowerCase();
 
-    // ----------------------------------------------------
-    // 1. ADMIN DOMAIN (admin.crestoakcollege.com.ng)
-    // ----------------------------------------------------
+    // 1. Never redirect if user is already inside an active page or dashboard
+    if (
+      pathname.startsWith("/admin") ||
+      pathname.startsWith("/portal") ||
+      pathname.startsWith("/bursary") ||
+      pathname.startsWith("/admissions")
+    ) {
+      return;
+    }
+
+    // 2. Admin Domain: Route unauthenticated root visits strictly to /login/?gateway=admin
     if (hostname.startsWith("admin.") || hostname.startsWith("superadmin.")) {
-      const targetGateway = hostname.startsWith("superadmin.") ? "superadmin" : "admin";
-
-      // If user is accessing /login without expected gateway parameter, fix it
-      if (pathname.startsWith("/login")) {
-        const urlParams = new URLSearchParams(window.location.search);
-        if (urlParams.get("gateway") !== targetGateway) {
-          router.replace(`/login/?gateway=${targetGateway}`);
-          return;
-        }
-      }
-      // If on root '/', send to admin login gateway (or /admin/ if session exists)
-      if (pathname === "/") {
-        const session = localStorage.getItem("cchsmt_auth_session") || localStorage.getItem("cchsmt_user_session");
-        if (session) {
-          router.replace("/admin/");
-          return;
-        }
-        router.replace(`/login/?gateway=${targetGateway}`);
-        return;
-      }
-    }
-
-    // ----------------------------------------------------
-    // 2. PAY / BURSARY DOMAIN (pay.crestoakcollege.com.ng)
-    // ----------------------------------------------------
-    if (hostname.startsWith("pay.") || hostname.startsWith("bursary.")) {
-      // Unauthenticated visits to /login or root MUST stay on Bursary Login
       if (pathname === "/" || pathname === "/login" || pathname === "/login/") {
-        const session = localStorage.getItem("cchsmt_auth_session") || localStorage.getItem("cchsmt_user_session");
-        if (session && pathname === "/") {
-          router.replace("/bursary/");
-          return;
-        }
-        const urlParams = new URLSearchParams(window.location.search);
-        if (urlParams.get("gateway") !== "bursary") {
-          router.replace("/login/?gateway=bursary");
-          return;
+        const params = new URLSearchParams(window.location.search);
+        if (params.get("gateway") !== "admin") {
+          router.replace("/login/?gateway=admin");
         }
       }
+      return;
     }
 
-    // ----------------------------------------------------
-    // 3. STUDENT PORTAL DOMAIN (portal.crestoakcollege.com.ng)
-    // ----------------------------------------------------
+    // 3. Bursary/Pay Domain: Route unauthenticated root visits strictly to /login/?gateway=bursary
+    if (hostname.startsWith("pay.") || hostname.startsWith("bursary.")) {
+      if (pathname === "/" || pathname === "/login" || pathname === "/login/") {
+        const params = new URLSearchParams(window.location.search);
+        if (params.get("gateway") !== "bursary") {
+          router.replace("/login/?gateway=bursary");
+        }
+      }
+      return;
+    }
+
+    // 4. Student Portal Domain
     if (hostname.startsWith("portal.")) {
       if (pathname === "/") {
-        const session = localStorage.getItem("cchsmt_auth_session") || localStorage.getItem("cchsmt_user_session");
-        if (session) {
-          router.replace("/portal/");
-          return;
-        }
-        router.replace("/login/?gateway=portal");
-        return;
+        router.replace("/login/");
       }
+      return;
     }
   }, [pathname, router]);
 
   return null;
 }
+
+export default SubdomainRedirectGate;
