@@ -270,17 +270,19 @@ function LoginForm() {
       }
 
       // 2. Validate & store session in localStorage for static client guards
-      const userSession = {
-        username: username.trim(),
+      const mockSession = {
+        username: username.trim() || "admin1",
         role: targetRole,
         token: `mock-jwt-token-${Date.now()}`,
         authenticated: true,
+        timestamp: Date.now(),
       };
 
-      localStorage.setItem("cchsmt_user_session", JSON.stringify(userSession));
+      localStorage.setItem("cchsmt_auth_session", JSON.stringify(mockSession));
+      localStorage.setItem("cchsmt_user_session", JSON.stringify(mockSession));
       localStorage.setItem("cchsmt_demo_role", targetRole);
 
-      // 3. Perform Direct Hard Navigation to Destination Dashboard
+      // 3. Force hard browser navigation to avoid 301/302 Next.js soft-fetch loops
       window.location.href = redirectPath;
     } catch (error) {
       console.error("Authentication Error:", error);
