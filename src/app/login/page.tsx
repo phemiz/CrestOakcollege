@@ -189,14 +189,14 @@ function LoginForm() {
     if (!isClient) return;
 
     if (typeof window !== "undefined") {
-      const storedUser = localStorage.getItem("user") || localStorage.getItem("cchsmt_user_session");
-      const authFlag = localStorage.getItem("isAuthenticated");
+      const user = localStorage.getItem("user") || localStorage.getItem("cchsmt_user_session");
+      const auth = localStorage.getItem("isAuthenticated");
 
-      if (storedUser || authFlag === "true") {
+      if (user || auth === "true") {
         let userRole: RoleType = gatewayConfig.role;
-        if (storedUser) {
+        if (user) {
           try {
-            const parsed = JSON.parse(storedUser);
+            const parsed = JSON.parse(user);
             if (parsed.role) {
               const r = String(parsed.role).toLowerCase();
               if (r.includes("admin")) userRole = "Admin";
@@ -220,21 +220,31 @@ function LoginForm() {
   const redirectBasedOnRole = (role: RoleType) => {
     switch (role) {
       case "Student":
-        router.push("/portal");
+        if (!window.location.pathname.startsWith("/portal")) {
+          window.location.replace("/portal/");
+        }
         break;
       case "Lecturer":
       case "Staff":
-        router.push("/staff");
+        if (!window.location.pathname.startsWith("/staff")) {
+          window.location.replace("/staff/");
+        }
         break;
       case "Bursary":
-        router.push("/bursary");
+        if (!window.location.pathname.startsWith("/bursary")) {
+          window.location.replace("/bursary/");
+        }
         break;
       case "Admin":
       case "Super Admin":
-        router.push("/admin");
+        if (!window.location.pathname.startsWith("/admin/dashboard") && !window.location.pathname.startsWith("/admin")) {
+          window.location.replace("/admin/dashboard/");
+        }
         break;
       default:
-        router.push("/portal");
+        if (!window.location.pathname.startsWith("/portal")) {
+          window.location.replace("/portal/");
+        }
     }
   };
 
@@ -290,8 +300,8 @@ function LoginForm() {
         localStorage.setItem("cchsmt_user_session", JSON.stringify(data.user));
       }
 
-      const redirectTarget = data.redirectUrl || data.redirect || gatewayConfig.redirectUrl || "/admin/";
-      window.location.assign(redirectTarget);
+      const redirectTarget = data.redirectUrl || data.redirect || gatewayConfig.redirectUrl || "/admin/dashboard/";
+      window.location.replace(redirectTarget);
     } catch (err: any) {
       setErrorMsg(err.message || "Authentication failed. Please check your credentials.");
     } finally {

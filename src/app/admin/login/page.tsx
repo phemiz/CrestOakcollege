@@ -5,7 +5,16 @@ import { useEffect } from "react";
 export default function AdminLoginPage() {
   useEffect(() => {
     if (typeof window !== "undefined") {
-      window.location.href = "/login/?gateway=admin";
+      const user = localStorage.getItem("user") || localStorage.getItem("cchsmt_user_session");
+      const auth = localStorage.getItem("isAuthenticated");
+
+      if (user || auth === "true") {
+        if (!window.location.pathname.startsWith("/admin/dashboard")) {
+          window.location.replace("/admin/dashboard/");
+        }
+      } else {
+        window.location.replace("/login/?gateway=admin");
+      }
     }
   }, []);
 
