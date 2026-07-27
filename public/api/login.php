@@ -23,7 +23,7 @@ try {
     $host = 'localhost';
     $db   = 'crestoa2_crestoak_db';
     $user = 'crestoa2_crestoak_db';
-    $pass = 'Crest@9kDB2026!'; // MUST MATCH YOUR DIRECTADMIN DB PASSWORD EXACTLY
+    $pass = 'CrestOak2026!DB'; // MUST MATCH YOUR DIRECTADMIN DB PASSWORD EXACTLY
 
     // Suppress warning during connection attempt to handle via JSON
     $conn = @new mysqli($host, $user, $pass, $db);
@@ -42,7 +42,7 @@ try {
 
     $username = trim($input['username'] ?? '');
     $password = trim($input['password'] ?? '');
-    $contextRole = trim($input['role'] ?? 'admin');
+    $contextRole = strtolower(trim($input['role'] ?? 'student'));
 
     if (empty($username) || empty($password)) {
         http_response_code(200);
@@ -50,7 +50,8 @@ try {
         exit();
     }
 
-    $stmt = $conn->prepare("SELECT id, username, password_hash, role FROM users WHERE username = ? AND role = ?");
+    // Query user by username to allow flexible role variations
+    $stmt = $conn->prepare("SELECT id, username, password_hash, role FROM users WHERE username = ?");
     
     if (!$stmt) {
         http_response_code(200);
@@ -58,7 +59,7 @@ try {
         exit();
     }
 
-    $stmt->bind_param("ss", $username, $contextRole);
+    $stmt->bind_param("s", $username);
     $stmt->execute();
     $result = $stmt->get_result();
 
@@ -68,6 +69,10 @@ try {
                 @session_start();
             }
 
+            $_SESSION['user_id'] = $row['id'];
+            $_SESSION['username'] = $row['username'];
+            $_SESSION['role'] = $row['role'];
+
             setcookie("cchsmt_session", session_id(), [
                 'expires' => time() + 86400,
                 'path' => '/',
@@ -75,15 +80,25 @@ try {
                 'samesite' => 'Lax'
             ]);
 
-            $redirectUrl = '/portal/';
-            if ($row['role'] === 'admin') $redirectUrl = '/admin/dashboard/';
-            if ($row['role'] === 'bursary') $redirectUrl = '/bursary/';
+            $dbRole = strtolower(trim($row['role']));
+            
+            // Correct redirect URLs matching Next.js static pages
+            if (in_array($dbRole, ['admin', 'superadmin', 'super_admin', 'super admin'])) {
+                $redirectUrl = '/admin/';
+            } else if (in_array($dbRole, ['bursary'])) {
+                $redirectUrl = '/bursary/';
+            } else if (in_array($dbRole, ['staff', 'lecturer'])) {
+                $redirectUrl = '/staff/';
+            } else {
+                $redirectUrl = '/portal/';
+            }
 
             echo json_encode([
                 'success' => true,
                 'message' => 'Authentication successful.',
                 'redirectUrl' => $redirectUrl,
                 'user' => [
+                    'id' => $row['id'],
                     'username' => $row['username'],
                     'role' => $row['role']
                 ]
