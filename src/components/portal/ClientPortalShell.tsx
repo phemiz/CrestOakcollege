@@ -99,7 +99,7 @@ export default function ClientPortalShell({ children, user, announcements }: Cli
           <nav className="flex flex-col gap-1">
             {menuItems.map((item) => {
               const Icon = item.icon;
-              const isActive = pathname === item.href;
+              const isActive = pathname === item.href || pathname === `${item.href}/` || (item.href !== "/portal" && pathname.startsWith(item.href));
               return (
                 <Link
                   key={item.href}
@@ -199,7 +199,7 @@ export default function ClientPortalShell({ children, user, announcements }: Cli
               <nav className="flex flex-col gap-1.5 overflow-y-auto flex-grow">
                 {menuItems.map((item) => {
                   const Icon = item.icon;
-                  const isActive = pathname === item.href;
+                  const isActive = pathname === item.href || pathname === `${item.href}/` || (item.href !== "/portal" && pathname.startsWith(item.href));
                   return (
                     <Link
                       key={item.href}
