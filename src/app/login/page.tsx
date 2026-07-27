@@ -184,13 +184,38 @@ function LoginForm() {
     }
   }, [isClient, searchParams]);
 
-  // Redirect if already authenticated
+  // Redirect if already authenticated via NextAuth, localStorage, or session cookies
   useEffect(() => {
-    if (isClient && status === "authenticated" && session?.user) {
+    if (!isClient) return;
+
+    if (typeof window !== "undefined") {
+      const storedUser = localStorage.getItem("user") || localStorage.getItem("cchsmt_user_session");
+      const authFlag = localStorage.getItem("isAuthenticated");
+
+      if (storedUser || authFlag === "true") {
+        let userRole: RoleType = gatewayConfig.role;
+        if (storedUser) {
+          try {
+            const parsed = JSON.parse(storedUser);
+            if (parsed.role) {
+              const r = String(parsed.role).toLowerCase();
+              if (r.includes("admin")) userRole = "Admin";
+              else if (r.includes("bursary")) userRole = "Bursary";
+              else if (r.includes("staff")) userRole = "Staff";
+              else if (r.includes("student")) userRole = "Student";
+            }
+          } catch (e) {}
+        }
+        redirectBasedOnRole(userRole);
+        return;
+      }
+    }
+
+    if (status === "authenticated" && session?.user) {
       const userRole = session.user.role as RoleType;
       redirectBasedOnRole(userRole);
     }
-  }, [isClient, status, session]);
+  }, [isClient, status, session, gatewayConfig.role]);
 
   const redirectBasedOnRole = (role: RoleType) => {
     switch (role) {

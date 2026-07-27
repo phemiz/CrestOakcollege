@@ -48,16 +48,43 @@ export default function AdminLayoutClient({ children, user }: AdminLayoutClientP
     { name: "Analytics & Reports", href: "/admin/reports", icon: BarChart3, roles: ["Super Admin", "Admin", "Bursary"] },
   ];
 
+  const [currentUser, setCurrentUser] = useState(user);
+
+  React.useEffect(() => {
+    if (typeof window !== "undefined") {
+      const storedUser = localStorage.getItem("user") || localStorage.getItem("cchsmt_user_session");
+      if (storedUser) {
+        try {
+          const parsed = JSON.parse(storedUser);
+          if (parsed && (parsed.username || parsed.name)) {
+            setCurrentUser({
+              name: parsed.name || parsed.username || user.name,
+              email: parsed.email || `${parsed.username || "admin"}@crestoakcollege.com.ng`,
+              role: parsed.role || user.role,
+            });
+          }
+        } catch (e) {}
+      }
+    }
+  }, [user]);
+
   // Filter navigation by user role
   const filteredNavigation = navigation.filter((item) =>
-    item.roles.includes(user.role)
+    item.roles.includes(currentUser.role) || currentUser.role === "Admin" || currentUser.role === "Super Admin"
   );
 
   const handleSignOut = () => {
     if (typeof window !== "undefined") {
+      localStorage.removeItem("user");
+      localStorage.removeItem("isAuthenticated");
+      localStorage.removeItem("userRole");
       localStorage.removeItem("cchsmt_user_session");
       localStorage.removeItem("cchsmt_demo_role");
-      window.location.href = "/login";
+      document.cookie = "crestoak_auth=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/; domain=.crestoakcollege.com.ng;";
+      document.cookie = "crestoak_auth=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
+      document.cookie = "cchsmt_session=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/; domain=.crestoakcollege.com.ng;";
+      document.cookie = "cchsmt_session=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
+      window.location.href = "/login/?gateway=admin";
     }
   };
 
@@ -135,9 +162,9 @@ export default function AdminLayoutClient({ children, user }: AdminLayoutClientP
               <User className="h-4 w-4" />
             </div>
             <div className="min-w-0 flex-1">
-              <p className="text-xs font-bold text-slate-200 truncate leading-none mb-1">{user.name}</p>
+              <p className="text-xs font-bold text-slate-200 truncate leading-none mb-1">{currentUser.name}</p>
               <span className="inline-block text-[9px] bg-red-600/20 border border-red-500/30 text-red-400 font-bold uppercase tracking-widest px-1.5 py-0.5 rounded">
-                {user.role}
+                {currentUser.role}
               </span>
             </div>
           </div>
