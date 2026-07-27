@@ -9,16 +9,32 @@ DirectoryIndex index.html
   RewriteCond %{HTTPS} off
   RewriteRule ^(.*)$ https://%{HTTP_HOST}/$1 [R=301,L]
 
-  # 2. Allow existing files and directories to load directly (CSS, JS, Images, API)
+  # 2. Fix Subdomain Duplicate Subfolder Requests (e.g. admin.crestoakcollege.com.ng/admin/ -> /)
+  RewriteCond %{HTTP_HOST} ^admin\. [NC]
+  RewriteRule ^admin/?$ / [R=301,L]
+
+  RewriteCond %{HTTP_HOST} ^superadmin\. [NC]
+  RewriteRule ^(admin|superadmin)/?$ / [R=301,L]
+
+  RewriteCond %{HTTP_HOST} ^(pay|bursary)\. [NC]
+  RewriteRule ^(pay|bursary)/?$ / [R=301,L]
+
+  RewriteCond %{HTTP_HOST} ^portal\. [NC]
+  RewriteRule ^portal/?$ / [R=301,L]
+
+  RewriteCond %{HTTP_HOST} ^staff\. [NC]
+  RewriteRule ^staff/?$ / [R=301,L]
+
+  # 3. Allow existing files and directories to load directly (CSS, JS, Images, API)
   RewriteCond %{REQUEST_FILENAME} -f [OR]
   RewriteCond %{REQUEST_FILENAME} -d
   RewriteRule ^ - [L]
 
-  # 3. Handle Static Route Folders (e.g., /login -> /login/index.html)
+  # 4. Handle Static Route Folders (e.g., /login -> /login/index.html)
   RewriteCond %{DOCUMENT_ROOT}/$1/index.html -f
   RewriteRule ^(.*)/?$ /$1/index.html [L]
 
-  # 4. Fallback for Single Page App routing
+  # 5. Fallback for Single Page App routing
   RewriteRule ^ index.html [L]
 </IfModule>
 
@@ -26,4 +42,3 @@ DirectoryIndex index.html
 <IfModule mod_headers.c>
   Header set Access-Control-Allow-Origin "*"
 </IfModule>
-

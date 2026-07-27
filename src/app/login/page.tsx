@@ -249,21 +249,24 @@ function LoginForm() {
       let targetRole = gatewayConfig.role || "Student";
       let redirectPath = gatewayConfig.redirectUrl ? `${gatewayConfig.redirectUrl}/` : "/portal/";
 
+      const isSubdomain = (currentHost.endsWith("crestoakcollege.com.ng") || currentHost.includes("localhost")) && 
+                          (currentHost.startsWith("admin.") || currentHost.startsWith("superadmin.") || currentHost.startsWith("pay.") || currentHost.startsWith("bursary.") || currentHost.startsWith("staff.") || currentHost.startsWith("portal."));
+
       if (currentHost.startsWith("superadmin.") || searchGateway === "superadmin" || currentHost.includes("superadmin")) {
         targetRole = "Super Admin";
-        redirectPath = "/admin/";
+        redirectPath = currentHost.startsWith("superadmin.") || currentHost.startsWith("admin.") ? "/" : "/admin/";
       } else if (currentHost.startsWith("admin.") || searchGateway === "admin") {
         targetRole = "Admin";
-        redirectPath = "/admin/";
+        redirectPath = currentHost.startsWith("admin.") ? "/" : "/admin/";
       } else if (currentHost.startsWith("pay.") || currentHost.startsWith("bursary.") || searchGateway === "bursary" || searchGateway === "pay") {
         targetRole = "Bursary";
-        redirectPath = "/bursary/";
+        redirectPath = (currentHost.startsWith("pay.") || currentHost.startsWith("bursary.")) ? "/" : "/bursary/";
       } else if (currentHost.startsWith("staff.") || searchGateway === "staff" || searchGateway === "lecturer") {
         targetRole = "Staff";
-        redirectPath = "/staff/";
+        redirectPath = currentHost.startsWith("staff.") ? "/" : "/staff/";
       } else if (currentHost.startsWith("portal.") || searchGateway === "portal" || searchGateway === "student") {
         targetRole = "Student";
-        redirectPath = "/portal/";
+        redirectPath = currentHost.startsWith("portal.") ? "/" : "/portal/";
       }
 
       // 2. Validate & store session in localStorage for static client guards
