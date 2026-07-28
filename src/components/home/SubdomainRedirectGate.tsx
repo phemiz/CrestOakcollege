@@ -8,7 +8,12 @@ export function SubdomainRedirectGate() {
   const pathname = usePathname();
 
   useEffect(() => {
-    if (typeof window === "undefined") return;
+    // Check master keychain: if user or isAuthenticated === 'true' exists, do not trigger redirect
+    const user = localStorage.getItem("user") || localStorage.getItem("cchsmt_user_session");
+    const isAuthenticated = localStorage.getItem("isAuthenticated") === "true";
+    if (user || isAuthenticated) {
+      return;
+    }
 
     const hostname = window.location.hostname.toLowerCase();
 

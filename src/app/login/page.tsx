@@ -296,12 +296,11 @@ function LoginForm() {
       if (typeof window !== "undefined") {
         localStorage.setItem("user", JSON.stringify(data.user));
         localStorage.setItem("isAuthenticated", "true");
-        localStorage.setItem("userRole", data.user?.role || "");
+        localStorage.setItem("userRole", data.user.role);
         localStorage.setItem("cchsmt_user_session", JSON.stringify(data.user));
       }
 
-      const redirectTarget = data.redirectUrl || data.redirect || gatewayConfig.redirectUrl || "/admin/dashboard/";
-      window.location.replace(redirectTarget);
+      window.location.replace(data.redirect || "/admin/dashboard/");
     } catch (err: any) {
       setErrorMsg(err.message || "Authentication failed. Please check your credentials.");
     } finally {

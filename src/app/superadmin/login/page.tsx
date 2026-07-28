@@ -5,7 +5,16 @@ import { useEffect } from "react";
 export default function SuperAdminLoginPage() {
   useEffect(() => {
     if (typeof window !== "undefined") {
-      window.location.href = "/login/?gateway=superadmin";
+      const user = localStorage.getItem("user") || localStorage.getItem("cchsmt_user_session");
+      const auth = localStorage.getItem("isAuthenticated");
+
+      if (user || auth === "true") {
+        if (!window.location.pathname.startsWith("/superadmin") && !window.location.pathname.startsWith("/admin")) {
+          window.location.replace("/admin/dashboard/");
+        }
+      } else {
+        window.location.replace("/login/?gateway=superadmin");
+      }
     }
   }, []);
 

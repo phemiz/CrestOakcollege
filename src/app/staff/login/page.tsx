@@ -5,7 +5,16 @@ import { useEffect } from "react";
 export default function StaffLoginPage() {
   useEffect(() => {
     if (typeof window !== "undefined") {
-      window.location.href = "/login/?gateway=staff";
+      const user = localStorage.getItem("user") || localStorage.getItem("cchsmt_user_session");
+      const auth = localStorage.getItem("isAuthenticated");
+
+      if (user || auth === "true") {
+        if (!window.location.pathname.startsWith("/staff")) {
+          window.location.replace("/staff/");
+        }
+      } else {
+        window.location.replace("/login/?gateway=staff");
+      }
     }
   }, []);
 
