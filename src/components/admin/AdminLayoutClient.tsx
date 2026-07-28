@@ -73,7 +73,7 @@ export default function AdminLayoutClient({ children, user }: AdminLayoutClientP
             setCurrentUser({
               name: parsed.name || parsed.username || user.name,
               email: parsed.email || `${parsed.username || "admin"}@crestoakcollege.com.ng`,
-              role: parsed.role || user.role,
+              role: parsed.role || user.role || "Admin",
             });
           }
         } catch (e) {}
@@ -81,10 +81,14 @@ export default function AdminLayoutClient({ children, user }: AdminLayoutClientP
     }
   }, [user]);
 
-  // Filter navigation by user role
-  const filteredNavigation = navigation.filter((item) =>
-    item.roles.includes(currentUser.role) || currentUser.role === "Admin" || currentUser.role === "Super Admin"
-  );
+  // Robust case-insensitive role filtering
+  const userRoleUpper = (currentUser.role || "ADMIN").toString().trim().toUpperCase();
+  const isAdminOrSuper = userRoleUpper.includes("ADMIN") || userRoleUpper.includes("SUPER");
+
+  const filteredNavigation = navigation.filter((item) => {
+    if (isAdminOrSuper || !userRoleUpper) return true;
+    return item.roles.some((role) => role.toUpperCase() === userRoleUpper);
+  });
 
   const handleSignOut = () => {
     if (typeof window !== "undefined") {
@@ -166,7 +170,7 @@ export default function AdminLayoutClient({ children, user }: AdminLayoutClientP
         <nav className="flex-1 px-4 py-6 overflow-y-auto space-y-1.5 scrollbar-thin">
           {filteredNavigation.map((item) => {
             const Icon = item.icon;
-            const isActive = pathname === item.href;
+            const isActive = pathname === item.href || (item.href === "/admin" && pathname === "/admin/dashboard");
             return (
               <Link
                 key={item.name}
