@@ -1,126 +1,66 @@
-import React from "react";
-import db from "@/lib/db";
+"use client";
+
+import React, { useState, useEffect } from "react";
 import ReportsClient from "@/components/admin/ReportsClient";
+import { Loader2 } from "lucide-react";
 
-export const revalidate = 0; // Fresh metrics always
+export default function ReportsPage() {
+  const [isAuthorized, setIsAuthorized] = useState(false);
+  const [summaryStats, setSummaryStats] = useState<any>({ totalStudents: 0, totalRevenue: 0, avgCgpa: 0, unpaidAmount: 0 });
+  const [deptDistribution, setDeptDistribution] = useState<any[]>([]);
+  const [revenueByFeeType, setRevenueByFeeType] = useState<any[]>([]);
+  const [rawStudents, setRawStudents] = useState<any[]>([]);
+  const [rawPayments, setRawPayments] = useState<any[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
 
-export default async function ReportsPage() {
-  const [students, payments, unpaidInvoices, departments] = await Promise.all([
-    db.student.findMany({
-      where: { isDeleted: false },
-      include: {
-        user: { select: { firstName: true, lastName: true, email: true } },
-        department: { select: { name: true } },
-      },
-    }),
-    db.payment.findMany({
-      where: {
-        status: "PAID",
-        isDeleted: false,
-      },
-      include: {
-        invoice: {
-          include: {
-            user: {
-              select: {
-                firstName: true,
-                lastName: true,
-                student: { select: { matricNo: true } },
-              },
-            },
-          },
-        },
-      },
-    }),
-    db.invoice.findMany({
-      where: {
-        status: "UNPAID",
-        isDeleted: false,
-      },
-      select: {
-        amount: true,
-      },
-    }),
-    db.department.findMany({
-      where: { isDeleted: false },
-      select: { name: true },
-    }),
-  ]);
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const isAuth = localStorage.getItem("isAuthenticated");
+      const userStr = localStorage.getItem("user") || localStorage.getItem("cchsmt_user_session");
+      let roleUpper = "";
+      if (userStr) {
+        try {
+          const u = JSON.parse(userStr);
+          roleUpper = (u.role || "").toUpperCase();
+        } catch (e) {}
+      }
+      const isAdmin = roleUpper.includes("ADMIN") || roleUpper.includes("SUPER");
+      if (!isAuth || isAuth !== "true" || !isAdmin) {
+        window.location.replace("/login/?gateway=admin");
+        return;
+      }
+      setIsAuthorized(true);
+    }
 
-  // Calculate Summary metrics
-  const totalStudents = students.length;
-  
-  const totalRevenue = payments.reduce(
-    (acc: number, pay: any) => acc + Number(pay.amountPaid),
-    0
-  );
+    fetch("/api/admin/reports.php")
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.success) {
+          if (data.summaryStats) setSummaryStats(data.summaryStats);
+          if (Array.isArray(data.deptDistribution)) setDeptDistribution(data.deptDistribution);
+          if (Array.isArray(data.revenueByFeeType)) setRevenueByFeeType(data.revenueByFeeType);
+          if (Array.isArray(data.rawStudents)) setRawStudents(data.rawStudents);
+          if (Array.isArray(data.rawPayments)) setRawPayments(data.rawPayments);
+        }
+      })
+      .catch(() => {})
+      .finally(() => setIsLoading(false));
+  }, []);
 
-  const avgCgpa =
-    students.length > 0
-      ? students.reduce((acc: number, stu: any) => acc + Number(stu.cgpa), 0) / students.length
-      : 0;
-
-  const unpaidAmount = unpaidInvoices.reduce(
-    (acc: number, inv: any) => acc + Number(inv.amount),
-    0
-  );
-
-  // Group departments demographics
-  const deptMap: { [key: string]: number } = {};
-  departments.forEach((d: any) => {
-    deptMap[d.name] = 0;
-  });
-  students.forEach((s: any) => {
-    const deptName = s.department.name;
-    deptMap[deptName] = (deptMap[deptName] || 0) + 1;
-  });
-  const deptDistribution = Object.keys(deptMap).map((key) => ({
-    name: key,
-    count: deptMap[key],
-  }));
-
-  // Group revenue by Fee Type
-  const feeTypeMap: { [key: string]: number } = {
-    TUITION: 0,
-    ACCOMMODATION: 0,
-    ACCEPTANCE: 0,
-    APPLICATION: 0,
-    OTHER: 0,
-  };
-  payments.forEach((pay: any) => {
-    const type = pay.invoice.feeType;
-    feeTypeMap[type] = (feeTypeMap[type] || 0) + Number(pay.amountPaid);
-  });
-  const revenueByFeeType = Object.keys(feeTypeMap).map((key) => ({
-    type: key,
-    amount: feeTypeMap[key],
-  }));
-
-  // Map raw students list for CSV export
-  const rawStudents = students.map((s: any) => ({
-    matricNo: s.matricNo,
-    name: `${s.user.firstName} ${s.user.lastName}`,
-    department: s.department.name,
-    level: s.level,
-    cgpa: Number(s.cgpa),
-    email: s.user.email,
-  }));
-
-  // Map raw payments list for CSV export
-  const rawPayments = payments.map((p: any) => ({
-    reference: p.reference,
-    amountPaid: Number(p.amountPaid),
-    method: p.method,
-    status: p.status,
-    paidAt: p.paidAt ? p.paidAt.toLocaleDateString() : "—",
-    studentName: `${p.invoice.user.firstName} ${p.invoice.user.lastName}`,
-    matricNo: p.invoice.user.student?.matricNo || "—",
-    feeType: p.invoice.feeType,
-  }));
+  if (!isAuthorized) {
+    return (
+      <div className="min-h-screen bg-slate-50 flex items-center justify-center p-4">
+        <div className="flex items-center gap-3 text-slate-600 font-medium text-sm">
+          <Loader2 className="h-5 w-5 animate-spin text-brand-red" />
+          <span>Verifying administrative authorization...</span>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <ReportsClient
-      summaryStats={{ totalStudents, totalRevenue, avgCgpa, unpaidAmount }}
+      summaryStats={summaryStats}
       deptDistribution={deptDistribution}
       revenueByFeeType={revenueByFeeType}
       rawStudents={rawStudents}

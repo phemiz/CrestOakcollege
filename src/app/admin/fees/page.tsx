@@ -1,83 +1,56 @@
-import React from "react";
-import db from "@/lib/db";
+"use client";
+
+import React, { useState, useEffect } from "react";
 import FeesClient from "@/components/admin/FeesClient";
+import { Loader2 } from "lucide-react";
 
-export const revalidate = 0; // Fresh ledger details always
+export default function FeesPage() {
+  const [isAuthorized, setIsAuthorized] = useState(false);
+  const [invoices, setInvoices] = useState<any[]>([]);
+  const [students, setStudents] = useState<any[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
 
-export default async function FeesPage() {
-  const [invoices, students] = await Promise.all([
-    db.invoice.findMany({
-      where: {
-        isDeleted: false,
-      },
-      include: {
-        user: {
-          select: {
-            firstName: true,
-            lastName: true,
-            email: true,
-          },
-        },
-        payments: {
-          select: {
-            reference: true,
-            amountPaid: true,
-            paidAt: true,
-          },
-          where: {
-            isDeleted: false,
-          },
-        },
-      },
-      orderBy: {
-        createdAt: "desc",
-      },
-    }),
-    db.student.findMany({
-      where: {
-        isDeleted: false,
-        user: { isDeleted: false },
-      },
-      include: {
-        user: {
-          select: {
-            firstName: true,
-            lastName: true,
-          },
-        },
-      },
-      orderBy: {
-        matricNo: "asc",
-      },
-    }),
-  ]);
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const isAuth = localStorage.getItem("isAuthenticated");
+      const userStr = localStorage.getItem("user") || localStorage.getItem("cchsmt_user_session");
+      let roleUpper = "";
+      if (userStr) {
+        try {
+          const u = JSON.parse(userStr);
+          roleUpper = (u.role || "").toUpperCase();
+        } catch (e) {}
+      }
+      const isAdmin = roleUpper.includes("ADMIN") || roleUpper.includes("SUPER");
+      if (!isAuth || isAuth !== "true" || !isAdmin) {
+        window.location.replace("/login/?gateway=admin");
+        return;
+      }
+      setIsAuthorized(true);
+    }
 
-  // Convert aggregate Decimal values to standard JS numbers
-  const mappedInvoices = invoices.map((inv: any) => ({
-    id: inv.id,
-    invoiceNo: inv.invoiceNo,
-    amount: Number(inv.amount),
-    description: inv.description,
-    feeType: inv.feeType,
-    status: inv.status,
-    dueDate: inv.dueDate,
-    createdAt: inv.createdAt,
-    user: inv.user,
-    payments: inv.payments.map((pay: any) => ({
-      reference: pay.reference,
-      amountPaid: Number(pay.amountPaid),
-      paidAt: pay.paidAt,
-    })),
-  }));
+    fetch("/api/admin/fees.php")
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.success) {
+          if (Array.isArray(data.invoices)) setInvoices(data.invoices);
+          if (Array.isArray(data.students)) setStudents(data.students);
+        }
+      })
+      .catch(() => {})
+      .finally(() => setIsLoading(false));
+  }, []);
 
-  const mappedStudents = students.map((stu: any) => ({
-    id: stu.id,
-    matricNo: stu.matricNo,
-    user: {
-      firstName: stu.user.firstName,
-      lastName: stu.user.lastName,
-    },
-  }));
+  if (!isAuthorized) {
+    return (
+      <div className="min-h-screen bg-slate-50 flex items-center justify-center p-4">
+        <div className="flex items-center gap-3 text-slate-600 font-medium text-sm">
+          <Loader2 className="h-5 w-5 animate-spin text-brand-red" />
+          <span>Verifying administrative authorization...</span>
+        </div>
+      </div>
+    );
+  }
 
-  return <FeesClient invoices={mappedInvoices} students={mappedStudents} />;
+  return <FeesClient invoices={invoices} students={students} />;
 }

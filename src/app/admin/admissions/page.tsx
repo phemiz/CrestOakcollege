@@ -1,66 +1,54 @@
-import React from "react";
-import db from "@/lib/db";
+"use client";
+
+import React, { useState, useEffect } from "react";
 import AdmissionsClient from "@/components/admin/AdmissionsClient";
+import { Loader2 } from "lucide-react";
 
-export const revalidate = 0; // Fresh applications always
+export default function AdmissionsPage() {
+  const [isAuthorized, setIsAuthorized] = useState(false);
+  const [applications, setApplications] = useState<any[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
 
-export default async function AdmissionsPage() {
-  const applications = await db.application.findMany({
-    where: {
-      isDeleted: false,
-    },
-    include: {
-      applicant: {
-        select: {
-          firstName: true,
-          lastName: true,
-          email: true,
-          phoneNumber: true,
-        },
-      },
-      programme: {
-        select: {
-          name: true,
-          code: true,
-        },
-      },
-      documents: {
-        select: {
-          id: true,
-          documentName: true,
-          documentUrl: true,
-        },
-      },
-      screening: {
-        select: {
-          screeningDate: true,
-          venue: true,
-          status: true,
-          notes: true,
-        },
-      },
-    },
-    orderBy: {
-      createdAt: "desc",
-    },
-  });
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const isAuth = localStorage.getItem("isAuthenticated");
+      const userStr = localStorage.getItem("user") || localStorage.getItem("cchsmt_user_session");
+      let roleUpper = "";
+      if (userStr) {
+        try {
+          const u = JSON.parse(userStr);
+          roleUpper = (u.role || "").toUpperCase();
+        } catch (e) {}
+      }
+      const isAdmin = roleUpper.includes("ADMIN") || roleUpper.includes("SUPER");
+      if (!isAuth || isAuth !== "true" || !isAdmin) {
+        window.location.replace("/login/?gateway=admin");
+        return;
+      }
+      setIsAuthorized(true);
+    }
 
-  const mappedApps = applications.map((app: any) => ({
-    id: app.id,
-    applicationNo: app.applicationNo,
-    status: app.status,
-    paymentStatus: app.paymentStatus,
-    createdAt: app.createdAt,
-    applicant: app.applicant,
-    programme: app.programme,
-    documents: app.documents,
-    screening: app.screening ? {
-      screeningDate: app.screening.screeningDate,
-      venue: app.screening.venue,
-      status: app.screening.status,
-      notes: app.screening.notes
-    } : null,
-  }));
+    fetch("/api/admin/admissions.php")
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.success && Array.isArray(data.applications)) {
+          setApplications(data.applications);
+        }
+      })
+      .catch(() => {})
+      .finally(() => setIsLoading(false));
+  }, []);
 
-  return <AdmissionsClient applications={mappedApps} />;
+  if (!isAuthorized) {
+    return (
+      <div className="min-h-screen bg-slate-50 flex items-center justify-center p-4">
+        <div className="flex items-center gap-3 text-slate-600 font-medium text-sm">
+          <Loader2 className="h-5 w-5 animate-spin text-brand-red" />
+          <span>Verifying administrative authorization...</span>
+        </div>
+      </div>
+    );
+  }
+
+  return <AdmissionsClient applications={applications} />;
 }

@@ -1,113 +1,56 @@
-import React from "react";
-import db from "@/lib/db";
+"use client";
+
+import React, { useState, useEffect } from "react";
 import FacultiesClient from "@/components/admin/FacultiesClient";
+import { Loader2 } from "lucide-react";
 
-export const revalidate = 0; // Fresh details always
+export default function FacultiesPage() {
+  const [isAuthorized, setIsAuthorized] = useState(false);
+  const [faculties, setFaculties] = useState<any[]>([]);
+  const [lecturers, setLecturers] = useState<any[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
 
-export default async function FacultiesPage() {
-  const [faculties, lecturers] = await Promise.all([
-    db.faculty.findMany({
-      where: {
-        isDeleted: false
-      },
-      include: {
-        dean: {
-          select: {
-            id: true,
-            staff: {
-              select: {
-                user: {
-                  select: {
-                    firstName: true,
-                    lastName: true
-                  }
-                }
-              }
-            }
-          }
-        },
-        departments: {
-          where: {
-            isDeleted: false
-          },
-          include: {
-            headOfDepartment: {
-              select: {
-                id: true,
-                staff: {
-                  select: {
-                    user: {
-                      select: {
-                        firstName: true,
-                        lastName: true
-                      }
-                    }
-                  }
-                }
-              }
-            }
-          }
-        }
-      },
-      orderBy: {
-        code: "asc"
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const isAuth = localStorage.getItem("isAuthenticated");
+      const userStr = localStorage.getItem("user") || localStorage.getItem("cchsmt_user_session");
+      let roleUpper = "";
+      if (userStr) {
+        try {
+          const u = JSON.parse(userStr);
+          roleUpper = (u.role || "").toUpperCase();
+        } catch (e) {}
       }
-    }),
-    db.lecturer.findMany({
-      where: {
-        isDeleted: false,
-        staff: { isDeleted: false }
-      },
-      include: {
-        staff: {
-          select: {
-            user: {
-              select: {
-                firstName: true,
-                lastName: true
-              }
-            }
-          }
-        }
+      const isAdmin = roleUpper.includes("ADMIN") || roleUpper.includes("SUPER");
+      if (!isAuth || isAuth !== "true" || !isAdmin) {
+        window.location.replace("/login/?gateway=admin");
+        return;
       }
-    })
-  ]);
+      setIsAuthorized(true);
+    }
 
-  // Map lecturers to simple dropdown items
-  const mappedLecturers = lecturers.map((lec: any) => ({
-    id: lec.id,
-    name: `${lec.staff.user.firstName} ${lec.staff.user.lastName}`
-  }));
-
-  // Re-map types to prevent deep type nesting conflicts
-  const mappedFaculties = faculties.map((fac: any) => ({
-    id: fac.id,
-    name: fac.name,
-    code: fac.code,
-    description: fac.description,
-    dean: fac.dean ? {
-      staff: {
-        user: {
-          firstName: fac.dean.staff.user.firstName,
-          lastName: fac.dean.staff.user.lastName
+    fetch("/api/admin/faculties.php")
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.success) {
+          if (Array.isArray(data.faculties)) setFaculties(data.faculties);
+          if (Array.isArray(data.lecturers)) setLecturers(data.lecturers);
         }
-      }
-    } : null,
-    departments: fac.departments.map((dept: any) => ({
-      id: dept.id,
-      name: dept.name,
-      code: dept.code,
-      description: dept.description,
-      headOfDepartment: dept.headOfDepartment ? {
-        staff: {
-          user: {
-            firstName: dept.headOfDepartment.staff.user.firstName,
-            lastName: dept.headOfDepartment.staff.user.lastName
-          }
-        }
-      } : null
-    }))
-  }));
+      })
+      .catch(() => {})
+      .finally(() => setIsLoading(false));
+  }, []);
 
-  return <FacultiesClient faculties={mappedFaculties} lecturers={mappedLecturers} />;
+  if (!isAuthorized) {
+    return (
+      <div className="min-h-screen bg-slate-50 flex items-center justify-center p-4">
+        <div className="flex items-center gap-3 text-slate-600 font-medium text-sm">
+          <Loader2 className="h-5 w-5 animate-spin text-brand-red" />
+          <span>Verifying administrative authorization...</span>
+        </div>
+      </div>
+    );
+  }
+
+  return <FacultiesClient faculties={faculties} lecturers={lecturers} />;
 }

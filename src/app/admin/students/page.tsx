@@ -1,98 +1,70 @@
-import React from "react";
-import db from "@/lib/db";
+"use client";
+
+import React, { useState, useEffect } from "react";
 import StudentsClient from "@/components/admin/StudentsClient";
+import { Loader2 } from "lucide-react";
 
-export const revalidate = 0; // Fresh students directory always
+export default function StudentsPage() {
+  const [isAuthorized, setIsAuthorized] = useState(false);
+  const [students, setStudents] = useState<any[]>([]);
+  const [departments, setDepartments] = useState<any[]>([]);
+  const [programmes, setProgrammes] = useState<any[]>([]);
+  const [sessions, setSessions] = useState<any[]>([]);
+  const [semesters, setSemesters] = useState<any[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
 
-export default async function StudentsPage() {
-  const [
-    students,
-    departments,
-    programmes,
-    sessions,
-    semesters
-  ] = await Promise.all([
-    db.student.findMany({
-      where: {
-        isDeleted: false,
-        user: { isDeleted: false }
-      },
-      include: {
-        user: {
-          select: {
-            firstName: true,
-            lastName: true,
-            middleName: true,
-            email: true,
-            phoneNumber: true
-          }
-        },
-        department: {
-          select: {
-            id: true,
-            name: true
-          }
-        },
-        programme: {
-          select: {
-            id: true,
-            name: true
-          }
-        }
-      },
-      orderBy: {
-        matricNo: "asc"
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const isAuth = localStorage.getItem("isAuthenticated");
+      const userStr = localStorage.getItem("user") || localStorage.getItem("cchsmt_user_session");
+      let roleUpper = "";
+      if (userStr) {
+        try {
+          const u = JSON.parse(userStr);
+          roleUpper = (u.role || "").toUpperCase();
+        } catch (e) {}
       }
-    }),
-    db.department.findMany({
-      where: { isDeleted: false },
-      select: { id: true, name: true },
-      orderBy: { name: "asc" }
-    }),
-    db.programme.findMany({
-      where: { isDeleted: false },
-      select: { id: true, name: true },
-      orderBy: { name: "asc" }
-    }),
-    db.academicSession.findMany({
-      where: { isDeleted: false },
-      select: { id: true, name: true },
-      orderBy: { name: "desc" }
-    }),
-    db.semester.findMany({
-      where: { isDeleted: false },
-      select: { id: true, name: true },
-      orderBy: { name: "asc" }
-    })
-  ]);
+      const isAdmin = roleUpper.includes("ADMIN") || roleUpper.includes("SUPER");
+      if (!isAuth || isAuth !== "true" || !isAdmin) {
+        window.location.replace("/login/?gateway=admin");
+        return;
+      }
+      setIsAuthorized(true);
+    }
 
-  const mappedStudents = students.map((stu: any) => ({
-    id: stu.id,
-    matricNo: stu.matricNo,
-    level: stu.level,
-    cgpa: Number(stu.cgpa),
-    gpa: Number(stu.gpa),
-    user: stu.user,
-    department: stu.department,
-    programme: stu.programme,
-    entrySessionId: stu.entrySessionId,
-    currentSessionId: stu.currentSessionId,
-    currentSemesterId: stu.currentSemesterId
-  }));
+    fetch("/api/admin/students.php")
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.success) {
+          if (Array.isArray(data.students)) setStudents(data.students);
+          if (Array.isArray(data.departments)) setDepartments(data.departments);
+          if (Array.isArray(data.programmes)) setProgrammes(data.programmes);
+          if (Array.isArray(data.sessions)) setSessions(data.sessions);
+          if (Array.isArray(data.semesters)) setSemesters(data.semesters);
+        }
+      })
+      .catch(() => {})
+      .finally(() => setIsLoading(false));
+  }, []);
 
-  // Re-map semester names to be human readable
-  const mappedSemesters = semesters.map((sem: any) => ({
-    id: sem.id,
-    name: sem.name
-  }));
+  if (!isAuthorized) {
+    return (
+      <div className="min-h-screen bg-slate-50 flex items-center justify-center p-4">
+        <div className="flex items-center gap-3 text-slate-600 font-medium text-sm">
+          <Loader2 className="h-5 w-5 animate-spin text-brand-red" />
+          <span>Verifying administrative authorization...</span>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <StudentsClient
-      students={mappedStudents}
+      students={students}
       departments={departments}
       programmes={programmes}
       sessions={sessions}
-      semesters={mappedSemesters}
+      semesters={semesters}
     />
   );
 }
