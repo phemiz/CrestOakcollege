@@ -6,9 +6,19 @@ export default function BursaryLoginPage() {
   useEffect(() => {
     if (typeof window !== "undefined") {
       const user = localStorage.getItem("user") || localStorage.getItem("cchsmt_user_session");
-      const auth = localStorage.getItem("isAuthenticated");
+      const auth = localStorage.getItem("isAuthenticated") === "true";
 
-      if (user || auth === "true") {
+      let roleUpper = "";
+      if (user) {
+        try {
+          const u = JSON.parse(user);
+          roleUpper = (u.role || "").toString().trim().toUpperCase();
+        } catch (e) {}
+      }
+
+      const isBursary = roleUpper.includes("BURSARY") || roleUpper.includes("ADMIN") || roleUpper.includes("SUPER");
+
+      if (auth && isBursary) {
         if (!window.location.pathname.startsWith("/bursary")) {
           window.location.replace("/bursary/");
         }

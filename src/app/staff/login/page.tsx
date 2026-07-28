@@ -6,9 +6,19 @@ export default function StaffLoginPage() {
   useEffect(() => {
     if (typeof window !== "undefined") {
       const user = localStorage.getItem("user") || localStorage.getItem("cchsmt_user_session");
-      const auth = localStorage.getItem("isAuthenticated");
+      const auth = localStorage.getItem("isAuthenticated") === "true";
 
-      if (user || auth === "true") {
+      let roleUpper = "";
+      if (user) {
+        try {
+          const u = JSON.parse(user);
+          roleUpper = (u.role || "").toString().trim().toUpperCase();
+        } catch (e) {}
+      }
+
+      const isStaff = roleUpper.includes("STAFF") || roleUpper.includes("LECTURER") || roleUpper.includes("ADMIN") || roleUpper.includes("SUPER");
+
+      if (auth && isStaff) {
         if (!window.location.pathname.startsWith("/staff")) {
           window.location.replace("/staff/");
         }

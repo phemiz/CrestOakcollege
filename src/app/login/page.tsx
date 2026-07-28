@@ -18,7 +18,6 @@ import {
   Sparkles,
   GraduationCap,
   ShieldCheck,
-  HelpCircle,
   Shield,
   CreditCard,
   Briefcase
@@ -88,7 +87,7 @@ function LoginForm() {
         badge: "Official CrestOak Super Admin Gateway",
         usernameLabel: "Super Admin Username / ID",
         placeholder: "e.g., admin or superadmin",
-        redirectUrl: "/admin",
+        redirectUrl: "/admin/dashboard/",
         icon: Shield,
         securityNotice: "Strictly restricted to authorized Super Admin personnel.",
         themeColor: "from-red-950 via-slate-950 to-slate-900",
@@ -105,7 +104,7 @@ function LoginForm() {
         badge: "Official CrestOak Admin Gateway",
         usernameLabel: "Administrative Staff ID / Username",
         placeholder: "e.g., admin1",
-        redirectUrl: "/admin",
+        redirectUrl: "/admin/dashboard/",
         icon: Shield,
         securityNotice: "Unauthorized access is strictly prohibited and monitored.",
         themeColor: "from-rose-950 via-slate-900 to-slate-950",
@@ -122,7 +121,7 @@ function LoginForm() {
         badge: "Official CrestOak Bursary Gateway",
         usernameLabel: "Bursary Staff ID / Username",
         placeholder: "e.g., bursary1",
-        redirectUrl: "/bursary",
+        redirectUrl: "/bursary/dashboard/",
         icon: CreditCard,
         securityNotice: "Secured financial gateway with 256-bit encryption.",
         themeColor: "from-amber-950 via-slate-900 to-slate-950",
@@ -139,7 +138,7 @@ function LoginForm() {
         badge: "Official CrestOak Staff Gateway",
         usernameLabel: "Lecturer / Staff ID / Username",
         placeholder: "e.g., lecturer1 or staff1",
-        redirectUrl: "/staff",
+        redirectUrl: "/staff/dashboard/",
         icon: Briefcase,
         securityNotice: "Internal academic portal for verified CrestOak staff.",
         themeColor: "from-purple-950 via-slate-900 to-slate-950",
@@ -156,7 +155,7 @@ function LoginForm() {
       badge: "Official CrestOak Student Portal Gateway",
       usernameLabel: "Matriculation / Student Reg. Number",
       placeholder: "e.g., student1 or CCHSMT/2026/001",
-      redirectUrl: "/portal",
+      redirectUrl: "/portal/dashboard/",
       icon: GraduationCap,
       securityNotice: "Official student gateway for CrestOak College (CCHSMT).",
       themeColor: "from-brand-blue-dark via-brand-blue to-slate-950",
@@ -184,7 +183,7 @@ function LoginForm() {
     }
   }, [isClient, searchParams]);
 
-  // Redirect if already authenticated via NextAuth, localStorage, or session cookies
+  // Redirect if already authenticated WITH A ROLE MATCHING THIS GATEWAY
   useEffect(() => {
     if (!isClient) return;
 
@@ -192,59 +191,66 @@ function LoginForm() {
       const user = localStorage.getItem("user") || localStorage.getItem("cchsmt_user_session");
       const auth = localStorage.getItem("isAuthenticated");
 
-      if (user || auth === "true") {
-        let userRole: RoleType = gatewayConfig.role;
-        if (user) {
-          try {
-            const parsed = JSON.parse(user);
-            if (parsed.role) {
-              const r = String(parsed.role).toLowerCase();
-              if (r.includes("admin")) userRole = "Admin";
-              else if (r.includes("bursary")) userRole = "Bursary";
-              else if (r.includes("staff")) userRole = "Staff";
-              else if (r.includes("student")) userRole = "Student";
-            }
-          } catch (e) {}
+      if (user && auth === "true") {
+        let storedRole = "Student";
+        try {
+          const parsed = JSON.parse(user);
+          if (parsed.role) {
+            storedRole = String(parsed.role).trim();
+          }
+        } catch (e) {}
+
+        const roleUpper = storedRole.toUpperCase();
+        const targetRoleUpper = gatewayConfig.role.toUpperCase();
+
+        const isMatch =
+          (targetRoleUpper.includes("ADMIN") && roleUpper.includes("ADMIN")) ||
+          (targetRoleUpper.includes("BURSARY") && (roleUpper.includes("BURSARY") || roleUpper.includes("ADMIN"))) ||
+          (targetRoleUpper.includes("STAFF") && (roleUpper.includes("STAFF") || roleUpper.includes("LECTURER") || roleUpper.includes("ADMIN"))) ||
+          (targetRoleUpper.includes("STUDENT") && roleUpper.includes("STUDENT"));
+
+        if (isMatch) {
+          redirectBasedOnRole(storedRole);
+          return;
         }
-        redirectBasedOnRole(userRole);
-        return;
       }
     }
 
     if (status === "authenticated" && session?.user) {
-      const userRole = session.user.role as RoleType;
-      redirectBasedOnRole(userRole);
+      const storedRole = String(session.user.role || "Student");
+      const roleUpper = storedRole.toUpperCase();
+      const targetRoleUpper = gatewayConfig.role.toUpperCase();
+
+      const isMatch =
+        (targetRoleUpper.includes("ADMIN") && roleUpper.includes("ADMIN")) ||
+        (targetRoleUpper.includes("BURSARY") && (roleUpper.includes("BURSARY") || roleUpper.includes("ADMIN"))) ||
+        (targetRoleUpper.includes("STAFF") && (roleUpper.includes("STAFF") || roleUpper.includes("LECTURER") || roleUpper.includes("ADMIN"))) ||
+        (targetRoleUpper.includes("STUDENT") && roleUpper.includes("STUDENT"));
+
+      if (isMatch) {
+        redirectBasedOnRole(storedRole);
+      }
     }
   }, [isClient, status, session, gatewayConfig.role]);
 
-  const redirectBasedOnRole = (role: RoleType) => {
-    switch (role) {
-      case "Student":
-        if (!window.location.pathname.startsWith("/portal")) {
-          window.location.replace("/portal/");
-        }
-        break;
-      case "Lecturer":
-      case "Staff":
-        if (!window.location.pathname.startsWith("/staff")) {
-          window.location.replace("/staff/");
-        }
-        break;
-      case "Bursary":
-        if (!window.location.pathname.startsWith("/bursary")) {
-          window.location.replace("/bursary/");
-        }
-        break;
-      case "Admin":
-      case "Super Admin":
-        if (!window.location.pathname.startsWith("/admin/dashboard") && !window.location.pathname.startsWith("/admin")) {
-          window.location.replace("/admin/dashboard/");
-        }
-        break;
-      default:
-        if (!window.location.pathname.startsWith("/portal")) {
-          window.location.replace("/portal/");
-        }
+  const redirectBasedOnRole = (role: string) => {
+    const rUpper = role.toUpperCase();
+    if (rUpper.includes("ADMIN") || rUpper.includes("SUPER")) {
+      if (!window.location.pathname.startsWith("/admin")) {
+        window.location.replace("/admin/dashboard/");
+      }
+    } else if (rUpper.includes("BURSARY")) {
+      if (!window.location.pathname.startsWith("/bursary")) {
+        window.location.replace("/bursary/dashboard/");
+      }
+    } else if (rUpper.includes("STAFF") || rUpper.includes("LECTURER")) {
+      if (!window.location.pathname.startsWith("/staff")) {
+        window.location.replace("/staff/dashboard/");
+      }
+    } else {
+      if (!window.location.pathname.startsWith("/portal")) {
+        window.location.replace("/portal/dashboard/");
+      }
     }
   };
 
@@ -300,7 +306,8 @@ function LoginForm() {
         localStorage.setItem("cchsmt_user_session", JSON.stringify(data.user));
       }
 
-      window.location.replace(data.redirect || "/admin/dashboard/");
+      const targetUrl = data.redirectUrl || data.redirect || gatewayConfig.redirectUrl;
+      window.location.replace(targetUrl);
     } catch (err: any) {
       setErrorMsg(err.message || "Authentication failed. Please check your credentials.");
     } finally {
@@ -333,7 +340,7 @@ function LoginForm() {
           </div>
         </section>
 
-        {/* RE-CENTERED ELEGANT SIGN-IN CONTAINER (RESPONSIVE ON MOBILE & TABLET) */}
+        {/* RE-CENTERED ELEGANT SIGN-IN CONTAINER */}
         <div className="max-w-md sm:max-w-xl mx-auto px-4 sm:px-6 -mt-6 sm:-mt-10 relative z-20 w-full">
           
           <div className="bg-white border border-slate-200/90 rounded-2xl sm:rounded-3xl p-5 sm:p-8 md:p-10 shadow-2xl shadow-slate-200/80 space-y-6 sm:space-y-7">
@@ -437,8 +444,6 @@ function LoginForm() {
               </button>
             </form>
 
-
-
             {/* SECURITY ASSURANCE & HELPDESK FOOTER */}
             <div className="pt-5 border-t border-slate-100 flex flex-col sm:flex-row items-center justify-between text-xs sm:text-sm text-slate-600 gap-3 text-center sm:text-left">
               <span className="flex items-center gap-2 font-semibold text-slate-700">
@@ -481,5 +486,3 @@ export default function LoginPage() {
     </Suspense>
   );
 }
-
-

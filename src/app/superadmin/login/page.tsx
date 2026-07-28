@@ -6,10 +6,20 @@ export default function SuperAdminLoginPage() {
   useEffect(() => {
     if (typeof window !== "undefined") {
       const user = localStorage.getItem("user") || localStorage.getItem("cchsmt_user_session");
-      const auth = localStorage.getItem("isAuthenticated");
+      const auth = localStorage.getItem("isAuthenticated") === "true";
 
-      if (user || auth === "true") {
-        if (!window.location.pathname.startsWith("/superadmin") && !window.location.pathname.startsWith("/admin")) {
+      let roleUpper = "";
+      if (user) {
+        try {
+          const u = JSON.parse(user);
+          roleUpper = (u.role || "").toString().trim().toUpperCase();
+        } catch (e) {}
+      }
+
+      const isAdmin = roleUpper.includes("ADMIN") || roleUpper.includes("SUPER");
+
+      if (auth && isAdmin) {
+        if (!window.location.pathname.startsWith("/admin/dashboard") && !window.location.pathname.startsWith("/admin")) {
           window.location.replace("/admin/dashboard/");
         }
       } else {

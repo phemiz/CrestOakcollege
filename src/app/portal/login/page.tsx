@@ -9,9 +9,19 @@ export default function PortalLoginPage() {
   useEffect(() => {
     if (typeof window !== "undefined") {
       const user = localStorage.getItem("user") || localStorage.getItem("cchsmt_user_session");
-      const auth = localStorage.getItem("isAuthenticated");
+      const auth = localStorage.getItem("isAuthenticated") === "true";
 
-      if (user || auth === "true") {
+      let roleUpper = "";
+      if (user) {
+        try {
+          const u = JSON.parse(user);
+          roleUpper = (u.role || "").toString().trim().toUpperCase();
+        } catch (e) {}
+      }
+
+      const isStudent = roleUpper.includes("STUDENT") || (!roleUpper && auth);
+
+      if (auth && isStudent) {
         if (!window.location.pathname.startsWith("/portal")) {
           window.location.replace("/portal/");
         }
