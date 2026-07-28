@@ -11,7 +11,8 @@ import {
   TrendingUp,
   Activity,
   DollarSign,
-  Loader2
+  Loader2,
+  ShieldAlert
 } from "lucide-react";
 import Link from "next/link";
 
@@ -40,6 +41,7 @@ interface DashboardMetrics {
 }
 
 export default function AdminDashboard() {
+  const [isAuthorized, setIsAuthorized] = useState(false);
   const [metrics, setMetrics] = useState<DashboardMetrics>({
     studentsCount: 0,
     staffCount: 0,
@@ -51,7 +53,21 @@ export default function AdminDashboard() {
   });
   const [isLoading, setIsLoading] = useState(true);
 
+  // Enforce Login Gateway Guard
   useEffect(() => {
+    if (typeof window !== "undefined") {
+      const isAuth = localStorage.getItem("isAuthenticated");
+      if (!isAuth || isAuth !== "true") {
+        window.location.replace("/login/?gateway=admin");
+      } else {
+        setIsAuthorized(true);
+      }
+    }
+  }, []);
+
+  // Fetch metrics once authorized
+  useEffect(() => {
+    if (!isAuthorized) return;
     async function fetchStats() {
       try {
         const response = await fetch("/api/admin/stats.php", {
@@ -65,74 +81,85 @@ export default function AdminDashboard() {
           }
         }
       } catch (err) {
-        console.warn("Failed to fetch live admin stats, using default dashboard metrics:", err);
+        console.warn("Failed to fetch live admin stats, using fallback metrics:", err);
       } finally {
         setIsLoading(false);
       }
     }
     fetchStats();
-  }, []);
+  }, [isAuthorized]);
+
+  if (!isAuthorized) {
+    return (
+      <div className="min-h-[60vh] flex items-center justify-center p-4">
+        <div className="flex items-center gap-3 text-slate-600 font-medium text-sm">
+          <Loader2 className="h-5 w-5 animate-spin text-red-600" />
+          <span>Verifying admin credentials...</span>
+        </div>
+      </div>
+    );
+  }
 
   const stats = [
     {
       name: "Enrolled Students",
       value: metrics.studentsCount,
       icon: Users,
-      color: "from-blue-600/20 to-blue-500/5",
-      iconColor: "text-blue-400",
+      color: "bg-blue-50 text-blue-600 border-blue-100",
+      iconColor: "text-blue-600 bg-blue-100/60",
       href: "/admin/students"
     },
     {
       name: "Staff & Faculty",
       value: metrics.staffCount,
       icon: Briefcase,
-      color: "from-emerald-600/20 to-emerald-500/5",
-      iconColor: "text-emerald-400",
+      color: "bg-emerald-50 text-emerald-600 border-emerald-100",
+      iconColor: "text-emerald-600 bg-emerald-100/60",
       href: "/admin/staff"
     },
     {
       name: "Active Courses",
       value: metrics.coursesCount,
       icon: BookOpen,
-      color: "from-violet-600/20 to-violet-500/5",
-      iconColor: "text-violet-400",
+      color: "bg-violet-50 text-violet-600 border-violet-100",
+      iconColor: "text-violet-600 bg-violet-100/60",
       href: "/admin/programmes"
     },
     {
       name: "Pending Admissions",
       value: metrics.pendingAppsCount,
       icon: FileText,
-      color: "from-amber-600/20 to-amber-500/5",
-      iconColor: "text-amber-400",
+      color: "bg-amber-50 text-amber-600 border-amber-100",
+      iconColor: "text-amber-600 bg-amber-100/60",
       href: "/admin/admissions"
     }
   ];
 
   return (
     <div className="space-y-8">
-      {/* Welcome Banner */}
-      <div className="bg-gradient-to-r from-slate-950 via-slate-900 to-red-950 border border-slate-800 rounded-3xl p-6 md:p-8 relative overflow-hidden">
-        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,_var(--tw-gradient-stops))] from-red-600/10 via-transparent to-transparent opacity-60" />
+      {/* Welcome Banner - Deep Institutional Navy */}
+      <div className="bg-gradient-to-r from-slate-900 via-slate-800 to-red-950 border border-slate-800 rounded-3xl p-6 md:p-8 relative overflow-hidden shadow-lg text-white">
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,_var(--tw-gradient-stops))] from-red-600/20 via-transparent to-transparent opacity-70" />
         <div className="relative z-10">
-          <span className="text-[10px] bg-red-600/15 border border-red-500/20 text-red-400 font-bold uppercase tracking-widest px-2.5 py-1 rounded-full">
-            System Overview
+          <span className="text-[10px] bg-red-600/20 border border-red-400/30 text-red-300 font-bold uppercase tracking-widest px-3 py-1 rounded-full">
+            System Executive Overview
           </span>
           <h2 className="text-xl md:text-3xl font-display font-black tracking-tight text-white mt-4">
-            CrestOak ERP Administrative Portal
+            CrestOak Administrative Control Portal
           </h2>
-          <p className="text-slate-400 text-xs md:text-sm mt-2 max-w-xl font-medium">
-            Welcome to the centralized management dashboard. Monitor college enrollment statistics, manage academic processes, and audit transactions in real-time.
+          <p className="text-slate-300 text-xs md:text-sm mt-2 max-w-2xl font-medium leading-relaxed">
+            Centralized management dashboard. Monitor college enrollment statistics, manage academic processes, inspect fee collections, and audit administrative activity logs.
           </p>
           {metrics.activeSession && (
-            <div className="mt-4 flex items-center gap-2 text-xs text-slate-300">
-              <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
+            <div className="mt-4 flex items-center gap-2 text-xs text-slate-200 bg-white/10 w-fit px-3 py-1.5 rounded-full border border-white/10 backdrop-blur-xs">
+              <span className="h-2 w-2 rounded-full bg-emerald-400 animate-pulse" />
               <span>Active Academic Session: <strong className="text-white font-bold">{metrics.activeSession.name}</strong></span>
             </div>
           )}
         </div>
       </div>
 
-      {/* Metrics Cards Grid */}
+      {/* Metrics Cards Grid - Light Institutional Styling */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
         {stats.map((stat) => {
           const Icon = stat.icon;
@@ -140,21 +167,20 @@ export default function AdminDashboard() {
             <Link
               href={stat.href}
               key={stat.name}
-              className="group block bg-slate-950 border border-slate-800/80 rounded-2xl p-5 hover:border-slate-700 transition-all hover:translate-y-[-2px] relative overflow-hidden"
+              className="group block bg-white border border-slate-200 rounded-2xl p-5 hover:border-red-300 transition-all hover:-translate-y-1 shadow-sm hover:shadow-md relative overflow-hidden"
             >
-              <div className={`absolute top-0 right-0 h-24 w-24 bg-gradient-to-br ${stat.color} rounded-bl-full filter blur-xl opacity-50 group-hover:opacity-80 transition-opacity`} />
-              <div className="relative z-10 flex justify-between items-start">
+              <div className="flex justify-between items-start">
                 <div>
-                  <p className="text-xs font-bold text-slate-400 uppercase tracking-wider">{stat.name}</p>
-                  <p className="text-2xl md:text-3xl font-display font-black text-white mt-2">
-                    {isLoading ? <Loader2 className="h-6 w-6 animate-spin text-slate-600" /> : stat.value}
+                  <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">{stat.name}</p>
+                  <p className="text-2xl md:text-3xl font-display font-black text-slate-900 mt-2">
+                    {isLoading ? <Loader2 className="h-6 w-6 animate-spin text-slate-400" /> : stat.value}
                   </p>
                 </div>
-                <div className={`p-2.5 bg-slate-900 border border-slate-800 rounded-xl ${stat.iconColor}`}>
+                <div className={`p-3 rounded-xl ${stat.iconColor} border border-transparent`}>
                   <Icon className="h-5 w-5" />
                 </div>
               </div>
-              <div className="mt-4 flex items-center gap-1 text-[10px] font-bold text-slate-500 group-hover:text-white transition-colors">
+              <div className="mt-4 flex items-center gap-1 text-[11px] font-bold text-slate-400 group-hover:text-red-600 transition-colors">
                 <span>Manage directory</span>
                 <ArrowRight className="h-3 w-3 transition-transform group-hover:translate-x-1" />
               </div>
@@ -163,36 +189,37 @@ export default function AdminDashboard() {
         })}
       </div>
 
-      {/* Financial Overview & Quick Links */}
+      {/* Financial Overview & Task Launchpad */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-        {/* Collections Overview */}
-        <div className="lg:col-span-5 bg-slate-950 border border-slate-800 rounded-2xl p-6 flex flex-col justify-between relative overflow-hidden">
-          <div className="absolute top-0 right-0 h-32 w-32 bg-gradient-to-br from-emerald-600/10 to-transparent rounded-bl-full filter blur-xl" />
-          <div className="relative z-10">
-            <div className="flex justify-between items-center mb-6">
-              <div>
-                <h3 className="text-sm font-bold uppercase tracking-wider text-slate-400">Total Collections</h3>
-                <span className="text-[10px] text-emerald-500 font-bold uppercase tracking-wider">Gateway Transactions</span>
-              </div>
-              <div className="p-2.5 bg-emerald-950/20 border border-emerald-900/30 text-emerald-400 rounded-xl">
-                <DollarSign className="h-5 w-5" />
-              </div>
+        {/* Collections Overview Card */}
+        <div className="lg:col-span-5 bg-white border border-slate-200 rounded-2xl p-6 flex flex-col justify-between shadow-sm relative overflow-hidden">
+          <div className="flex justify-between items-start mb-6">
+            <div>
+              <span className="text-[10px] font-black uppercase tracking-wider text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-100">
+                Gateway Collections
+              </span>
+              <h3 className="text-sm font-extrabold uppercase tracking-wider text-slate-700 mt-2">Total Settled Revenue</h3>
             </div>
-            <p className="text-3xl md:text-4xl font-display font-black text-white">
+            <div className="p-3 bg-emerald-50 border border-emerald-100 text-emerald-600 rounded-xl">
+              <DollarSign className="h-5 w-5" />
+            </div>
+          </div>
+          <div>
+            <p className="text-3xl md:text-4xl font-display font-black text-slate-900 tracking-tight">
               ₦{metrics.totalRevenue.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
             </p>
-            <p className="text-slate-400 text-xs mt-3 leading-relaxed">
-              Sum total of all successfully completed student tuition, accommodation, and registration fee payments routed through local payment channels.
+            <p className="text-slate-500 text-xs mt-3 leading-relaxed font-medium">
+              Sum total of all successfully completed student tuition, accommodation, and registration fee payments routed through local payment gateways.
             </p>
           </div>
-          <div className="mt-6 pt-4 border-t border-slate-800/80 flex items-center justify-between text-xs">
-            <span className="text-slate-400 flex items-center gap-1.5">
-              <TrendingUp className="h-4 w-4 text-emerald-400" />
-              <span>Payments healthy</span>
+          <div className="mt-6 pt-4 border-t border-slate-100 flex items-center justify-between text-xs">
+            <span className="text-slate-500 flex items-center gap-1.5 font-semibold">
+              <TrendingUp className="h-4 w-4 text-emerald-600" />
+              <span>Payments status healthy</span>
             </span>
             <Link
               href="/admin/fees"
-              className="text-red-400 hover:text-white font-bold transition-colors flex items-center gap-1"
+              className="text-red-600 hover:text-red-700 font-bold transition-colors flex items-center gap-1"
             >
               <span>Ledger details</span>
               <ArrowRight className="h-3 w-3" />
@@ -200,25 +227,25 @@ export default function AdminDashboard() {
           </div>
         </div>
 
-        {/* Quick Launchpad */}
-        <div className="lg:col-span-7 bg-slate-950 border border-slate-800 rounded-2xl p-6">
-          <h3 className="text-sm font-bold uppercase tracking-wider text-slate-400 mb-5 flex items-center gap-2">
-            <Activity className="h-4.5 w-4.5 text-red-500" />
+        {/* Administrative Quick Launchpad */}
+        <div className="lg:col-span-7 bg-white border border-slate-200 rounded-2xl p-6 shadow-sm">
+          <h3 className="text-sm font-bold uppercase tracking-wider text-slate-700 mb-5 flex items-center gap-2">
+            <Activity className="h-4.5 w-4.5 text-red-600" />
             <span>Administrative Tasks Launchpad</span>
           </h3>
-          <div className="grid grid-cols-2 sm:grid-cols-3 gap-3.5">
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
             {[
-              { label: "Approve Admissions", href: "/admin/admissions", color: "hover:border-amber-500/40 hover:bg-amber-950/10" },
-              { label: "Add New Student", href: "/admin/students", color: "hover:border-blue-500/40 hover:bg-blue-950/10" },
-              { label: "Staff Directory", href: "/admin/staff", color: "hover:border-emerald-500/40 hover:bg-emerald-950/10" },
-              { label: "Dispatch Invoices", href: "/admin/fees", color: "hover:border-indigo-500/40 hover:bg-indigo-950/10" },
-              { label: "Announcements", href: "/admin/news", color: "hover:border-purple-500/40 hover:bg-purple-950/10" },
-              { label: "Generate Reports", href: "/admin/reports", color: "hover:border-rose-500/40 hover:bg-rose-950/10" }
+              { label: "Approve Admissions", href: "/admin/admissions", color: "hover:border-amber-300 hover:bg-amber-50/50 hover:text-amber-900" },
+              { label: "Add New Student", href: "/admin/students", color: "hover:border-blue-300 hover:bg-blue-50/50 hover:text-blue-900" },
+              { label: "Staff Directory", href: "/admin/staff", color: "hover:border-emerald-300 hover:bg-emerald-50/50 hover:text-emerald-900" },
+              { label: "Dispatch Invoices", href: "/admin/fees", color: "hover:border-indigo-300 hover:bg-indigo-50/50 hover:text-indigo-900" },
+              { label: "Announcements", href: "/admin/news", color: "hover:border-purple-300 hover:bg-purple-50/50 hover:text-purple-900" },
+              { label: "Generate Reports", href: "/admin/reports", color: "hover:border-rose-300 hover:bg-rose-50/50 hover:text-rose-900" }
             ].map((btn) => (
               <Link
                 key={btn.label}
                 href={btn.href}
-                className={`bg-slate-900/60 border border-slate-800/80 p-4 rounded-xl text-center text-xs font-bold text-slate-300 transition-all ${btn.color}`}
+                className={`bg-slate-50 border border-slate-200 p-4 rounded-xl text-center text-xs font-bold text-slate-700 transition-all ${btn.color} shadow-xs hover:shadow-sm`}
               >
                 {btn.label}
               </Link>
@@ -227,23 +254,23 @@ export default function AdminDashboard() {
         </div>
       </div>
 
-      {/* Real-time Audit Logs Stream */}
-      <div className="bg-slate-950 border border-slate-800 rounded-2xl p-6">
+      {/* Audit Activity Stream Table */}
+      <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm">
         <div className="flex justify-between items-center mb-6">
           <div>
-            <h3 className="text-sm font-bold uppercase tracking-wider text-slate-200">System Activity Logs</h3>
-            <p className="text-[11px] text-slate-400 mt-0.5">Real-time recording of operations performed across administrative accounts.</p>
+            <h3 className="text-sm font-bold uppercase tracking-wider text-slate-900">System Activity Audit Trail</h3>
+            <p className="text-xs text-slate-500 mt-0.5">Real-time recording of operations performed across administrative accounts.</p>
           </div>
-          <div className="p-2 bg-slate-900 border border-slate-800 text-slate-400 rounded-xl">
+          <div className="p-2.5 bg-slate-50 border border-slate-200 text-slate-500 rounded-xl">
             <Clock className="h-4 w-4" />
           </div>
         </div>
 
         {metrics.recentAudits.length > 0 ? (
           <div className="overflow-x-auto">
-            <table className="w-full text-left border-collapse text-xs text-slate-300">
+            <table className="w-full text-left border-collapse text-xs text-slate-700">
               <thead>
-                <tr className="border-b border-slate-800 text-slate-400 font-bold uppercase tracking-wider">
+                <tr className="bg-slate-50 border-b border-slate-200 text-slate-500 font-bold uppercase tracking-wider">
                   <th className="py-3 px-4">Timestamp</th>
                   <th className="py-3 px-4">Operator / Actor</th>
                   <th className="py-3 px-4">Operation</th>
@@ -251,7 +278,7 @@ export default function AdminDashboard() {
                   <th className="py-3 px-4">IP Address</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-800/40">
+              <tbody className="divide-y divide-slate-100 font-medium">
                 {metrics.recentAudits.map((audit: any) => {
                   const actorName = audit.user
                     ? `${audit.user.firstName} ${audit.user.lastName}`
@@ -259,8 +286,8 @@ export default function AdminDashboard() {
                   const actorEmail = audit.user ? audit.user.email : "cron@crestoak";
                   
                   return (
-                    <tr key={audit.id} className="hover:bg-slate-900/30 transition-colors">
-                      <td className="py-3 px-4 whitespace-nowrap text-slate-400 font-medium">
+                    <tr key={audit.id} className="hover:bg-slate-50/80 transition-colors">
+                      <td className="py-3 px-4 whitespace-nowrap text-slate-500 font-semibold">
                         {new Date(audit.createdAt).toLocaleString(undefined, {
                           month: "short",
                           day: "2-digit",
@@ -270,31 +297,31 @@ export default function AdminDashboard() {
                         })}
                       </td>
                       <td className="py-3 px-4">
-                        <div className="font-bold text-slate-200">{actorName}</div>
-                        <div className="text-[10px] text-slate-400">{actorEmail}</div>
+                        <div className="font-bold text-slate-900">{actorName}</div>
+                        <div className="text-[10px] text-slate-500">{actorEmail}</div>
                       </td>
                       <td className="py-3 px-4">
-                        <span className={`inline-block text-[9px] font-black uppercase tracking-wider px-2 py-0.5 rounded ${
+                        <span className={`inline-block text-[9px] font-black uppercase tracking-wider px-2 py-0.5 rounded border ${
                           audit.action === "CREATE"
-                            ? "bg-emerald-950 text-emerald-400 border border-emerald-900/30"
+                            ? "bg-emerald-50 text-emerald-700 border-emerald-200"
                             : audit.action === "UPDATE"
-                            ? "bg-blue-950 text-blue-400 border border-blue-900/30"
+                            ? "bg-blue-50 text-blue-700 border-blue-200"
                             : audit.action === "DELETE"
-                            ? "bg-rose-950 text-rose-400 border border-rose-900/30"
-                            : "bg-slate-900 text-slate-300 border border-slate-800"
+                            ? "bg-rose-50 text-rose-700 border-rose-200"
+                            : "bg-slate-100 text-slate-700 border-slate-200"
                         }`}>
                           {audit.action}
                         </span>
                       </td>
-                      <td className="py-3 px-4 text-slate-200 font-semibold">
+                      <td className="py-3 px-4 text-slate-900 font-bold">
                         {audit.entity}
                         {audit.entityId && (
-                          <span className="block text-[10px] text-slate-400 font-normal truncate max-w-[120px] font-mono">
+                          <span className="block text-[10px] text-slate-500 font-normal truncate max-w-[120px] font-mono">
                             {audit.entityId}
                           </span>
                         )}
                       </td>
-                      <td className="py-3 px-4 font-mono text-slate-400">{audit.ipAddress || "—"}</td>
+                      <td className="py-3 px-4 font-mono text-slate-500">{audit.ipAddress || "—"}</td>
                     </tr>
                   );
                 })}
@@ -302,7 +329,7 @@ export default function AdminDashboard() {
             </table>
           </div>
         ) : (
-          <div className="py-12 border border-dashed border-slate-800 rounded-xl text-center text-slate-500 font-bold uppercase tracking-wider text-[11px] bg-slate-900/20">
+          <div className="py-12 border border-dashed border-slate-200 rounded-xl text-center text-slate-400 font-bold uppercase tracking-wider text-[11px] bg-slate-50">
             No system audit entries logged yet.
           </div>
         )}

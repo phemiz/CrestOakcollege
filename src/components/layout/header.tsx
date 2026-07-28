@@ -171,10 +171,6 @@ export const Header: React.FC = () => {
               <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-ping" />
               Student Portal
             </Link>
-            <span className="opacity-30">|</span>
-            <Link href="/admin" prefetch={false} className="text-slate-300 hover:text-brand-gold hover:underline transition-all">
-              Admin CMS
-            </Link>
           </div>
           <span className="hidden md:inline opacity-30">|</span>
           <div className="hidden md:flex items-center gap-1.5 opacity-80">
@@ -415,16 +411,6 @@ export const Header: React.FC = () => {
                     >
                       <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
                       Student Portal
-                    </Link>
-                  </li>
-                  <li>
-                    <Link
-                      href="/admin"
-                      prefetch={false}
-                      onClick={() => setMobileMenuOpen(false)}
-                      className="block py-2 font-display text-base font-semibold border-b border-slate-50 text-slate-600 hover:text-brand-red"
-                    >
-                      Admin CMS Panel
                     </Link>
                   </li>
                 </ul>
