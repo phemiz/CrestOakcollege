@@ -1,54 +1,17 @@
-# --- CrestOak College Subdomain Gateway Routing ---
-DirectoryIndex index.html
-
 <IfModule mod_rewrite.c>
   RewriteEngine On
   RewriteBase /
 
-  # 1. Force HTTPS
-  RewriteCond %{HTTPS} off
-  RewriteRule ^(.*)$ https://%{HTTP_HOST}/$1 [R=301,L]
-
-  # 2. Fix Subdomain Duplicate Subfolder Requests (e.g. admin.crestoakcollege.com.ng/admin/ -> /)
-  RewriteCond %{HTTP_HOST} ^admin\. [NC]
-  RewriteRule ^admin/?$ / [R=301,L]
-
-  RewriteCond %{HTTP_HOST} ^superadmin\. [NC]
-  RewriteRule ^(admin|superadmin)/?$ / [R=301,L]
-
-  RewriteCond %{HTTP_HOST} ^(pay|bursary)\. [NC]
-  RewriteRule ^(pay|bursary)/?$ / [R=301,L]
-
-  RewriteCond %{HTTP_HOST} ^portal\. [NC]
-  RewriteRule ^portal/?$ / [R=301,L]
-
-  RewriteCond %{HTTP_HOST} ^staff\. [NC]
-  RewriteRule ^staff/?$ / [R=301,L]
-
-  # 3. Allow existing files and directories to load directly (CSS, JS, Images, API)
+  # Serve existing files or directories directly
   RewriteCond %{REQUEST_FILENAME} -f [OR]
   RewriteCond %{REQUEST_FILENAME} -d
   RewriteRule ^ - [L]
 
-  # 4. Handle Static Route Folders (e.g., /login -> /login/index.html)
+  # Try adding .html extension if file exists
+  RewriteCond %{DOCUMENT_ROOT}/$1.html -f
+  RewriteRule ^(.*)$ $1.html [L]
+
+  # Load folder index.html if accessing subpath directly
   RewriteCond %{DOCUMENT_ROOT}/$1/index.html -f
-  RewriteRule ^(.*)/?$ /$1/index.html [L]
-
-  # 5. Fallback for Single Page App routing
-  RewriteRule ^ index.html [L]
-</IfModule>
-
-# --- Performance & Cache-Control Headers ---
-<IfModule mod_headers.c>
-  Header set Access-Control-Allow-Origin "*"
-
-  # Cache Next.js Static RSC Payload Files (_rsc text/json files)
-  <FilesMatch "\.(txt|json)$">
-    Header set Cache-Control "public, max-age=3600, stale-while-revalidate=86400"
-  </FilesMatch>
-
-  # Cache Next.js Static Chunks & Bundles
-  <FilesMatch "\.(js|css|woff2|png|jpg|jpeg|svg|ico)$">
-    Header set Cache-Control "public, max-age=31536000, immutable"
-  </FilesMatch>
+  RewriteRule ^(.*)/$ $1/index.html [L]
 </IfModule>
