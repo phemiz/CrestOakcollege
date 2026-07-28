@@ -1,5 +1,6 @@
-import React from "react";
-import db from "@/lib/db";
+"use client";
+
+import React, { useState, useEffect } from "react";
 import {
   Users,
   Briefcase,
@@ -9,61 +10,73 @@ import {
   ArrowRight,
   TrendingUp,
   Activity,
-  DollarSign
+  DollarSign,
+  Loader2
 } from "lucide-react";
 import Link from "next/link";
 
-export const revalidate = 0; // Disable caching to ensure fresh metrics
+interface AuditLog {
+  id: string;
+  createdAt: string;
+  action: string;
+  entity: string;
+  entityId?: string;
+  ipAddress?: string;
+  user?: {
+    firstName: string;
+    lastName: string;
+    email: string;
+  };
+}
 
-export default async function AdminDashboard() {
-  // Query statistics in parallel
-  const [
-    studentsCount,
-    staffCount,
-    coursesCount,
-    pendingAppsCount,
-    recentAudits,
-    financialSum,
-    activeSession,
-  ] = await Promise.all([
-    db.student.count({ where: { isDeleted: false } }),
-    db.staff.count({ where: { isDeleted: false } }),
-    db.course.count({ where: { isDeleted: false } }),
-    db.application.count({ where: { status: { in: ["SUBMITTED", "UNDER_REVIEW"] }, isDeleted: false } }),
-    db.auditLog.findMany({
-      take: 8,
-      orderBy: { createdAt: "desc" },
-      include: {
-        user: {
-          select: {
-            firstName: true,
-            lastName: true,
-            email: true,
-            role: { select: { name: true } }
+interface DashboardMetrics {
+  studentsCount: number;
+  staffCount: number;
+  coursesCount: number;
+  pendingAppsCount: number;
+  totalRevenue: number;
+  activeSession: { name: string } | null;
+  recentAudits: AuditLog[];
+}
+
+export default function AdminDashboard() {
+  const [metrics, setMetrics] = useState<DashboardMetrics>({
+    studentsCount: 0,
+    staffCount: 0,
+    coursesCount: 0,
+    pendingAppsCount: 0,
+    totalRevenue: 0,
+    activeSession: { name: "2025/2026 Academic Session" },
+    recentAudits: []
+  });
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    async function fetchStats() {
+      try {
+        const response = await fetch("/api/admin/stats.php", {
+          method: "GET",
+          headers: { "Content-Type": "application/json" }
+        });
+        if (response.ok) {
+          const res = await response.json();
+          if (res.success && res.data) {
+            setMetrics(res.data);
           }
         }
+      } catch (err) {
+        console.warn("Failed to fetch live admin stats, using default dashboard metrics:", err);
+      } finally {
+        setIsLoading(false);
       }
-    }),
-    db.payment.aggregate({
-      _sum: {
-        amountPaid: true
-      },
-      where: {
-        status: "PAID",
-        isDeleted: false
-      }
-    }),
-    db.academicSession.findFirst({
-      where: { isActive: true }
-    })
-  ]);
-
-  const totalRevenue = financialSum._sum.amountPaid ? Number(financialSum._sum.amountPaid) : 0;
+    }
+    fetchStats();
+  }, []);
 
   const stats = [
     {
       name: "Enrolled Students",
-      value: studentsCount,
+      value: metrics.studentsCount,
       icon: Users,
       color: "from-blue-600/20 to-blue-500/5",
       iconColor: "text-blue-400",
@@ -71,7 +84,7 @@ export default async function AdminDashboard() {
     },
     {
       name: "Staff & Faculty",
-      value: staffCount,
+      value: metrics.staffCount,
       icon: Briefcase,
       color: "from-emerald-600/20 to-emerald-500/5",
       iconColor: "text-emerald-400",
@@ -79,7 +92,7 @@ export default async function AdminDashboard() {
     },
     {
       name: "Active Courses",
-      value: coursesCount,
+      value: metrics.coursesCount,
       icon: BookOpen,
       color: "from-violet-600/20 to-violet-500/5",
       iconColor: "text-violet-400",
@@ -87,7 +100,7 @@ export default async function AdminDashboard() {
     },
     {
       name: "Pending Admissions",
-      value: pendingAppsCount,
+      value: metrics.pendingAppsCount,
       icon: FileText,
       color: "from-amber-600/20 to-amber-500/5",
       iconColor: "text-amber-400",
@@ -110,10 +123,10 @@ export default async function AdminDashboard() {
           <p className="text-slate-400 text-xs md:text-sm mt-2 max-w-xl font-medium">
             Welcome to the centralized management dashboard. Monitor college enrollment statistics, manage academic processes, and audit transactions in real-time.
           </p>
-          {activeSession && (
+          {metrics.activeSession && (
             <div className="mt-4 flex items-center gap-2 text-xs text-slate-300">
               <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
-              <span>Active Academic Session: <strong className="text-white font-bold">{activeSession.name}</strong></span>
+              <span>Active Academic Session: <strong className="text-white font-bold">{metrics.activeSession.name}</strong></span>
             </div>
           )}
         </div>
@@ -134,7 +147,7 @@ export default async function AdminDashboard() {
                 <div>
                   <p className="text-xs font-bold text-slate-400 uppercase tracking-wider">{stat.name}</p>
                   <p className="text-2xl md:text-3xl font-display font-black text-white mt-2">
-                    {stat.value}
+                    {isLoading ? <Loader2 className="h-6 w-6 animate-spin text-slate-600" /> : stat.value}
                   </p>
                 </div>
                 <div className={`p-2.5 bg-slate-900 border border-slate-800 rounded-xl ${stat.iconColor}`}>
@@ -166,7 +179,7 @@ export default async function AdminDashboard() {
               </div>
             </div>
             <p className="text-3xl md:text-4xl font-display font-black text-white">
-              ₦{totalRevenue.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+              ₦{metrics.totalRevenue.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
             </p>
             <p className="text-slate-400 text-xs mt-3 leading-relaxed">
               Sum total of all successfully completed student tuition, accommodation, and registration fee payments routed through local payment channels.
@@ -226,7 +239,7 @@ export default async function AdminDashboard() {
           </div>
         </div>
 
-        {recentAudits.length > 0 ? (
+        {metrics.recentAudits.length > 0 ? (
           <div className="overflow-x-auto">
             <table className="w-full text-left border-collapse text-xs text-slate-300">
               <thead>
@@ -239,7 +252,7 @@ export default async function AdminDashboard() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-800/40">
-                {recentAudits.map((audit: any) => {
+                {metrics.recentAudits.map((audit: any) => {
                   const actorName = audit.user
                     ? `${audit.user.firstName} ${audit.user.lastName}`
                     : "System Job";
