@@ -111,32 +111,144 @@ if ($method === 'GET') {
 
 if ($method === 'POST' || $method === 'PUT') {
     $id = $input['id'] ?? ('staff-' . rand(1000, 9999));
+    $staffNo = $input['staffNo'] ?? ('CCHMS/STAFF/REG/' . str_pad(rand(1, 99), 3, '0', STR_PAD_LEFT));
     $firstName = $input['firstName'] ?? '';
     $lastName = $input['lastName'] ?? '';
+    $middleName = $input['middleName'] ?? '';
     $username = $input['username'] ?? (strtolower($firstName) . '.' . strtolower($lastName));
-    $rawPassword = $input['password'] ?? 'CrestOak@2026';
-    $hashedPassword = password_hash($rawPassword, PASSWORD_DEFAULT);
+    $email = $input['email'] ?? '';
+    $phone = $input['phoneNumber'] ?? ($input['phone'] ?? '');
+    $roleName = $input['roleName'] ?? ($input['role'] ?? 'LECTURER');
+    $departmentId = $input['departmentId'] ?? 'dept-health-001';
+    $designation = $input['designation'] ?? 'Staff';
+    $joiningDate = $input['joiningDate'] ?? date('Y-m-d');
+    $rawPassword = $input['password'] ?? '';
+    $passwordHash = !empty($rawPassword) ? password_hash($rawPassword, PASSWORD_DEFAULT) : null;
+
+    if ($conn) {
+        // Ensure staff table exists
+        $conn->query("CREATE TABLE IF NOT EXISTS staff (
+            id VARCHAR(64) PRIMARY KEY,
+            staff_id VARCHAR(64),
+            first_name VARCHAR(100),
+            last_name VARCHAR(100),
+            middle_name VARCHAR(100),
+            username VARCHAR(100),
+            email VARCHAR(150),
+            phone VARCHAR(50),
+            role VARCHAR(50),
+            department VARCHAR(150),
+            designation VARCHAR(150),
+            password_hash VARCHAR(255),
+            joining_date DATE,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
+
+        // Insert or Update into staff table
+        if ($passwordHash) {
+            $stmt = $conn->prepare("INSERT INTO staff (id, staff_id, first_name, last_name, middle_name, username, email, phone, role, department, designation, password_hash, joining_date)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                ON DUPLICATE KEY UPDATE
+                staff_id = VALUES(staff_id),
+                first_name = VALUES(first_name),
+                last_name = VALUES(last_name),
+                middle_name = VALUES(middle_name),
+                username = VALUES(username),
+                email = VALUES(email),
+                phone = VALUES(phone),
+                role = VALUES(role),
+                department = VALUES(department),
+                designation = VALUES(designation),
+                password_hash = VALUES(password_hash),
+                joining_date = VALUES(joining_date)");
+            if ($stmt) {
+                $stmt->bind_param("sssssssssssss", $id, $staffNo, $firstName, $lastName, $middleName, $username, $email, $phone, $roleName, $departmentId, $designation, $passwordHash, $joiningDate);
+                $stmt->execute();
+                $stmt->close();
+            }
+        } else {
+            $stmt = $conn->prepare("INSERT INTO staff (id, staff_id, first_name, last_name, middle_name, username, email, phone, role, department, designation, joining_date)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                ON DUPLICATE KEY UPDATE
+                staff_id = VALUES(staff_id),
+                first_name = VALUES(first_name),
+                last_name = VALUES(last_name),
+                middle_name = VALUES(middle_name),
+                username = VALUES(username),
+                email = VALUES(email),
+                phone = VALUES(phone),
+                role = VALUES(role),
+                department = VALUES(department),
+                designation = VALUES(designation),
+                joining_date = VALUES(joining_date)");
+            if ($stmt) {
+                $stmt->bind_param("ssssssssssss", $id, $staffNo, $firstName, $lastName, $middleName, $username, $email, $phone, $roleName, $departmentId, $designation, $joiningDate);
+                $stmt->execute();
+                $stmt->close();
+            }
+        }
+
+        // Sync into users table for unified login API
+        $conn->query("CREATE TABLE IF NOT EXISTS users (
+            id VARCHAR(64) PRIMARY KEY,
+            username VARCHAR(100),
+            email VARCHAR(150),
+            password_hash VARCHAR(255),
+            role VARCHAR(50),
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
+
+        if ($passwordHash) {
+            $stmtUser = $conn->prepare("INSERT INTO users (id, username, email, password_hash, role)
+                VALUES (?, ?, ?, ?, ?)
+                ON DUPLICATE KEY UPDATE
+                username = VALUES(username),
+                email = VALUES(email),
+                password_hash = VALUES(password_hash),
+                role = VALUES(role)");
+            if ($stmtUser) {
+                $stmtUser->bind_param("sssss", $id, $username, $email, $passwordHash, $roleName);
+                $stmtUser->execute();
+                $stmtUser->close();
+            }
+        } else {
+            $stmtUser = $conn->prepare("INSERT INTO users (id, username, email, role)
+                VALUES (?, ?, ?, ?)
+                ON DUPLICATE KEY UPDATE
+                username = VALUES(username),
+                email = VALUES(email),
+                role = VALUES(role)");
+            if ($stmtUser) {
+                $stmtUser->bind_param("ssss", $id, $username, $email, $roleName);
+                $stmtUser->execute();
+                $stmtUser->close();
+            }
+        }
+
+        $conn->close();
+    }
 
     echo json_encode([
         "success" => true,
-        "message" => "Staff profile updated successfully.",
+        "message" => "Staff profile updated and synchronized successfully.",
         "staff" => [
             "id" => $id,
-            "staffNo" => $input['staffNo'] ?? ('CCHMS/STAFF/REG/' . str_pad(rand(1, 99), 3, '0', STR_PAD_LEFT)),
-            "designation" => $input['designation'] ?? 'Staff',
-            "joiningDate" => $input['joiningDate'] ?? date('Y-m-d'),
+            "staffNo" => $staffNo,
+            "designation" => $designation,
+            "joiningDate" => $joiningDate,
             "user" => [
                 "id" => $id,
                 "username" => $username,
                 "firstName" => $firstName,
                 "lastName" => $lastName,
-                "middleName" => $input['middleName'] ?? '',
-                "email" => $input['email'] ?? '',
-                "phoneNumber" => $input['phoneNumber'] ?? '',
-                "role" => ["name" => $input['roleName'] ?? 'LECTURER']
+                "middleName" => $middleName,
+                "email" => $email,
+                "phoneNumber" => $phone,
+                "role" => ["name" => $roleName]
             ],
-            "department" => ["id" => $input['departmentId'] ?? 'dept-health-001', "name" => "Selected Department"],
-            "lecturer" => ($input['roleName'] ?? '') === 'LECTURER' ? [
+            "department" => ["id" => $departmentId, "name" => "Selected Department"],
+            "lecturer" => $roleName === 'LECTURER' ? [
                 "rank" => $input['rank'] ?? 'LECTURER_II',
                 "specialization" => $input['specialization'] ?? ''
             ] : null
@@ -146,6 +258,15 @@ if ($method === 'POST' || $method === 'PUT') {
 }
 
 if ($method === 'DELETE') {
+    if ($conn) {
+        $stmt = $conn->prepare("UPDATE staff SET isDeleted = 1 WHERE id = ?");
+        if ($stmt) {
+            $stmt->bind_param("s", $input['id']);
+            $stmt->execute();
+            $stmt->close();
+        }
+        $conn->close();
+    }
     echo json_encode(["success" => true, "message" => "Staff member deleted successfully."]);
     exit();
 }

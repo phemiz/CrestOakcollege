@@ -48,9 +48,8 @@ try {
     $dbHost = 'localhost';
     $dbName = 'crestoa2_crestoak_db';
     $dbUser = 'crestoa2_crestoak_db';
-    $dbPass = 'CrestOak2026!DB'; // MUST MATCH YOUR DIRECTADMIN DB PASSWORD EXACTLY
+    $dbPass = 'CrestOak2026!DB';
 
-    // Suppress warning during connection attempt to handle via JSON
     $conn = @new mysqli($dbHost, $dbUser, $dbPass, $dbName);
 
     if ($conn->connect_error) {
@@ -75,20 +74,35 @@ try {
         exit();
     }
 
-    // Query user by username to allow flexible role variations
-    $stmt = $conn->prepare("SELECT id, username, password_hash, role FROM users WHERE username = ?");
-    
-    if (!$stmt) {
-        http_response_code(200);
-        echo json_encode(['success' => false, 'message' => 'Query error: ' . $conn->error]);
-        exit();
+    $row = null;
+
+    // 1. Query users table by username or email
+    $stmt = $conn->prepare("SELECT id, username, password_hash, role FROM users WHERE username = ? OR email = ? LIMIT 1");
+    if ($stmt) {
+        $stmt->bind_param("ss", $username, $username);
+        $stmt->execute();
+        $res = $stmt->get_result();
+        if ($res && $res->num_rows > 0) {
+            $row = $res->fetch_assoc();
+        }
+        $stmt->close();
     }
 
-    $stmt->bind_param("s", $username);
-    $stmt->execute();
-    $result = $stmt->get_result();
+    // 2. Query staff table by username, email, or staff_id if not found in users
+    if (!$row) {
+        $stmtStaff = $conn->prepare("SELECT id, username, password_hash, role, staff_id FROM staff WHERE (username = ? OR email = ? OR staff_id = ?) AND (isDeleted = 0 OR isDeleted IS NULL) LIMIT 1");
+        if ($stmtStaff) {
+            $stmtStaff->bind_param("sss", $username, $username, $username);
+            $stmtStaff->execute();
+            $resStaff = $stmtStaff->get_result();
+            if ($resStaff && $resStaff->num_rows > 0) {
+                $row = $resStaff->fetch_assoc();
+            }
+            $stmtStaff->close();
+        }
+    }
 
-    if ($row = $result->fetch_assoc()) {
+    if ($row && !empty($row['password_hash'])) {
         if (password_verify($password, $row['password_hash'])) {
             $_SESSION['user_id'] = $row['id'];
             $_SESSION['username'] = $row['username'];
@@ -130,9 +144,9 @@ try {
             // Map dbRole to target portal URL
             if (in_array($dbRole, ['admin', 'superadmin', 'super_admin', 'super admin'])) {
                 $redirectUrl = '/admin/';
-            } else if (in_array($dbRole, ['bursary'])) {
+            } else if (in_array($dbRole, ['bursary', 'bursar'])) {
                 $redirectUrl = '/bursary/';
-            } else if (in_array($dbRole, ['staff', 'lecturer'])) {
+            } else if (in_array($dbRole, ['staff', 'lecturer', 'registrar'])) {
                 $redirectUrl = '/staff/';
             } else {
                 $redirectUrl = '/portal/';
@@ -161,4 +175,3 @@ try {
     echo json_encode(['success' => false, 'message' => 'Server error: ' . $e->getMessage()]);
     exit();
 }
-?>
