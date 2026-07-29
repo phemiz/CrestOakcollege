@@ -19,8 +19,8 @@ export default function AdminLoginPage() {
       const isAdmin = roleUpper.includes("ADMIN") || roleUpper.includes("SUPER");
 
       if (auth && isAdmin) {
-        if (!window.location.pathname.startsWith("/admin/dashboard")) {
-          window.location.replace("/admin/dashboard/");
+        if (!window.location.pathname.startsWith("/admin")) {
+          window.location.replace("/admin/");
         }
       } else {
         window.location.replace("/login/?gateway=admin");
@@ -29,8 +29,8 @@ export default function AdminLoginPage() {
   }, []);
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-slate-950 text-slate-300 font-bold text-sm">
-      Redirecting to CrestOak Administrative Gateway...
+    <div className="min-h-screen flex items-center justify-center bg-slate-50 text-slate-700 font-bold text-sm">
+      Redirecting to Administrative Gateway Login...
     </div>
   );
 }

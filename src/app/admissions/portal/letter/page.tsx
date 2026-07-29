@@ -83,18 +83,19 @@ export default async function AdmissionLetterPage() {
       />
 
       {/* Header controls (hidden during print) */}
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 no-print bg-slate-950 p-6 rounded-2xl border border-slate-800">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 no-print bg-white p-6 rounded-2xl border border-slate-200 shadow-xs">
         <div>
-          <h2 className="text-xl font-display font-black text-white flex items-center gap-2">
-            <ShieldCheck className="h-5.5 w-5.5 text-emerald-400" />
+          <h2 className="text-xl font-display font-black text-slate-900 flex items-center gap-2">
+            <ShieldCheck className="h-5.5 w-5.5 text-emerald-600" />
             <span>Admission Letter</span>
           </h2>
-          <p className="text-xs text-slate-400 mt-1">Download and print your official CrestOak College offer letter.</p>
+          <p className="text-xs text-slate-500 mt-1 font-medium">Download and print your official CrestOak College offer letter.</p>
         </div>
         <div className="flex gap-2">
           <Link
             href="/admissions/portal"
-            className="bg-slate-900 hover:bg-slate-850 border border-slate-800 text-slate-200 font-display font-bold py-2.5 px-4 rounded-xl text-xs transition-all flex items-center gap-2 no-underline"
+            prefetch={false}
+            className="bg-slate-100 hover:bg-slate-200 border border-slate-200 text-slate-800 font-display font-bold py-2.5 px-4 rounded-xl text-xs transition-all flex items-center gap-2 no-underline"
           >
             <ArrowLeft className="h-4 w-4" />
             <span>Dashboard</span>

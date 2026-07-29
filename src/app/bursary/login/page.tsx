@@ -16,9 +16,9 @@ export default function BursaryLoginPage() {
         } catch (e) {}
       }
 
-      const isBursary = roleUpper.includes("BURSARY") || roleUpper.includes("ADMIN") || roleUpper.includes("SUPER");
+      const isBursar = roleUpper.includes("BURSAR") || roleUpper.includes("FINANCE") || roleUpper.includes("ADMIN") || roleUpper.includes("SUPER");
 
-      if (auth && isBursary) {
+      if (auth && isBursar) {
         if (!window.location.pathname.startsWith("/bursary")) {
           window.location.replace("/bursary/");
         }
@@ -29,8 +29,8 @@ export default function BursaryLoginPage() {
   }, []);
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-slate-900 text-slate-300 font-bold text-sm">
-      Redirecting to Bursary & Payment Gateway Login...
+    <div className="min-h-screen flex items-center justify-center bg-slate-50 text-slate-700 font-bold text-sm">
+      Redirecting to Bursary Gateway Login...
     </div>
   );
 }

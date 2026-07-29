@@ -16,11 +16,11 @@ export default function SuperAdminLoginPage() {
         } catch (e) {}
       }
 
-      const isAdmin = roleUpper.includes("ADMIN") || roleUpper.includes("SUPER");
+      const isSuperAdmin = roleUpper.includes("SUPER");
 
-      if (auth && isAdmin) {
-        if (!window.location.pathname.startsWith("/admin/dashboard") && !window.location.pathname.startsWith("/admin")) {
-          window.location.replace("/admin/dashboard/");
+      if (auth && isSuperAdmin) {
+        if (!window.location.pathname.startsWith("/superadmin") && !window.location.pathname.startsWith("/admin")) {
+          window.location.replace("/admin/");
         }
       } else {
         window.location.replace("/login/?gateway=superadmin");
@@ -29,8 +29,8 @@ export default function SuperAdminLoginPage() {
   }, []);
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-slate-950 text-slate-300 font-bold text-sm">
-      Redirecting to CrestOak Super Admin Control Gateway...
+    <div className="min-h-screen flex items-center justify-center bg-slate-50 text-slate-700 font-bold text-sm">
+      Redirecting to Super Admin Gateway Login...
     </div>
   );
 }

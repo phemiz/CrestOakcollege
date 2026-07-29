@@ -20,9 +20,9 @@ export default function StaffDashboardAliasPage() {
 
   if (!isAuthorized) {
     return (
-      <div className="min-h-screen bg-slate-950 flex items-center justify-center p-4">
-        <div className="flex items-center gap-3 text-slate-400 font-medium text-sm">
-          <Loader2 className="h-5 w-5 animate-spin text-purple-500" />
+      <div className="min-h-screen bg-slate-50 flex items-center justify-center p-4">
+        <div className="flex items-center gap-3 text-slate-600 font-medium text-sm">
+          <Loader2 className="h-5 w-5 animate-spin text-slate-900" />
           <span>Verifying staff portal credentials...</span>
         </div>
       </div>

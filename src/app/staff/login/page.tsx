@@ -29,7 +29,7 @@ export default function StaffLoginPage() {
   }, []);
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-slate-900 text-slate-300 font-bold text-sm">
+    <div className="min-h-screen flex items-center justify-center bg-slate-50 text-slate-700 font-bold text-sm">
       Redirecting to Academic Staff Gateway Login...
     </div>
   );
