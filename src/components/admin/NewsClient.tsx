@@ -11,7 +11,10 @@ import {
   Newspaper,
   Eye,
   EyeOff,
-  Loader2
+  Loader2,
+  Upload,
+  Image as ImageIcon,
+  FileText
 } from "lucide-react";
 
 interface NewsItem {
@@ -37,6 +40,9 @@ export default function NewsClient({ newsList: initialNews }: NewsClientProps) {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingNews, setEditingNews] = useState<NewsItem | null>(null);
 
+  const [uploadFileName, setUploadFileName] = useState("");
+  const [attachmentFileName, setAttachmentFileName] = useState("");
+
   const [formData, setFormData] = useState({
     title: "",
     content: "",
@@ -44,8 +50,31 @@ export default function NewsClient({ newsList: initialNews }: NewsClientProps) {
     isPublished: true
   });
 
+  const handleImageFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      setUploadFileName(file.name);
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        if (typeof reader.result === "string") {
+          setFormData(prev => ({ ...prev, featuredImage: reader.result as string }));
+        }
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const handleAttachmentUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      setAttachmentFileName(file.name);
+    }
+  };
+
   const openAddModal = () => {
     setEditingNews(null);
+    setUploadFileName("");
+    setAttachmentFileName("");
     setFormData({
       title: "",
       content: "",
@@ -57,6 +86,8 @@ export default function NewsClient({ newsList: initialNews }: NewsClientProps) {
 
   const openEditModal = (news: NewsItem) => {
     setEditingNews(news);
+    setUploadFileName("");
+    setAttachmentFileName("");
     setFormData({
       title: news.title,
       content: news.content,
@@ -248,15 +279,113 @@ export default function NewsClient({ newsList: initialNews }: NewsClientProps) {
                 />
               </div>
 
-              <div className="flex flex-col gap-1">
-                <label className="text-[10px] uppercase font-bold text-slate-700">Featured Image URL</label>
-                <input
-                  type="text"
-                  value={formData.featuredImage}
-                  onChange={(e) => setFormData({ ...formData, featuredImage: e.target.value })}
-                  placeholder="/crestoak-poster.jpg"
-                  className="p-2.5 bg-white border border-slate-300 rounded-xl focus:outline-none focus:border-slate-900 text-slate-900"
-                />
+              {/* Upload Featured Image / Banner */}
+              <div className="flex flex-col gap-1.5">
+                <label className="text-[10px] uppercase font-bold text-slate-700">
+                  Featured Image Banner Upload
+                </label>
+                <div className="border-2 border-dashed border-slate-300 hover:border-red-500/50 rounded-2xl p-4 bg-slate-50/60 transition-colors">
+                  {formData.featuredImage ? (
+                    <div className="flex items-center justify-between gap-3 bg-white p-3 rounded-xl border border-slate-200 shadow-xs">
+                      <div className="flex items-center gap-3 overflow-hidden">
+                        <img
+                          src={formData.featuredImage}
+                          alt="Preview"
+                          className="h-12 w-12 object-cover rounded-lg border border-slate-200 shrink-0"
+                        />
+                        <div className="truncate">
+                          <p className="text-xs font-bold text-slate-900 truncate">
+                            {uploadFileName || "Featured Image Selected"}
+                          </p>
+                          <p className="text-[10px] text-slate-400 font-mono truncate max-w-[250px]">
+                            {formData.featuredImage.slice(0, 40)}...
+                          </p>
+                        </div>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setFormData({ ...formData, featuredImage: "" });
+                          setUploadFileName("");
+                        }}
+                        className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors cursor-pointer shrink-0"
+                        title="Remove Image"
+                      >
+                        <X className="h-4 w-4" />
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="flex flex-col items-center justify-center text-center py-3 gap-2">
+                      <div className="p-2.5 bg-red-50 border border-red-100 text-red-600 rounded-full">
+                        <ImageIcon className="h-5 w-5" />
+                      </div>
+                      <div>
+                        <label
+                          htmlFor="news-image-file-input"
+                          className="text-xs font-bold text-slate-900 hover:text-red-600 cursor-pointer flex items-center gap-1.5 justify-center"
+                        >
+                          <Upload className="h-3.5 w-3.5 text-red-600" />
+                          <span>Upload Featured Image File</span>
+                        </label>
+                        <p className="text-[10px] text-slate-400 mt-0.5">
+                          PNG, JPG, WEBP formats up to 10MB
+                        </p>
+                      </div>
+                      <input
+                        id="news-image-file-input"
+                        type="file"
+                        accept="image/*"
+                        onChange={handleImageFileUpload}
+                        className="hidden"
+                      />
+                    </div>
+                  )}
+                </div>
+
+                <div className="flex flex-col gap-1 mt-0.5">
+                  <span className="text-[9px] font-bold text-slate-400 uppercase tracking-wider">
+                    Or Enter Image URL Path
+                  </span>
+                  <input
+                    type="text"
+                    value={formData.featuredImage}
+                    onChange={(e) => {
+                      setFormData({ ...formData, featuredImage: e.target.value });
+                      setUploadFileName("");
+                    }}
+                    placeholder="/crestoak-logo.png or https://..."
+                    className="p-2 bg-white border border-slate-300 rounded-xl focus:outline-none focus:border-slate-900 text-slate-900 font-mono text-[11px]"
+                  />
+                </div>
+              </div>
+
+              {/* PDF Press Release Attachment Upload */}
+              <div className="flex flex-col gap-1.5">
+                <label className="text-[10px] uppercase font-bold text-slate-700">
+                  Optional Press Release PDF / Bulletin Document Attachment
+                </label>
+                <div className="bg-slate-50 border border-slate-200 rounded-xl p-3 flex items-center justify-between gap-3">
+                  <div className="flex items-center gap-2 text-slate-600 truncate">
+                    <FileText className="h-4 w-4 text-red-600 shrink-0" />
+                    <span className="text-xs font-semibold truncate">
+                      {attachmentFileName || "No PDF document attached"}
+                    </span>
+                  </div>
+                  <label
+                    htmlFor="news-attachment-file-input"
+                    className="bg-white border border-slate-300 hover:bg-slate-100 text-slate-900 text-[10px] font-bold py-1.5 px-3 rounded-lg flex items-center gap-1 cursor-pointer shrink-0"
+                  >
+                    <Upload className="h-3 w-3 text-slate-500" />
+                    <span>Attach PDF</span>
+                  </label>
+                  <input
+                    id="news-attachment-file-input"
+                    type="file"
+                    accept=".pdf,.doc,.docx"
+                    onChange={handleAttachmentUpload}
+                    className="hidden"
+                  />
+                </div>
               </div>
 
               <div className="flex flex-col gap-1">
