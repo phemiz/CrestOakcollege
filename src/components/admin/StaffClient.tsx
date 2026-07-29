@@ -22,6 +22,7 @@ interface StaffItem {
   joiningDate: Date | string;
   user: {
     id?: string;
+    username?: string | null;
     firstName: string;
     lastName: string;
     middleName: string | null;
@@ -51,17 +52,6 @@ interface StaffClientProps {
   departments: DropdownItem[];
 }
 
-const STAFF_COURSE_CODES = [
-  { code: "SCS", name: "Computer Science & IT" },
-  { code: "NUR", name: "Nursing Sciences" },
-  { code: "MLS", name: "Medical Laboratory Science" },
-  { code: "CHS", name: "Community Health Sciences" },
-  { code: "BUS", name: "Business Administration" },
-  { code: "LAW", name: "Law & Criminology" },
-  { code: "REG", name: "Registry & Administration" },
-  { code: "BUR", name: "Bursary & Finance" }
-];
-
 function getStaffDeptCode(deptName: string = "") {
   const upper = deptName.toUpperCase();
   if (upper.includes("NURSING")) return "NUR";
@@ -73,104 +63,6 @@ function getStaffDeptCode(deptName: string = "") {
   if (upper.includes("REGISTRY") || upper.includes("ADMIN")) return "REG";
   if (upper.includes("BURSARY") || upper.includes("FINANCE") || upper.includes("ACCOUNT")) return "BUR";
   return upper.substring(0, 3).replace(/[^A-Z]/g, "S") || "SCS";
-}
-
-function SegmentedStaffIdInput({
-  value,
-  onChange,
-  selectedDeptName
-}: {
-  value: string;
-  onChange: (val: string) => void;
-  selectedDeptName?: string;
-}) {
-  const parts = (value || "").split("/");
-  let currentCode = "SCS";
-  let currentSeq = "001";
-
-  if (parts.length >= 4 && parts[0] === "CCHMS" && parts[1] === "STAFF") {
-    currentCode = parts[2] || "SCS";
-    currentSeq = parts[3] || "001";
-  } else if (selectedDeptName) {
-    currentCode = getStaffDeptCode(selectedDeptName);
-  }
-
-  const [code, setCode] = useState(currentCode);
-  const [seq, setSeq] = useState(currentSeq === "001" ? "" : currentSeq);
-
-  useEffect(() => {
-    const p = (value || "").split("/");
-    if (p.length >= 4 && p[0] === "CCHMS" && p[1] === "STAFF") {
-      setCode(p[2]);
-      setSeq(p[3] === "001" ? "" : p[3]);
-    }
-  }, [value]);
-
-  useEffect(() => {
-    if (selectedDeptName) {
-      const autoCode = getStaffDeptCode(selectedDeptName);
-      setCode(autoCode);
-      const paddedSeq = (seq || "1").padStart(3, "0");
-      onChange(`CCHMS/STAFF/${autoCode}/${paddedSeq}`);
-    }
-  }, [selectedDeptName]);
-
-  const updateFullStaffId = (newCode: string, newSeqRaw: string) => {
-    const cleanSeqDigits = newSeqRaw.replace(/\D/g, "").slice(0, 3);
-    setCode(newCode);
-    setSeq(cleanSeqDigits);
-    const paddedSeq = (cleanSeqDigits || "1").padStart(3, "0");
-    onChange(`CCHMS/STAFF/${newCode}/${paddedSeq}`);
-  };
-
-  const handleSeqBlur = () => {
-    if (!seq) {
-      onChange(`CCHMS/STAFF/${code}/001`);
-    } else {
-      const padded = seq.padStart(3, "0");
-      setSeq(padded);
-      onChange(`CCHMS/STAFF/${code}/${padded}`);
-    }
-  };
-
-  const currentCourse = STAFF_COURSE_CODES.find((c) => c.code === code) || { code, name: "Department Code" };
-
-  return (
-    <div className="flex items-center border border-slate-300 rounded-xl bg-white overflow-hidden focus-within:border-slate-900 focus-within:ring-1 focus-within:ring-slate-900 shadow-xs transition-all w-full">
-      {/* 1. Locked Staff Prefix */}
-      <div className="bg-slate-100 text-slate-500 font-mono font-bold text-xs px-2.5 py-2.5 border-r border-slate-200 select-none shrink-0" title="Institutional Staff Prefix">
-        CCHMS/STAFF/
-      </div>
-
-      {/* 2. Department Code Select with Tooltip */}
-      <div className="flex items-center border-r border-slate-200 bg-white hover:bg-slate-50 shrink-0 px-1" title={`${currentCourse.code}: ${currentCourse.name}`}>
-        <select
-          value={code}
-          onChange={(e) => updateFullStaffId(e.target.value, seq)}
-          className="py-2.5 px-1 text-xs font-mono font-bold text-slate-900 bg-transparent focus:outline-none cursor-pointer uppercase"
-        >
-          {STAFF_COURSE_CODES.map((c) => (
-            <option key={c.code} value={c.code} title={`${c.code} - ${c.name}`}>
-              {c.code}
-            </option>
-          ))}
-        </select>
-        <span className="text-slate-400 font-mono font-bold text-xs pr-0.5">/</span>
-      </div>
-
-      {/* 3. 3-Digit Sequential Index Input */}
-      <input
-        type="text"
-        maxLength={3}
-        value={seq}
-        onChange={(e) => updateFullStaffId(code, e.target.value)}
-        onBlur={handleSeqBlur}
-        placeholder="001"
-        title="3-digit Staff Index Number"
-        className="w-full min-w-[50px] py-2.5 px-3 font-mono font-bold text-xs text-slate-900 bg-white focus:outline-none placeholder:text-slate-400"
-      />
-    </div>
-  );
 }
 
 export default function StaffClient({ staffList: initialStaff, departments: rawDepartments }: StaffClientProps) {
@@ -197,6 +89,7 @@ export default function StaffClient({ staffList: initialStaff, departments: rawD
 
   // Form State
   const [formData, setFormData] = useState({
+    username: "",
     email: "",
     firstName: "",
     lastName: "",
@@ -211,18 +104,50 @@ export default function StaffClient({ staffList: initialStaff, departments: rawD
     specialization: ""
   });
 
+  const computeStaffNo = (deptId: string) => {
+    const selectedDept = departments.find((d) => d.id === deptId);
+    const code = getStaffDeptCode(selectedDept?.name || "");
+    const countInDept = staffList.filter((s) => s.department?.id === deptId).length;
+    const nextIndex = String(countInDept + 1).padStart(3, "0");
+    return `CCHMS/STAFF/${code}/${nextIndex}`;
+  };
+
+  const handleNameChange = (field: "firstName" | "lastName", val: string) => {
+    setFormData((prev) => {
+      const updated = { ...prev, [field]: val };
+      const fn = updated.firstName.trim().toLowerCase().replace(/[^a-z0-9]/g, "");
+      const ln = updated.lastName.trim().toLowerCase().replace(/[^a-z0-9]/g, "");
+      const suggestedUsername = fn && ln ? `${fn}.${ln}` : fn || ln;
+      return {
+        ...updated,
+        username: suggestedUsername
+      };
+    });
+  };
+
+  const handleDepartmentChange = (deptId: string) => {
+    setFormData((prev) => ({
+      ...prev,
+      departmentId: deptId,
+      staffNo: editingStaff ? prev.staffNo : computeStaffNo(deptId)
+    }));
+  };
+
   const openAddModal = () => {
     setEditingStaff(null);
+    const defaultDeptId = departments[0]?.id || "";
+    const defaultStaffNo = computeStaffNo(defaultDeptId);
     setFormData({
+      username: "",
       email: "",
       firstName: "",
       lastName: "",
       middleName: "",
       phoneNumber: "",
-      staffNo: `CCHMS/STAFF/${getStaffDeptCode(departments[0]?.name)}/001`,
+      staffNo: defaultStaffNo,
       designation: "Lecturer",
       joiningDate: new Date().toISOString().split("T")[0],
-      departmentId: departments[0]?.id || "",
+      departmentId: defaultDeptId,
       roleName: "LECTURER",
       rank: "LECTURER_II",
       specialization: ""
@@ -237,7 +162,10 @@ export default function StaffClient({ staffList: initialStaff, departments: rawD
     else if (staff.user.role.name === "BURSAR") roleShort = "BURSAR";
     else if (staff.user.role.name === "REGISTRAR") roleShort = "REGISTRAR";
 
+    const autoUser = `${staff.user.firstName.trim().toLowerCase().replace(/[^a-z0-9]/g, "")}.${staff.user.lastName.trim().toLowerCase().replace(/[^a-z0-9]/g, "")}`;
+
     setFormData({
+      username: staff.user.username || autoUser,
       email: staff.user.email,
       firstName: staff.user.firstName,
       lastName: staff.user.lastName,
@@ -256,7 +184,7 @@ export default function StaffClient({ staffList: initialStaff, departments: rawD
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!formData.email || !formData.firstName || !formData.lastName || !formData.staffNo) {
+    if (!formData.email || !formData.firstName || !formData.lastName || !formData.username) {
       alert("Please fill in all required fields.");
       return;
     }
@@ -323,6 +251,7 @@ export default function StaffClient({ staffList: initialStaff, departments: rawD
     const searchMatch =
       fullName.includes(searchTerm.toLowerCase()) ||
       staff.staffNo.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (staff.user.username && staff.user.username.toLowerCase().includes(searchTerm.toLowerCase())) ||
       staff.user.email.toLowerCase().includes(searchTerm.toLowerCase());
 
     const deptMatch = deptFilter === "ALL" || staff.department.id === deptFilter;
@@ -361,7 +290,7 @@ export default function StaffClient({ staffList: initialStaff, departments: rawD
           <Search className="absolute left-3.5 top-3.5 h-4 w-4 text-slate-400" />
           <input
             type="text"
-            placeholder="Search staff by name, staff number, or email..."
+            placeholder="Search staff by name, staff number, username, or email..."
             value={searchTerm}
             onChange={(e) => {
               setSearchTerm(e.target.value);
@@ -377,7 +306,7 @@ export default function StaffClient({ staffList: initialStaff, departments: rawD
               setDeptFilter(e.target.value);
               setCurrentPage(1);
             }}
-            className="w-full px-4 py-2.5 bg-white border border-slate-300 rounded-xl text-xs font-bold text-slate-800 focus:outline-none focus:border-slate-900 focus:ring-1 focus:ring-slate-900 transition-colors cursor-pointer"
+            className="w-full py-2.5 px-3 bg-white border border-slate-300 rounded-xl text-xs font-semibold text-slate-900 focus:outline-none focus:border-slate-900 focus:ring-1 focus:ring-slate-900 transition-colors"
           >
             <option value="ALL">All Departments</option>
             {departments.map((dept) => (
@@ -394,101 +323,120 @@ export default function StaffClient({ staffList: initialStaff, departments: rawD
               setRoleFilter(e.target.value);
               setCurrentPage(1);
             }}
-            className="w-full px-4 py-2.5 bg-white border border-slate-300 rounded-xl text-xs font-bold text-slate-800 focus:outline-none focus:border-slate-900 focus:ring-1 focus:ring-slate-900 transition-colors cursor-pointer"
+            className="w-full py-2.5 px-3 bg-white border border-slate-300 rounded-xl text-xs font-semibold text-slate-900 focus:outline-none focus:border-slate-900 focus:ring-1 focus:ring-slate-900 transition-colors"
           >
             <option value="ALL">All Roles</option>
-            <option value="LECTURER">Lecturers</option>
-            <option value="STAFF">Registry Staff</option>
-            <option value="BURSAR">Bursary Staff</option>
-            <option value="ADMIN">System Admin</option>
+            <option value="ADMIN">ADMIN</option>
+            <option value="LECTURER">LECTURER</option>
+            <option value="BURSAR">BURSAR</option>
+            <option value="REGISTRAR">REGISTRAR</option>
           </select>
         </div>
       </div>
 
-      {/* Staff Data Grid */}
+      {/* Staff Table */}
       <div className="bg-white border border-slate-200 rounded-2xl overflow-hidden shadow-xs">
-        {paginatedStaff.length > 0 ? (
-          <div className="overflow-x-auto">
-            <table className="w-full text-left border-collapse text-xs text-slate-800">
-              <thead>
-                <tr className="border-b border-slate-200 bg-slate-50 text-slate-500 font-bold uppercase tracking-wider">
-                  <th className="py-3.5 px-5">Name</th>
-                  <th className="py-3.5 px-5">Staff No</th>
-                  <th className="py-3.5 px-5">Designation</th>
-                  <th className="py-3.5 px-5">Role/Scope</th>
-                  <th className="py-3.5 px-5">Joining Date</th>
-                  <th className="py-3.5 px-5 text-right">Actions</th>
+        <div className="overflow-x-auto">
+          <table className="w-full text-left border-collapse">
+            <thead>
+              <tr className="bg-slate-50 border-b border-slate-200 text-[11px] font-bold text-slate-500 uppercase tracking-wider">
+                <th className="py-3.5 px-4">Staff Member</th>
+                <th className="py-3.5 px-4">Staff ID</th>
+                <th className="py-3.5 px-4">Department / Unit</th>
+                <th className="py-3.5 px-4">Designation & Rank</th>
+                <th className="py-3.5 px-4">Role / Access</th>
+                <th className="py-3.5 px-4 text-right">Actions</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-slate-100 text-xs">
+              {paginatedStaff.length === 0 ? (
+                <tr>
+                  <td colSpan={6} className="py-8 text-center text-slate-400 font-medium">
+                    No staff records match your filters.
+                  </td>
                 </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-100">
-                {paginatedStaff.map((staff) => (
+              ) : (
+                paginatedStaff.map((staff) => (
                   <tr key={staff.id} className="hover:bg-slate-50/80 transition-colors">
-                    <td className="py-3.5 px-5 font-semibold text-slate-900">
-                      {staff.user.firstName} {staff.user.lastName}
-                      <span className="block text-[11px] text-slate-500 font-normal mt-0.5">
-                        {staff.user.email}
-                      </span>
+                    <td className="py-3.5 px-4">
+                      <div className="font-bold text-slate-900">
+                        {staff.user.firstName} {staff.user.middleName || ""} {staff.user.lastName}
+                      </div>
+                      <div className="text-[11px] text-slate-400">{staff.user.email}</div>
                     </td>
-                    <td className="py-3.5 px-5 font-mono font-bold text-slate-800">{staff.staffNo}</td>
-                    <td className="py-3.5 px-5 text-slate-700 font-medium">
-                      {staff.designation}
-                      {staff.lecturer && (
-                        <span className="block text-[11px] text-slate-500 font-normal italic">
-                          Specialization: {staff.lecturer.specialization || "General"}
-                        </span>
+                    <td className="py-3.5 px-4 font-mono font-bold text-slate-700">{staff.staffNo}</td>
+                    <td className="py-3.5 px-4 font-semibold text-slate-700">{staff.department.name}</td>
+                    <td className="py-3.5 px-4">
+                      <div className="font-semibold text-slate-800">{staff.designation}</div>
+                      {staff.lecturer?.specialization && (
+                        <div className="text-[10px] text-slate-400 font-medium">{staff.lecturer.specialization}</div>
                       )}
                     </td>
-                    <td className="py-3.5 px-5">
-                      <span className="bg-red-50 text-red-700 px-2.5 py-1 rounded border border-red-100 font-bold uppercase tracking-wider text-[10px]">
+                    <td className="py-3.5 px-4">
+                      <span
+                        className={`inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-bold uppercase tracking-wider ${
+                          staff.user.role.name === "ADMIN"
+                            ? "bg-purple-100 text-purple-700 border border-purple-200"
+                            : staff.user.role.name === "BURSAR"
+                            ? "bg-amber-100 text-amber-700 border border-amber-200"
+                            : staff.user.role.name === "LECTURER"
+                            ? "bg-blue-100 text-blue-700 border border-blue-200"
+                            : "bg-slate-100 text-slate-700 border border-slate-200"
+                        }`}
+                      >
                         {staff.user.role.name}
                       </span>
                     </td>
-                    <td className="py-3.5 px-5 text-slate-500 font-medium">
-                      {new Date(staff.joiningDate).toLocaleDateString()}
-                    </td>
-                    <td className="py-3.5 px-5 text-right space-x-2">
-                      <button
-                        onClick={() => openEditModal(staff)}
-                        className="p-2 bg-white border border-slate-200 hover:bg-slate-100 rounded-lg text-slate-600 transition-all cursor-pointer shadow-xs"
-                      >
-                        <Edit2 className="h-3.5 w-3.5" />
-                      </button>
-                      <button
-                        onClick={() => handleDelete(staff.id)}
-                        className="p-2 bg-white border border-slate-200 hover:bg-red-50 hover:text-red-600 hover:border-red-200 rounded-lg text-slate-600 transition-all cursor-pointer shadow-xs"
-                      >
-                        <Trash2 className="h-3.5 w-3.5" />
-                      </button>
+                    <td className="py-3.5 px-4 text-right">
+                      <div className="flex items-center justify-end gap-2">
+                        <button
+                          onClick={() => openEditModal(staff)}
+                          className="p-1.5 text-slate-500 hover:text-slate-900 hover:bg-slate-100 rounded-lg transition-colors cursor-pointer"
+                          title="Edit Staff Member"
+                        >
+                          <Edit2 className="h-4 w-4" />
+                        </button>
+                        <button
+                          onClick={() => handleDelete(staff.id)}
+                          className="p-1.5 text-red-500 hover:text-red-700 hover:bg-red-50 rounded-lg transition-colors cursor-pointer"
+                          title="Soft-Delete Staff"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </button>
+                      </div>
                     </td>
                   </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        ) : (
-          <div className="py-16 text-center text-slate-500 font-bold uppercase tracking-widest text-xs bg-white">
-            No staff members found in registry.
-          </div>
-        )}
+                ))
+              )}
+            </tbody>
+          </table>
+        </div>
 
         {/* Pagination Footer */}
         {totalPages > 1 && (
-          <div className="flex justify-between items-center px-5 py-3.5 border-t border-slate-200 text-xs font-bold text-slate-600 bg-slate-50">
-            <span>
-              Page {currentPage} of {totalPages}
-            </span>
-            <div className="flex gap-2">
+          <div className="flex items-center justify-between px-4 py-3 border-t border-slate-200 bg-slate-50">
+            <div className="text-xs text-slate-500">
+              Showing <span className="font-semibold text-slate-900">{(currentPage - 1) * itemsPerPage + 1}</span> to{" "}
+              <span className="font-semibold text-slate-900">
+                {Math.min(currentPage * itemsPerPage, filteredStaff.length)}
+              </span>{" "}
+              of <span className="font-semibold text-slate-900">{filteredStaff.length}</span> staff
+            </div>
+            <div className="flex items-center gap-2">
               <button
+                onClick={() => setCurrentPage((p) => Math.max(p - 1, 1))}
                 disabled={currentPage === 1}
-                onClick={() => setCurrentPage((c) => Math.max(c - 1, 1))}
-                className="p-2 bg-white border border-slate-200 hover:bg-slate-100 text-slate-700 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed transition-all cursor-pointer"
+                className="p-1.5 border border-slate-300 rounded-lg text-slate-600 hover:bg-white disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
               >
                 <ChevronLeft className="h-4 w-4" />
               </button>
+              <span className="text-xs font-bold text-slate-700 px-2">
+                Page {currentPage} of {totalPages}
+              </span>
               <button
+                onClick={() => setCurrentPage((p) => Math.min(p + 1, totalPages))}
                 disabled={currentPage === totalPages}
-                onClick={() => setCurrentPage((c) => Math.min(c + 1, totalPages))}
-                className="p-2 bg-white border border-slate-200 hover:bg-slate-100 text-slate-700 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed transition-all cursor-pointer"
+                className="p-1.5 border border-slate-300 rounded-lg text-slate-600 hover:bg-white disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
               >
                 <ChevronRight className="h-4 w-4" />
               </button>
@@ -497,25 +445,28 @@ export default function StaffClient({ staffList: initialStaff, departments: rawD
         )}
       </div>
 
-      {/* Create / Edit Modal Dialog */}
+      {/* Add / Edit Staff Modal */}
       {isModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 backdrop-blur-xs p-4">
-          <div className="bg-white border border-slate-200 rounded-3xl w-full max-w-xl max-h-[90vh] overflow-y-auto shadow-2xl">
-            {/* Modal Header */}
-            <div className="h-16 border-b border-slate-200 flex items-center justify-between px-6 bg-white sticky top-0 z-10">
-              <h3 className="font-display font-black text-sm tracking-widest uppercase text-slate-900">
-                {editingStaff ? "Edit Staff Profile" : "Register New Staff Member"}
-              </h3>
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs">
+          <div className="bg-white rounded-3xl max-w-2xl w-full p-6 sm:p-8 shadow-2xl border border-slate-100 max-h-[90vh] overflow-y-auto">
+            <div className="flex justify-between items-center pb-4 border-b border-slate-100 mb-6">
+              <div>
+                <h3 className="text-xl font-display font-black text-slate-900">
+                  {editingStaff ? "Edit Staff Member Profile" : "Register New Staff Member"}
+                </h3>
+                <p className="text-xs text-slate-500 mt-0.5">
+                  {editingStaff ? "Update staff member record and permissions." : "Create new academic or administrative staff account."}
+                </p>
+              </div>
               <button
                 onClick={() => setIsModalOpen(false)}
-                className="text-slate-400 hover:text-slate-900 transition-colors cursor-pointer"
+                className="p-2 text-slate-400 hover:text-slate-600 rounded-full hover:bg-slate-100 transition-colors cursor-pointer"
               >
                 <X className="h-5 w-5" />
               </button>
             </div>
 
-            {/* Modal Form */}
-            <form onSubmit={handleSubmit} className="p-6 space-y-4 text-xs font-semibold text-slate-800">
+            <form onSubmit={handleSubmit} className="space-y-4 text-xs font-semibold">
               <div className="grid grid-cols-2 gap-4">
                 <div className="flex flex-col gap-1">
                   <label className="text-[10px] uppercase font-bold text-slate-700">First Name *</label>
@@ -523,7 +474,7 @@ export default function StaffClient({ staffList: initialStaff, departments: rawD
                     type="text"
                     required
                     value={formData.firstName}
-                    onChange={(e) => setFormData({ ...formData, firstName: e.target.value })}
+                    onChange={(e) => handleNameChange("firstName", e.target.value)}
                     className="p-2.5 bg-white border border-slate-300 rounded-xl focus:outline-none focus:border-slate-900 text-slate-900"
                   />
                 </div>
@@ -533,7 +484,7 @@ export default function StaffClient({ staffList: initialStaff, departments: rawD
                     type="text"
                     required
                     value={formData.lastName}
-                    onChange={(e) => setFormData({ ...formData, lastName: e.target.value })}
+                    onChange={(e) => handleNameChange("lastName", e.target.value)}
                     className="p-2.5 bg-white border border-slate-300 rounded-xl focus:outline-none focus:border-slate-900 text-slate-900"
                   />
                 </div>
@@ -550,16 +501,26 @@ export default function StaffClient({ staffList: initialStaff, departments: rawD
                   />
                 </div>
                 <div className="flex flex-col gap-1">
-                  <label className="text-[10px] uppercase font-bold text-slate-700">Staff Number *</label>
-                  <SegmentedStaffIdInput
-                    value={formData.staffNo}
-                    onChange={(val) => setFormData({ ...formData, staffNo: val })}
-                    selectedDeptName={departments.find(d => d.id === formData.departmentId)?.name}
-                  />
+                  <label className="text-[10px] uppercase font-bold text-slate-700">Official Staff ID (System Generated)</label>
+                  <div className="p-2.5 bg-slate-100 border border-slate-200 rounded-xl font-mono font-bold text-xs text-slate-600 cursor-not-allowed select-none flex items-center justify-between shadow-xs">
+                    <span>{formData.staffNo}</span>
+                    <span className="text-[9px] bg-slate-200 text-slate-600 px-2 py-0.5 rounded font-sans uppercase font-bold tracking-wider">System Assigned</span>
+                  </div>
                 </div>
               </div>
 
               <div className="grid grid-cols-2 gap-4">
+                <div className="flex flex-col gap-1">
+                  <label className="text-[10px] uppercase font-bold text-slate-700">Username / Login Credential *</label>
+                  <input
+                    type="text"
+                    required
+                    placeholder="e.g. femi.adebayo or staff1"
+                    value={formData.username}
+                    onChange={(e) => setFormData({ ...formData, username: e.target.value })}
+                    className="p-2.5 bg-white border border-slate-300 rounded-xl focus:outline-none focus:border-slate-900 text-slate-900 font-medium text-xs"
+                  />
+                </div>
                 <div className="flex flex-col gap-1">
                   <label className="text-[10px] uppercase font-bold text-slate-700">Email Address *</label>
                   <input
@@ -570,6 +531,9 @@ export default function StaffClient({ staffList: initialStaff, departments: rawD
                     className="p-2.5 bg-white border border-slate-300 rounded-xl focus:outline-none focus:border-slate-900 text-slate-900"
                   />
                 </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
                 <div className="flex flex-col gap-1">
                   <label className="text-[10px] uppercase font-bold text-slate-700">Phone Number</label>
                   <input
@@ -579,9 +543,6 @@ export default function StaffClient({ staffList: initialStaff, departments: rawD
                     className="p-2.5 bg-white border border-slate-300 rounded-xl focus:outline-none focus:border-slate-900 text-slate-900"
                   />
                 </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
                 <div className="flex flex-col gap-1">
                   <label className="text-[10px] uppercase font-bold text-slate-700">Designation *</label>
                   <input
@@ -593,6 +554,9 @@ export default function StaffClient({ staffList: initialStaff, departments: rawD
                     className="p-2.5 bg-white border border-slate-300 rounded-xl focus:outline-none focus:border-slate-900 text-slate-900"
                   />
                 </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
                 <div className="flex flex-col gap-1">
                   <label className="text-[10px] uppercase font-bold text-slate-700">Role / Permission Group *</label>
                   <select
@@ -606,14 +570,11 @@ export default function StaffClient({ staffList: initialStaff, departments: rawD
                     <option value="ADMIN">ADMIN (System Admin)</option>
                   </select>
                 </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
                 <div className="flex flex-col gap-1">
                   <label className="text-[10px] uppercase font-bold text-slate-700">Department *</label>
                   <select
                     value={formData.departmentId}
-                    onChange={(e) => setFormData({ ...formData, departmentId: e.target.value })}
+                    onChange={(e) => handleDepartmentChange(e.target.value)}
                     className="p-2.5 bg-white border border-slate-300 rounded-xl focus:outline-none focus:border-slate-900 text-slate-900 font-bold"
                   >
                     {departments.map((dept) => (
@@ -623,6 +584,9 @@ export default function StaffClient({ staffList: initialStaff, departments: rawD
                     ))}
                   </select>
                 </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
                 <div className="flex flex-col gap-1">
                   <label className="text-[10px] uppercase font-bold text-slate-700">Joining Date *</label>
                   <input
@@ -630,61 +594,63 @@ export default function StaffClient({ staffList: initialStaff, departments: rawD
                     required
                     value={formData.joiningDate}
                     onChange={(e) => setFormData({ ...formData, joiningDate: e.target.value })}
-                    className="p-2.5 bg-white border border-slate-300 rounded-xl focus:outline-none focus:border-slate-900 text-slate-900 font-bold"
+                    className="p-2.5 bg-white border border-slate-300 rounded-xl focus:outline-none focus:border-slate-900 text-slate-900"
                   />
                 </div>
-              </div>
-
-              {formData.roleName === "LECTURER" && (
-                <div className="grid grid-cols-2 gap-4 pt-2 border-t border-slate-200">
+                {formData.roleName === "LECTURER" && (
                   <div className="flex flex-col gap-1">
-                    <label className="text-[10px] uppercase font-bold text-slate-700">Academic Rank</label>
+                    <label className="text-[10px] uppercase font-bold text-slate-700">Academic Rank *</label>
                     <select
                       value={formData.rank}
                       onChange={(e) => setFormData({ ...formData, rank: e.target.value })}
                       className="p-2.5 bg-white border border-slate-300 rounded-xl focus:outline-none focus:border-slate-900 text-slate-900 font-bold"
                     >
-                      <option value="PROFESSOR">Professor</option>
-                      <option value="READER">Reader / Associate Prof</option>
-                      <option value="SENIOR_LECTURER">Senior Lecturer</option>
-                      <option value="LECTURER_I">Lecturer I</option>
-                      <option value="LECTURER_II">Lecturer II</option>
+                      <option value="GRADUATE_ASSISTANT">Graduate Assistant</option>
                       <option value="ASSISTANT_LECTURER">Assistant Lecturer</option>
+                      <option value="LECTURER_II">Lecturer II</option>
+                      <option value="LECTURER_I">Lecturer I</option>
+                      <option value="SENIOR_LECTURER">Senior Lecturer</option>
+                      <option value="ASSOCIATE_PROFESSOR">Associate Professor</option>
+                      <option value="PROFESSOR">Professor</option>
                     </select>
                   </div>
-                  <div className="flex flex-col gap-1">
-                    <label className="text-[10px] uppercase font-bold text-slate-700">Specialization</label>
-                    <input
-                      type="text"
-                      placeholder="e.g. Clinical Nursing"
-                      value={formData.specialization}
-                      onChange={(e) => setFormData({ ...formData, specialization: e.target.value })}
-                      className="p-2.5 bg-white border border-slate-300 rounded-xl focus:outline-none focus:border-slate-900 text-slate-900"
-                    />
-                  </div>
+                )}
+              </div>
+
+              {formData.roleName === "LECTURER" && (
+                <div className="flex flex-col gap-1">
+                  <label className="text-[10px] uppercase font-bold text-slate-700">Academic Specialization / Research Area</label>
+                  <input
+                    type="text"
+                    value={formData.specialization}
+                    onChange={(e) => setFormData({ ...formData, specialization: e.target.value })}
+                    placeholder="e.g. Clinical Nursing & Maternal Health"
+                    className="p-2.5 bg-white border border-slate-300 rounded-xl focus:outline-none focus:border-slate-900 text-slate-900"
+                  />
                 </div>
               )}
 
-              {/* Action Buttons */}
-              <div className="pt-4 flex justify-end gap-3 border-t border-slate-200">
+              <div className="pt-4 flex justify-end gap-3 border-t border-slate-100 mt-6">
                 <button
                   type="button"
                   onClick={() => setIsModalOpen(false)}
-                  className="bg-white hover:bg-slate-100 border border-slate-300 px-5 py-2.5 rounded-xl text-slate-700 font-bold cursor-pointer transition-colors"
+                  className="px-5 py-2.5 rounded-xl border border-slate-300 text-slate-700 font-bold hover:bg-slate-50 transition-colors cursor-pointer"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
                   disabled={isSubmitting}
-                  className="bg-slate-900 hover:bg-slate-800 disabled:opacity-50 text-white font-bold px-6 py-2.5 rounded-xl transition-all cursor-pointer flex items-center gap-1.5 shadow-sm"
+                  className="px-5 py-2.5 rounded-xl bg-slate-900 text-white font-bold hover:bg-slate-800 transition-colors flex items-center gap-2 disabled:opacity-50 cursor-pointer"
                 >
                   {isSubmitting ? (
-                    <Loader2 className="h-4 w-4 animate-spin text-white" />
+                    <>
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                      <span>Saving...</span>
+                    </>
                   ) : (
-                    <Plus className="h-4 w-4" />
+                    <span>{editingStaff ? "Update Staff Profile" : "Register Staff Member"}</span>
                   )}
-                  <span>{isSubmitting ? "Saving..." : editingStaff ? "Update Staff" : "Register Staff"}</span>
                 </button>
               </div>
             </form>

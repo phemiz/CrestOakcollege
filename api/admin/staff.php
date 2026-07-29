@@ -24,11 +24,12 @@ $defaultRoles = [
 $defaultStaff = [
     [
         "id" => "staff-001",
-        "staffNo" => "EMP-NUR-201",
+        "staffNo" => "CCHMS/STAFF/NUR/001",
         "designation" => "Senior Lecturer & Clinical Supervisor",
         "joiningDate" => "2024-09-01",
         "user" => [
             "id" => "u-staff-001",
+            "username" => "emmanuel.adeyemi",
             "firstName" => "Dr. Emmanuel",
             "lastName" => "Adeyemi",
             "middleName" => "Oluwaseun",
@@ -44,11 +45,12 @@ $defaultStaff = [
     ],
     [
         "id" => "staff-002",
-        "staffNo" => "EMP-BUR-102",
+        "staffNo" => "CCHMS/STAFF/BUS/001",
         "designation" => "Bursary Financial Accountant",
         "joiningDate" => "2025-01-15",
         "user" => [
             "id" => "u-staff-002",
+            "username" => "grace.okoro",
             "firstName" => "Grace",
             "lastName" => "Okoro",
             "middleName" => "Chidimma",
@@ -65,7 +67,7 @@ if ($method === 'GET') {
     $staffList = $defaultStaff;
 
     if ($conn) {
-        $res = $conn->query("SELECT s.*, u.firstName, u.lastName, u.middleName, u.email, u.phoneNumber, r.name as roleName, d.name as deptName, l.rank, l.specialization FROM Staff s JOIN User u ON s.id = u.id LEFT JOIN Role r ON u.roleId = r.id LEFT JOIN Department d ON s.departmentId = d.id LEFT JOIN Lecturer l ON s.id = l.id WHERE s.isDeleted = 0 OR s.isDeleted IS NULL");
+        $res = $conn->query("SELECT s.*, u.username, u.firstName, u.lastName, u.middleName, u.email, u.phoneNumber, r.name as roleName, d.name as deptName, l.rank, l.specialization FROM Staff s JOIN User u ON s.id = u.id LEFT JOIN Role r ON u.roleId = r.id LEFT JOIN Department d ON s.departmentId = d.id LEFT JOIN Lecturer l ON s.id = l.id WHERE s.isDeleted = 0 OR s.isDeleted IS NULL");
         if ($res && $res->num_rows > 0) {
             $dbStaff = [];
             while ($row = $res->fetch_assoc()) {
@@ -76,6 +78,7 @@ if ($method === 'GET') {
                     "joiningDate" => $row['joiningDate'] ?? date('Y-m-d'),
                     "user" => [
                         "id" => $row['id'],
+                        "username" => $row['username'] ?? '',
                         "firstName" => $row['firstName'],
                         "lastName" => $row['lastName'],
                         "middleName" => $row['middleName'],
@@ -108,24 +111,29 @@ if ($method === 'GET') {
 
 if ($method === 'POST' || $method === 'PUT') {
     $id = $input['id'] ?? ('staff-' . rand(1000, 9999));
+    $firstName = $input['firstName'] ?? '';
+    $lastName = $input['lastName'] ?? '';
+    $username = $input['username'] ?? (strtolower($firstName) . '.' . strtolower($lastName));
+
     echo json_encode([
         "success" => true,
         "message" => "Staff profile updated successfully.",
         "staff" => [
             "id" => $id,
-            "staffNo" => $input['staffNo'] ?? ('EMP-REG-' . rand(100, 999)),
+            "staffNo" => $input['staffNo'] ?? ('CCHMS/STAFF/REG/' . str_pad(rand(1, 99), 3, '0', STR_PAD_LEFT)),
             "designation" => $input['designation'] ?? 'Staff',
             "joiningDate" => $input['joiningDate'] ?? date('Y-m-d'),
             "user" => [
                 "id" => $id,
-                "firstName" => $input['firstName'] ?? '',
-                "lastName" => $input['lastName'] ?? '',
+                "username" => $username,
+                "firstName" => $firstName,
+                "lastName" => $lastName,
                 "middleName" => $input['middleName'] ?? '',
                 "email" => $input['email'] ?? '',
                 "phoneNumber" => $input['phoneNumber'] ?? '',
                 "role" => ["name" => $input['roleName'] ?? 'LECTURER']
             ],
-            "department" => ["id" => $input['departmentId'] ?? 'dept-health-001', "name" => "Department"],
+            "department" => ["id" => $input['departmentId'] ?? 'dept-health-001', "name" => "Selected Department"],
             "lecturer" => ($input['roleName'] ?? '') === 'LECTURER' ? [
                 "rank" => $input['rank'] ?? 'LECTURER_II',
                 "specialization" => $input['specialization'] ?? ''
