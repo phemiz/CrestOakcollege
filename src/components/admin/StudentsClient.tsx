@@ -68,6 +68,8 @@ const COURSE_CODES = [
   { code: "LAW", name: "Law & Criminology" }
 ];
 
+const YEARS = Array.from({ length: 2050 - 2024 + 1 }, (_, i) => String(2024 + i));
+
 function getDeptCode(deptName: string = "") {
   const upper = deptName.toUpperCase();
   if (upper.includes("NURSING")) return "NUR";
@@ -95,14 +97,14 @@ function SegmentedMatricInput({
 
   const [year, setYear] = useState(currentYear);
   const [code, setCode] = useState(currentCode);
-  const [seq, setSeq] = useState(currentSeq);
+  const [seq, setSeq] = useState(currentSeq === "0001" ? "" : currentSeq);
 
   useEffect(() => {
     const p = (value || "").split("/");
     if (p.length >= 4 && p[0] === "CCHMS") {
       setYear(p[1]);
       setCode(p[2]);
-      setSeq(p[3]);
+      setSeq(p[3] === "0001" ? "" : p[3]);
     }
   }, [value]);
 
@@ -125,9 +127,13 @@ function SegmentedMatricInput({
   };
 
   const handleSeqBlur = () => {
-    const padded = (seq || "1").padStart(4, "0");
-    setSeq(padded);
-    onChange(`CCHMS/${year}/${code}/${padded}`);
+    if (!seq) {
+      onChange(`CCHMS/${year}/${code}/0001`);
+    } else {
+      const padded = seq.padStart(4, "0");
+      setSeq(padded);
+      onChange(`CCHMS/${year}/${code}/${padded}`);
+    }
   };
 
   const currentCourse = COURSE_CODES.find((c) => c.code === code) || { code, name: "Course Code" };
@@ -139,18 +145,18 @@ function SegmentedMatricInput({
         CCHMS/
       </div>
 
-      {/* 2. Year Select */}
+      {/* 2. Year Select (2024 - 2050) */}
       <div className="flex items-center border-r border-slate-200 bg-white hover:bg-slate-50 shrink-0 px-1" title="Academic Session Year">
         <select
           value={year}
           onChange={(e) => updateFullMatric(e.target.value, code, seq)}
           className="py-2.5 px-1 text-xs font-mono font-bold text-slate-900 bg-transparent focus:outline-none cursor-pointer"
         >
-          <option value="2024">2024</option>
-          <option value="2025">2025</option>
-          <option value="2026">2026</option>
-          <option value="2027">2027</option>
-          <option value="2028">2028</option>
+          {YEARS.map((y) => (
+            <option key={y} value={y}>
+              {y}
+            </option>
+          ))}
         </select>
         <span className="text-slate-400 font-mono font-bold text-xs pr-0.5">/</span>
       </div>
@@ -180,7 +186,7 @@ function SegmentedMatricInput({
         onBlur={handleSeqBlur}
         placeholder="0001"
         title="4-digit Student Index Number"
-        className="w-full min-w-[60px] py-2.5 px-3 font-mono font-bold text-xs text-slate-900 bg-white focus:outline-none placeholder:text-slate-300"
+        className="w-full min-w-[60px] py-2.5 px-3 font-mono font-bold text-xs text-slate-900 bg-white focus:outline-none placeholder:text-slate-400"
       />
     </div>
   );
@@ -282,7 +288,7 @@ export default function StudentsClient({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!formData.email || !formData.firstName || !formData.lastName || !formData.matricNo) {
+    if (!formData.email || !formData.firstName || !formData.lastName || !formData.matricNo || !formData.phoneNumber) {
       alert("Please fill in all required fields.");
       return;
     }
@@ -588,9 +594,10 @@ export default function StudentsClient({
                   />
                 </div>
                 <div className="flex flex-col gap-1">
-                  <label className="text-[10px] uppercase font-bold text-slate-700">Phone Number</label>
+                  <label className="text-[10px] uppercase font-bold text-slate-700">Phone Number *</label>
                   <input
                     type="text"
+                    required
                     value={formData.phoneNumber}
                     onChange={(e) => setFormData({ ...formData, phoneNumber: e.target.value })}
                     className="p-2.5 bg-white border border-slate-300 rounded-xl focus:outline-none focus:border-slate-900 text-slate-900"

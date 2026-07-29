@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import {
   Search,
@@ -51,6 +51,128 @@ interface StaffClientProps {
   departments: DropdownItem[];
 }
 
+const STAFF_COURSE_CODES = [
+  { code: "SCS", name: "Computer Science & IT" },
+  { code: "NUR", name: "Nursing Sciences" },
+  { code: "MLS", name: "Medical Laboratory Science" },
+  { code: "CHS", name: "Community Health Sciences" },
+  { code: "BUS", name: "Business Administration" },
+  { code: "LAW", name: "Law & Criminology" },
+  { code: "REG", name: "Registry & Administration" },
+  { code: "BUR", name: "Bursary & Finance" }
+];
+
+function getStaffDeptCode(deptName: string = "") {
+  const upper = deptName.toUpperCase();
+  if (upper.includes("NURSING")) return "NUR";
+  if (upper.includes("LABORATORY") || upper.includes("MLS")) return "MLS";
+  if (upper.includes("COMMUNITY") || upper.includes("HEALTH") || upper.includes("CHEW")) return "CHS";
+  if (upper.includes("COMPUTER") || upper.includes("SCIENCE") || upper.includes("IT")) return "SCS";
+  if (upper.includes("BUSINESS") || upper.includes("MANAGEMENT")) return "BUS";
+  if (upper.includes("LAW") || upper.includes("CRIMINOLOGY")) return "LAW";
+  if (upper.includes("REGISTRY") || upper.includes("ADMIN")) return "REG";
+  if (upper.includes("BURSARY") || upper.includes("FINANCE") || upper.includes("ACCOUNT")) return "BUR";
+  return upper.substring(0, 3).replace(/[^A-Z]/g, "S") || "SCS";
+}
+
+function SegmentedStaffIdInput({
+  value,
+  onChange,
+  selectedDeptName
+}: {
+  value: string;
+  onChange: (val: string) => void;
+  selectedDeptName?: string;
+}) {
+  const parts = (value || "").split("/");
+  let currentCode = "SCS";
+  let currentSeq = "001";
+
+  if (parts.length >= 4 && parts[0] === "CCHMS" && parts[1] === "STAFF") {
+    currentCode = parts[2] || "SCS";
+    currentSeq = parts[3] || "001";
+  } else if (selectedDeptName) {
+    currentCode = getStaffDeptCode(selectedDeptName);
+  }
+
+  const [code, setCode] = useState(currentCode);
+  const [seq, setSeq] = useState(currentSeq === "001" ? "" : currentSeq);
+
+  useEffect(() => {
+    const p = (value || "").split("/");
+    if (p.length >= 4 && p[0] === "CCHMS" && p[1] === "STAFF") {
+      setCode(p[2]);
+      setSeq(p[3] === "001" ? "" : p[3]);
+    }
+  }, [value]);
+
+  useEffect(() => {
+    if (selectedDeptName) {
+      const autoCode = getStaffDeptCode(selectedDeptName);
+      setCode(autoCode);
+      const paddedSeq = (seq || "1").padStart(3, "0");
+      onChange(`CCHMS/STAFF/${autoCode}/${paddedSeq}`);
+    }
+  }, [selectedDeptName]);
+
+  const updateFullStaffId = (newCode: string, newSeqRaw: string) => {
+    const cleanSeqDigits = newSeqRaw.replace(/\D/g, "").slice(0, 3);
+    setCode(newCode);
+    setSeq(cleanSeqDigits);
+    const paddedSeq = (cleanSeqDigits || "1").padStart(3, "0");
+    onChange(`CCHMS/STAFF/${newCode}/${paddedSeq}`);
+  };
+
+  const handleSeqBlur = () => {
+    if (!seq) {
+      onChange(`CCHMS/STAFF/${code}/001`);
+    } else {
+      const padded = seq.padStart(3, "0");
+      setSeq(padded);
+      onChange(`CCHMS/STAFF/${code}/${padded}`);
+    }
+  };
+
+  const currentCourse = STAFF_COURSE_CODES.find((c) => c.code === code) || { code, name: "Department Code" };
+
+  return (
+    <div className="flex items-center border border-slate-300 rounded-xl bg-white overflow-hidden focus-within:border-slate-900 focus-within:ring-1 focus-within:ring-slate-900 shadow-xs transition-all w-full">
+      {/* 1. Locked Staff Prefix */}
+      <div className="bg-slate-100 text-slate-500 font-mono font-bold text-xs px-2.5 py-2.5 border-r border-slate-200 select-none shrink-0" title="Institutional Staff Prefix">
+        CCHMS/STAFF/
+      </div>
+
+      {/* 2. Department Code Select with Tooltip */}
+      <div className="flex items-center border-r border-slate-200 bg-white hover:bg-slate-50 shrink-0 px-1" title={`${currentCourse.code}: ${currentCourse.name}`}>
+        <select
+          value={code}
+          onChange={(e) => updateFullStaffId(e.target.value, seq)}
+          className="py-2.5 px-1 text-xs font-mono font-bold text-slate-900 bg-transparent focus:outline-none cursor-pointer uppercase"
+        >
+          {STAFF_COURSE_CODES.map((c) => (
+            <option key={c.code} value={c.code} title={`${c.code} - ${c.name}`}>
+              {c.code}
+            </option>
+          ))}
+        </select>
+        <span className="text-slate-400 font-mono font-bold text-xs pr-0.5">/</span>
+      </div>
+
+      {/* 3. 3-Digit Sequential Index Input */}
+      <input
+        type="text"
+        maxLength={3}
+        value={seq}
+        onChange={(e) => updateFullStaffId(code, e.target.value)}
+        onBlur={handleSeqBlur}
+        placeholder="001"
+        title="3-digit Staff Index Number"
+        className="w-full min-w-[50px] py-2.5 px-3 font-mono font-bold text-xs text-slate-900 bg-white focus:outline-none placeholder:text-slate-400"
+      />
+    </div>
+  );
+}
+
 export default function StaffClient({ staffList: initialStaff, departments: rawDepartments }: StaffClientProps) {
   const departments = (rawDepartments && rawDepartments.length > 0)
     ? rawDepartments
@@ -97,7 +219,7 @@ export default function StaffClient({ staffList: initialStaff, departments: rawD
       lastName: "",
       middleName: "",
       phoneNumber: "",
-      staffNo: `EMP-${departments[0]?.name.substring(0, 3).toUpperCase() || "REG"}-${Math.floor(100 + Math.random() * 900)}`,
+      staffNo: `CCHMS/STAFF/${getStaffDeptCode(departments[0]?.name)}/001`,
       designation: "Lecturer",
       joiningDate: new Date().toISOString().split("T")[0],
       departmentId: departments[0]?.id || "",
@@ -429,12 +551,10 @@ export default function StaffClient({ staffList: initialStaff, departments: rawD
                 </div>
                 <div className="flex flex-col gap-1">
                   <label className="text-[10px] uppercase font-bold text-slate-700">Staff Number *</label>
-                  <input
-                    type="text"
-                    required
+                  <SegmentedStaffIdInput
                     value={formData.staffNo}
-                    onChange={(e) => setFormData({ ...formData, staffNo: e.target.value })}
-                    className="p-2.5 bg-white border border-slate-300 rounded-xl focus:outline-none focus:border-slate-900 text-slate-900 font-mono font-bold"
+                    onChange={(val) => setFormData({ ...formData, staffNo: val })}
+                    selectedDeptName={departments.find(d => d.id === formData.departmentId)?.name}
                   />
                 </div>
               </div>
