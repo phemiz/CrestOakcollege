@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import {
   Search,
@@ -57,6 +57,118 @@ interface StudentsClientProps {
   programmes: DropdownItem[];
   sessions: DropdownItem[];
   semesters: DropdownItem[];
+}
+
+function getDeptCode(deptName: string = "") {
+  const upper = deptName.toUpperCase();
+  if (upper.includes("NURSING")) return "NUR";
+  if (upper.includes("LABORATORY") || upper.includes("MLS")) return "MLS";
+  if (upper.includes("COMMUNITY") || upper.includes("HEALTH") || upper.includes("CHEW")) return "CHS";
+  if (upper.includes("COMPUTER") || upper.includes("SCIENCE") || upper.includes("IT")) return "SCS";
+  if (upper.includes("BUSINESS") || upper.includes("MANAGEMENT")) return "BUS";
+  if (upper.includes("LAW") || upper.includes("CRIMINOLOGY")) return "LAW";
+  return upper.substring(0, 3).replace(/[^A-Z]/g, "S") || "SCS";
+}
+
+function SegmentedMatricInput({
+  value,
+  onChange,
+  selectedDeptName
+}: {
+  value: string;
+  onChange: (val: string) => void;
+  selectedDeptName?: string;
+}) {
+  const parts = (value || "").split("/");
+  const currentYear = parts[1] || "2026";
+  const currentCode = parts[2] || (selectedDeptName ? getDeptCode(selectedDeptName) : "SCS");
+  const currentSeq = parts[3] || "0001";
+
+  const [year, setYear] = useState(currentYear);
+  const [code, setCode] = useState(currentCode);
+  const [seq, setSeq] = useState(currentSeq);
+
+  useEffect(() => {
+    const p = (value || "").split("/");
+    if (p.length >= 4 && p[0] === "CCHMS") {
+      setYear(p[1]);
+      setCode(p[2]);
+      setSeq(p[3]);
+    }
+  }, [value]);
+
+  useEffect(() => {
+    if (selectedDeptName) {
+      const autoCode = getDeptCode(selectedDeptName);
+      setCode(autoCode);
+      const paddedSeq = (seq || "1").padStart(4, "0");
+      onChange(`CCHMS/${year}/${autoCode}/${paddedSeq}`);
+    }
+  }, [selectedDeptName]);
+
+  const updateFullMatric = (newYear: string, newCode: string, newSeqRaw: string) => {
+    const cleanSeqDigits = newSeqRaw.replace(/\D/g, "").slice(0, 4);
+    setYear(newYear);
+    setCode(newCode);
+    setSeq(cleanSeqDigits);
+    const paddedSeq = (cleanSeqDigits || "1").padStart(4, "0");
+    onChange(`CCHMS/${newYear}/${newCode}/${paddedSeq}`);
+  };
+
+  const handleSeqBlur = () => {
+    const padded = (seq || "1").padStart(4, "0");
+    setSeq(padded);
+    onChange(`CCHMS/${year}/${code}/${padded}`);
+  };
+
+  return (
+    <div className="flex items-center border border-slate-300 rounded-xl bg-white overflow-hidden focus-within:border-slate-900 focus-within:ring-1 focus-within:ring-slate-900 shadow-xs transition-all">
+      <div className="bg-slate-100 text-slate-500 font-mono font-bold text-xs px-2.5 py-2.5 border-r border-slate-200 select-none shrink-0">
+        CCHMS/
+      </div>
+
+      <div className="flex items-center border-r border-slate-200 bg-white hover:bg-slate-50 shrink-0">
+        <select
+          value={year}
+          onChange={(e) => updateFullMatric(e.target.value, code, seq)}
+          className="py-2.5 pl-2 pr-0.5 text-xs font-mono font-bold text-slate-900 bg-transparent focus:outline-none cursor-pointer"
+        >
+          <option value="2024">2024</option>
+          <option value="2025">2025</option>
+          <option value="2026">2026</option>
+          <option value="2027">2027</option>
+          <option value="2028">2028</option>
+        </select>
+        <span className="text-slate-400 font-mono font-bold text-xs pr-1">/</span>
+      </div>
+
+      <div className="flex items-center border-r border-slate-200 bg-white hover:bg-slate-50 shrink-0">
+        <select
+          value={code}
+          onChange={(e) => updateFullMatric(year, e.target.value, seq)}
+          className="py-2.5 pl-2 pr-0.5 text-xs font-mono font-bold text-slate-900 bg-transparent focus:outline-none cursor-pointer uppercase"
+        >
+          <option value="NUR">NUR (Nursing)</option>
+          <option value="MLS">MLS (Med Lab)</option>
+          <option value="CHS">CHS (Comm Health)</option>
+          <option value="SCS">SCS (Computer Sci)</option>
+          <option value="BUS">BUS (Business Admin)</option>
+          <option value="LAW">LAW (Law & Crim)</option>
+        </select>
+        <span className="text-slate-400 font-mono font-bold text-xs pr-1">/</span>
+      </div>
+
+      <input
+        type="text"
+        maxLength={4}
+        value={seq}
+        onChange={(e) => updateFullMatric(year, code, e.target.value)}
+        onBlur={handleSeqBlur}
+        placeholder="0001"
+        className="w-full py-2.5 px-2.5 font-mono font-bold text-xs text-slate-900 bg-white focus:outline-none"
+      />
+    </div>
+  );
 }
 
 export default function StudentsClient({
@@ -441,12 +553,10 @@ export default function StudentsClient({
                 </div>
                 <div className="flex flex-col gap-1">
                   <label className="text-[10px] uppercase font-bold text-slate-700">Matric No *</label>
-                  <input
-                    type="text"
-                    required
+                  <SegmentedMatricInput
                     value={formData.matricNo}
-                    onChange={(e) => setFormData({ ...formData, matricNo: e.target.value })}
-                    className="p-2.5 bg-white border border-slate-300 rounded-xl focus:outline-none focus:border-slate-900 text-slate-900 font-mono font-bold"
+                    onChange={(val) => setFormData({ ...formData, matricNo: val })}
+                    selectedDeptName={departments.find(d => d.id === formData.departmentId)?.name}
                   />
                 </div>
               </div>
