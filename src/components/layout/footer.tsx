@@ -1,6 +1,6 @@
 import React from "react";
 import Link from "next/link";
-import { Phone, Mail, MapPin, Globe, ArrowUpRight } from "lucide-react";
+import { Phone, Mail, MapPin, ArrowUpRight } from "lucide-react";
 import { Logo } from "../ui/logo";
 
 export const Footer: React.FC = () => {
@@ -94,15 +94,6 @@ export const Footer: React.FC = () => {
                 KM 5, Oyo-Iseyin Road, Oyo State. Curricula aligned under university-level academic audits.
               </p>
             </div>
-            <a
-              href="https://www.atibauniversity.edu.ng"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-[10px] font-bold text-brand-blue-light hover:text-white transition-colors flex items-center gap-1.5 w-fit"
-            >
-              <Globe size={12} />
-              <span>Visit Atiba University Website</span>
-            </a>
           </div>
         </div>
       </div>

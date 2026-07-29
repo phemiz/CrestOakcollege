@@ -134,7 +134,7 @@ export default function PortalDashboard({ initialUser }: { initialUser?: any }) 
       const mockProfile: StudentProfile = {
         fullName: initialUser.name || "Adebayo Chukwuma",
         regNumber: initialUser.registrationNumber || initialUser.username || "STU-2026-001",
-        email: initialUser.email || "student@crestoak.edu.ng",
+        email: initialUser.email || "student@crestoakcollege.com.ng",
         phone: "+234 815 588 4804",
         faculty: initialUser.faculty || "health",
         semester: "1st Semester, 2026/2027",
@@ -270,7 +270,7 @@ export default function PortalDashboard({ initialUser }: { initialUser?: any }) 
     const mockProfile = {
       fullName: matchedName,
       regNumber: matchedReg,
-      email: "student@crestoak.edu.ng",
+      email: "student@crestoakcollege.com.ng",
       phone: "+234 815 588 4804",
       faculty: matchedFaculty,
       semester: "1st Semester, 2025/2026",

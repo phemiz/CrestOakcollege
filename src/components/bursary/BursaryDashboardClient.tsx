@@ -280,7 +280,7 @@ export default function BursaryDashboardClient({
           invoiceId: selectedPayment?.invoiceId
         },
         customer: {
-          email: selectedPayment?.invoice.user.email || "student@crestoak.edu.ng"
+          email: selectedPayment?.invoice.user.email || "student@crestoakcollege.com.ng"
         }
       }
     };
