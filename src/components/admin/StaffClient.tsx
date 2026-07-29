@@ -11,7 +11,10 @@ import {
   ChevronRight,
   X,
   UserPlus,
-  Loader2
+  Loader2,
+  Eye,
+  EyeOff,
+  Zap
 } from "lucide-react";
 import { DEFAULT_DEPARTMENTS } from "@/constants/institutionalData";
 
@@ -73,6 +76,7 @@ export default function StaffClient({ staffList: initialStaff, departments: rawD
   const router = useRouter();
   const [staffList, setStaffList] = useState<StaffItem[]>(initialStaff);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
 
   // Search & Filters
   const [searchTerm, setSearchTerm] = useState("");
@@ -91,6 +95,7 @@ export default function StaffClient({ staffList: initialStaff, departments: rawD
   const [formData, setFormData] = useState({
     username: "",
     email: "",
+    password: "",
     firstName: "",
     lastName: "",
     middleName: "",
@@ -98,13 +103,14 @@ export default function StaffClient({ staffList: initialStaff, departments: rawD
     staffNo: "",
     designation: "",
     joiningDate: new Date().toISOString().split("T")[0],
-    departmentId: departments[0]?.id || "",
+    departmentId: "",
     roleName: "LECTURER" as "LECTURER" | "STAFF" | "BURSAR" | "REGISTRAR",
     rank: "LECTURER_II",
     specialization: ""
   });
 
   const computeStaffNo = (deptId: string) => {
+    if (!deptId) return "";
     const selectedDept = departments.find((d) => d.id === deptId);
     const code = getStaffDeptCode(selectedDept?.name || "");
     const countInDept = staffList.filter((s) => s.department?.id === deptId).length;
@@ -133,21 +139,28 @@ export default function StaffClient({ staffList: initialStaff, departments: rawD
     }));
   };
 
+  const handleAutoGeneratePassword = () => {
+    const randDigits = Math.floor(1000 + Math.random() * 9000);
+    const generated = `CrestOak#${randDigits}`;
+    setFormData((prev) => ({ ...prev, password: generated }));
+    setShowPassword(true);
+  };
+
   const openAddModal = () => {
     setEditingStaff(null);
-    const defaultDeptId = departments[0]?.id || "";
-    const defaultStaffNo = computeStaffNo(defaultDeptId);
+    setShowPassword(false);
     setFormData({
       username: "",
       email: "",
+      password: "",
       firstName: "",
       lastName: "",
       middleName: "",
       phoneNumber: "",
-      staffNo: defaultStaffNo,
+      staffNo: "",
       designation: "Lecturer",
       joiningDate: new Date().toISOString().split("T")[0],
-      departmentId: defaultDeptId,
+      departmentId: "",
       roleName: "LECTURER",
       rank: "LECTURER_II",
       specialization: ""
@@ -157,6 +170,7 @@ export default function StaffClient({ staffList: initialStaff, departments: rawD
 
   const openEditModal = (staff: StaffItem) => {
     setEditingStaff(staff);
+    setShowPassword(false);
     let roleShort: "LECTURER" | "STAFF" | "BURSAR" | "REGISTRAR" = "STAFF";
     if (staff.user.role.name === "LECTURER") roleShort = "LECTURER";
     else if (staff.user.role.name === "BURSAR") roleShort = "BURSAR";
@@ -167,6 +181,7 @@ export default function StaffClient({ staffList: initialStaff, departments: rawD
     setFormData({
       username: staff.user.username || autoUser,
       email: staff.user.email,
+      password: "",
       firstName: staff.user.firstName,
       lastName: staff.user.lastName,
       middleName: staff.user.middleName || "",
@@ -184,15 +199,23 @@ export default function StaffClient({ staffList: initialStaff, departments: rawD
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!formData.email || !formData.firstName || !formData.lastName || !formData.username) {
-      alert("Please fill in all required fields.");
+    if (!formData.email || !formData.firstName || !formData.lastName || !formData.username || !formData.phoneNumber?.trim() || (!editingStaff && !formData.password?.trim())) {
+      alert("Please fill in all required fields (including Phone Number and Initial Password).");
       return;
+    }
+
+    let finalStaffNo = formData.staffNo;
+    if (!finalStaffNo) {
+      const activeDeptId = formData.departmentId || departments[0]?.id || "";
+      finalStaffNo = computeStaffNo(activeDeptId);
     }
 
     setIsSubmitting(true);
     try {
       const payload = {
         ...formData,
+        staffNo: finalStaffNo,
+        departmentId: formData.departmentId || departments[0]?.id,
         id: editingStaff?.id
       };
       const res = await fetch("/api/admin/staff.php", {
@@ -502,9 +525,23 @@ export default function StaffClient({ staffList: initialStaff, departments: rawD
                 </div>
                 <div className="flex flex-col gap-1">
                   <label className="text-[10px] uppercase font-bold text-slate-700">Official Staff ID (System Generated)</label>
-                  <div className="p-2.5 bg-slate-100 border border-slate-200 rounded-xl font-mono font-bold text-xs text-slate-600 cursor-not-allowed select-none flex items-center justify-between shadow-xs">
-                    <span>{formData.staffNo}</span>
-                    <span className="text-[9px] bg-slate-200 text-slate-600 px-2 py-0.5 rounded font-sans uppercase font-bold tracking-wider">System Assigned</span>
+                  <div
+                    className={`p-2.5 border rounded-xl font-mono font-bold text-xs select-none flex items-center justify-between shadow-xs transition-colors ${
+                      formData.staffNo
+                        ? "bg-slate-100 text-slate-700 border-slate-200"
+                        : "bg-slate-50 text-slate-400 border-dashed border-slate-300 font-normal"
+                    }`}
+                  >
+                    <span>{formData.staffNo || "Select a department to assign Staff ID..."}</span>
+                    {formData.staffNo ? (
+                      <span className="text-[9px] bg-slate-200 text-slate-700 px-2 py-0.5 rounded font-sans uppercase font-bold tracking-wider">
+                        System Assigned
+                      </span>
+                    ) : (
+                      <span className="text-[9px] bg-amber-100 text-amber-700 px-2 py-0.5 rounded font-sans uppercase font-bold tracking-wider">
+                        Pending Dept
+                      </span>
+                    )}
                   </div>
                 </div>
               </div>
@@ -535,14 +572,53 @@ export default function StaffClient({ staffList: initialStaff, departments: rawD
 
               <div className="grid grid-cols-2 gap-4">
                 <div className="flex flex-col gap-1">
-                  <label className="text-[10px] uppercase font-bold text-slate-700">Phone Number</label>
+                  <label className="text-[10px] uppercase font-bold text-slate-700">Phone Number *</label>
                   <input
                     type="text"
+                    required
+                    placeholder="e.g. 08012345678"
                     value={formData.phoneNumber}
                     onChange={(e) => setFormData({ ...formData, phoneNumber: e.target.value })}
                     className="p-2.5 bg-white border border-slate-300 rounded-xl focus:outline-none focus:border-slate-900 text-slate-900"
                   />
                 </div>
+                <div className="flex flex-col gap-1">
+                  <div className="flex items-center justify-between">
+                    <label className="text-[10px] uppercase font-bold text-slate-700">
+                      Initial Portal Password {editingStaff ? "" : "*"}
+                    </label>
+                    <button
+                      type="button"
+                      onClick={handleAutoGeneratePassword}
+                      className="text-[10px] text-amber-600 hover:text-amber-700 font-bold flex items-center gap-1 hover:underline cursor-pointer"
+                      title="Auto-generate a secure random password"
+                    >
+                      <Zap className="h-3 w-3" />
+                      <span>Auto-Generate</span>
+                    </button>
+                  </div>
+                  <div className="relative flex items-center">
+                    <input
+                      type={showPassword ? "text" : "password"}
+                      required={!editingStaff}
+                      value={formData.password}
+                      onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                      placeholder="e.g. CrestOak@2026 or minimum 8 characters"
+                      className="w-full p-2.5 pr-10 bg-white border border-slate-300 rounded-xl focus:outline-none focus:border-slate-900 text-slate-900 text-xs font-mono font-medium"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword(!showPassword)}
+                      className="absolute right-3 text-slate-400 hover:text-slate-600 cursor-pointer"
+                      title={showPassword ? "Hide password" : "Show password"}
+                    >
+                      {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
                 <div className="flex flex-col gap-1">
                   <label className="text-[10px] uppercase font-bold text-slate-700">Designation *</label>
                   <input
@@ -554,9 +630,6 @@ export default function StaffClient({ staffList: initialStaff, departments: rawD
                     className="p-2.5 bg-white border border-slate-300 rounded-xl focus:outline-none focus:border-slate-900 text-slate-900"
                   />
                 </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
                 <div className="flex flex-col gap-1">
                   <label className="text-[10px] uppercase font-bold text-slate-700">Role / Permission Group *</label>
                   <select
@@ -570,13 +643,18 @@ export default function StaffClient({ staffList: initialStaff, departments: rawD
                     <option value="ADMIN">ADMIN (System Admin)</option>
                   </select>
                 </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
                 <div className="flex flex-col gap-1">
                   <label className="text-[10px] uppercase font-bold text-slate-700">Department *</label>
                   <select
                     value={formData.departmentId}
                     onChange={(e) => handleDepartmentChange(e.target.value)}
+                    required
                     className="p-2.5 bg-white border border-slate-300 rounded-xl focus:outline-none focus:border-slate-900 text-slate-900 font-bold"
                   >
+                    <option value="">-- Select Department --</option>
                     {departments.map((dept) => (
                       <option key={dept.id} value={dept.id}>
                         {dept.name}
@@ -584,9 +662,6 @@ export default function StaffClient({ staffList: initialStaff, departments: rawD
                     ))}
                   </select>
                 </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
                 <div className="flex flex-col gap-1">
                   <label className="text-[10px] uppercase font-bold text-slate-700">Joining Date *</label>
                   <input
@@ -597,7 +672,10 @@ export default function StaffClient({ staffList: initialStaff, departments: rawD
                     className="p-2.5 bg-white border border-slate-300 rounded-xl focus:outline-none focus:border-slate-900 text-slate-900"
                   />
                 </div>
-                {formData.roleName === "LECTURER" && (
+              </div>
+
+              {formData.roleName === "LECTURER" && (
+                <div className="grid grid-cols-2 gap-4">
                   <div className="flex flex-col gap-1">
                     <label className="text-[10px] uppercase font-bold text-slate-700">Academic Rank *</label>
                     <select
@@ -614,19 +692,16 @@ export default function StaffClient({ staffList: initialStaff, departments: rawD
                       <option value="PROFESSOR">Professor</option>
                     </select>
                   </div>
-                )}
-              </div>
-
-              {formData.roleName === "LECTURER" && (
-                <div className="flex flex-col gap-1">
-                  <label className="text-[10px] uppercase font-bold text-slate-700">Academic Specialization / Research Area</label>
-                  <input
-                    type="text"
-                    value={formData.specialization}
-                    onChange={(e) => setFormData({ ...formData, specialization: e.target.value })}
-                    placeholder="e.g. Clinical Nursing & Maternal Health"
-                    className="p-2.5 bg-white border border-slate-300 rounded-xl focus:outline-none focus:border-slate-900 text-slate-900"
-                  />
+                  <div className="flex flex-col gap-1">
+                    <label className="text-[10px] uppercase font-bold text-slate-700">Academic Specialization / Research Area</label>
+                    <input
+                      type="text"
+                      value={formData.specialization}
+                      onChange={(e) => setFormData({ ...formData, specialization: e.target.value })}
+                      placeholder="e.g. Clinical Nursing & Maternal Health"
+                      className="p-2.5 bg-white border border-slate-300 rounded-xl focus:outline-none focus:border-slate-900 text-slate-900"
+                    />
+                  </div>
                 </div>
               )}
 

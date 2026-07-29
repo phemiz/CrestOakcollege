@@ -114,6 +114,8 @@ if ($method === 'POST' || $method === 'PUT') {
     $firstName = $input['firstName'] ?? '';
     $lastName = $input['lastName'] ?? '';
     $username = $input['username'] ?? (strtolower($firstName) . '.' . strtolower($lastName));
+    $rawPassword = $input['password'] ?? 'CrestOak@2026';
+    $hashedPassword = password_hash($rawPassword, PASSWORD_DEFAULT);
 
     echo json_encode([
         "success" => true,
