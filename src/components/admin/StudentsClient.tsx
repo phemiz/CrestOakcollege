@@ -13,6 +13,12 @@ import {
   UserPlus,
   Loader2
 } from "lucide-react";
+import {
+  DEFAULT_DEPARTMENTS,
+  DEFAULT_PROGRAMMES,
+  DEFAULT_SESSIONS,
+  DEFAULT_SEMESTERS
+} from "@/constants/institutionalData";
 
 interface StudentItem {
   id: string;
@@ -55,11 +61,27 @@ interface StudentsClientProps {
 
 export default function StudentsClient({
   students: initialStudents,
-  departments,
-  programmes,
-  sessions,
-  semesters
+  departments: rawDepartments,
+  programmes: rawProgrammes,
+  sessions: rawSessions,
+  semesters: rawSemesters
 }: StudentsClientProps) {
+  const departments = (rawDepartments && rawDepartments.length > 0)
+    ? rawDepartments
+    : DEFAULT_DEPARTMENTS.map((d, i) => ({ id: `dept-${i + 1}`, name: d }));
+
+  const programmes = (rawProgrammes && rawProgrammes.length > 0)
+    ? rawProgrammes
+    : DEFAULT_PROGRAMMES.map((p, i) => ({ id: `prog-${i + 1}`, name: p }));
+
+  const sessions = (rawSessions && rawSessions.length > 0)
+    ? rawSessions
+    : DEFAULT_SESSIONS.map((s, i) => ({ id: `sess-${i + 1}`, name: s }));
+
+  const semesters = (rawSemesters && rawSemesters.length > 0)
+    ? rawSemesters
+    : DEFAULT_SEMESTERS.map((sem, i) => ({ id: `sem-${i + 1}`, name: sem }));
+
   const router = useRouter();
   const [students, setStudents] = useState<StudentItem[]>(initialStudents);
   const [isSubmitting, setIsSubmitting] = useState(false);

@@ -15,6 +15,7 @@ import {
   Sparkles
 } from "lucide-react";
 import Image from "next/image";
+import { DEFAULT_PROGRAMMES } from "@/constants/institutionalData";
 
 interface ProgrammeItem {
   id: string;
@@ -39,9 +40,18 @@ interface ApplicantWizardClientProps {
 }
 
 export default function ApplicantWizardClient({
-  programmes,
+  programmes: rawProgrammes,
   draftApplication
 }: ApplicantWizardClientProps) {
+  const programmes = (rawProgrammes && rawProgrammes.length > 0)
+    ? rawProgrammes
+    : DEFAULT_PROGRAMMES.map((p, i) => ({
+        id: `prog-${i + 1}`,
+        name: p,
+        code: p.substring(0, 3).toUpperCase(),
+        degreeAwarded: p.includes("Diploma") ? "Diploma" : "B.Sc."
+      }));
+
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
 

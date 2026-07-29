@@ -11,6 +11,7 @@ import {
   BookOpen,
   Loader2
 } from "lucide-react";
+import { DEFAULT_DEPARTMENTS } from "@/constants/institutionalData";
 
 interface ProgrammeItem {
   id: string;
@@ -34,7 +35,11 @@ interface ProgrammesClientProps {
   departments: DepartmentItem[];
 }
 
-export default function ProgrammesClient({ programmes: initialProgrammes, departments }: ProgrammesClientProps) {
+export default function ProgrammesClient({ programmes: initialProgrammes, departments: rawDepartments }: ProgrammesClientProps) {
+  const departments = (rawDepartments && rawDepartments.length > 0)
+    ? rawDepartments
+    : DEFAULT_DEPARTMENTS.map((d, i) => ({ id: `dept-${i + 1}`, name: d }));
+
   const router = useRouter();
   const [programmes, setProgrammes] = useState<ProgrammeItem[]>(initialProgrammes);
   const [isSubmitting, setIsSubmitting] = useState(false);

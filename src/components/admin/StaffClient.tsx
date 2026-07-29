@@ -13,6 +13,7 @@ import {
   UserPlus,
   Loader2
 } from "lucide-react";
+import { DEFAULT_DEPARTMENTS } from "@/constants/institutionalData";
 
 interface StaffItem {
   id: string;
@@ -50,7 +51,11 @@ interface StaffClientProps {
   departments: DropdownItem[];
 }
 
-export default function StaffClient({ staffList: initialStaff, departments }: StaffClientProps) {
+export default function StaffClient({ staffList: initialStaff, departments: rawDepartments }: StaffClientProps) {
+  const departments = (rawDepartments && rawDepartments.length > 0)
+    ? rawDepartments
+    : DEFAULT_DEPARTMENTS.map((d, i) => ({ id: `dept-${i + 1}`, name: d }));
+
   const router = useRouter();
   const [staffList, setStaffList] = useState<StaffItem[]>(initialStaff);
   const [isSubmitting, setIsSubmitting] = useState(false);
