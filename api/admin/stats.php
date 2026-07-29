@@ -31,7 +31,7 @@ $response = [
                 "user" => [
                     "firstName" => "Admissions",
                     "lastName" => "Officer",
-                    "email" => "admissions@crestoakcollege.edu.ng"
+                    "email" => "admissions@crestoakcollege.com.ng"
                 ]
             ],
             [
@@ -44,7 +44,7 @@ $response = [
                 "user" => [
                     "firstName" => "Bursary",
                     "lastName" => "Manager",
-                    "email" => "bursary@crestoakcollege.edu.ng"
+                    "email" => "bursary@crestoakcollege.com.ng"
                 ]
             ]
         ]

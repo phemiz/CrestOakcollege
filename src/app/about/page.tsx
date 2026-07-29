@@ -36,13 +36,13 @@ export default function About() {
         "@type": "ListItem",
         "position": 1,
         "name": "Home",
-        "item": "https://crestoakcollege.edu.ng"
+        "item": "https://crestoakcollege.com.ng"
       },
       {
         "@type": "ListItem",
         "position": 2,
         "name": "About Us",
-        "item": "https://crestoakcollege.edu.ng/about"
+        "item": "https://crestoakcollege.com.ng/about"
       }
     ]
   };
@@ -56,7 +56,7 @@ export default function About() {
       "@type": "CollegeOrUniversity",
       "name": "CrestOak College",
       "alternateName": "CCHSMT",
-      "url": "https://crestoakcollege.edu.ng"
+      "url": "https://crestoakcollege.com.ng"
     }
   };
 

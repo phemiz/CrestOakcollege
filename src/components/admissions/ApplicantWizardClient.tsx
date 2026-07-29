@@ -192,7 +192,7 @@ export default function ApplicantWizardClient({
 
   // Mock upload handlers that generate static mock links to pass validation
   const triggerMockUpload = (field: "olevelUrl" | "jambUrl" | "passportUrl", defaultName: string) => {
-    const mockUrl = `https://documents.crestoakcollege.edu.ng/uploads/${defaultName}-${Math.floor(1000 + Math.random() * 9000)}.pdf`;
+    const mockUrl = `https://documents.crestoakcollege.com.ng/uploads/${defaultName}-${Math.floor(1000 + Math.random() * 9000)}.pdf`;
     setFormData(prev => ({
       ...prev,
       [field]: mockUrl

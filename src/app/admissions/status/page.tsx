@@ -100,7 +100,7 @@ function StatusCheckerContent() {
       applicationId: appId,
       fullName: "Prospective Applicant",
       phone: !isAppId ? query : "08155884804",
-      email: "applicant@crestoakcollege.edu.ng",
+      email: "applicant@crestoakcollege.com.ng",
       course: "Community Health Extension Worker (CHEW)",
       department: "Department of Community Health Sciences",
       school: "School of Health Sciences",

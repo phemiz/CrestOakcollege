@@ -36,13 +36,13 @@ export default async function Academics() {
       "@type": "ListItem",
       "position": 1,
       "name": "Home",
-      "item": "https://crestoakcollege.edu.ng"
+      "item": "https://crestoakcollege.com.ng"
     },
     {
       "@type": "ListItem",
       "position": 2,
       "name": "Academics",
-      "item": "https://crestoakcollege.edu.ng/academics"
+      "item": "https://crestoakcollege.com.ng/academics"
     }
   ];
 
@@ -56,8 +56,8 @@ export default async function Academics() {
       "position": 3,
       "name": name,
       "item": level === "postgraduate" 
-        ? "https://crestoakcollege.edu.ng/academics?level=postgraduate" 
-        : `https://crestoakcollege.edu.ng/academics?faculty=${faculty}`
+        ? "https://crestoakcollege.com.ng/academics?level=postgraduate" 
+        : `https://crestoakcollege.com.ng/academics?faculty=${faculty}`
     });
   }
 
@@ -81,7 +81,7 @@ export default async function Academics() {
           "provider": {
             "@type": "CollegeOrUniversity",
             "name": "CrestOak College",
-            "url": "https://crestoakcollege.edu.ng"
+            "url": "https://crestoakcollege.com.ng"
           }
         });
       });
@@ -97,7 +97,7 @@ export default async function Academics() {
         "provider": {
           "@type": "CollegeOrUniversity",
           "name": "CrestOak College",
-          "url": "https://crestoakcollege.edu.ng"
+          "url": "https://crestoakcollege.com.ng"
         }
       });
     });

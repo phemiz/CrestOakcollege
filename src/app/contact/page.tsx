@@ -28,13 +28,13 @@ export default function Contact() {
         "@type": "ListItem",
         "position": 1,
         "name": "Home",
-        "item": "https://crestoakcollege.edu.ng"
+        "item": "https://crestoakcollege.com.ng"
       },
       {
         "@type": "ListItem",
         "position": 2,
         "name": "Contact",
-        "item": "https://crestoakcollege.edu.ng/contact"
+        "item": "https://crestoakcollege.com.ng/contact"
       }
     ]
   };
@@ -47,7 +47,7 @@ export default function Contact() {
     "mainEntity": {
       "@type": "CollegeOrUniversity",
       "name": "CrestOak College",
-      "url": "https://crestoakcollege.edu.ng",
+      "url": "https://crestoakcollege.com.ng",
       "telephone": "+2348155884804",
       "email": "info@crestoakcollege.com.ng"
     }

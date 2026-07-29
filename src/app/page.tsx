@@ -61,10 +61,10 @@ export default function Home() {
           "@context": "https://schema.org",
           "@type": "WebSite",
           "name": "CrestOak College",
-          "url": "https://crestoakcollege.edu.ng",
+          "url": "https://crestoakcollege.com.ng",
           "potentialAction": {
             "@type": "SearchAction",
-            "target": "https://crestoakcollege.edu.ng/academics?search={search_term_string}",
+            "target": "https://crestoakcollege.com.ng/academics?search={search_term_string}",
             "query-input": "required name=search_term_string"
           }
         }}

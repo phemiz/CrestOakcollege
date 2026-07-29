@@ -41,7 +41,7 @@ echo json_encode([
         'applicationId' => $applicationId,
         'fullName' => 'Azeez Olanrewaju Okunola',
         'phone' => strpos($queryUpper, 'CCHSMT') !== false ? '08155884804' : $query,
-        'email' => 'applicant@crestoakcollege.edu.ng',
+        'email' => 'applicant@crestoakcollege.com.ng',
         'course' => 'Community Health Extension Worker (CHEW)',
         'department' => 'Department of Community Health Sciences',
         'school' => 'School of Health Sciences',

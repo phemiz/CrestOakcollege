@@ -366,7 +366,7 @@ export async function processApplicationDecision(applicationId: string, decision
         update: { status: "ACCEPTED" },
         create: {
           status: "OFFERED",
-          admissionLetterUrl: "https://documents.crestoakcollege.edu.ng/admission-letters/default.pdf",
+          admissionLetterUrl: "https://documents.crestoakcollege.com.ng/admission-letters/default.pdf",
           applicationId,
           admittedProgrammeId: application.programmeId,
           admittedById: approverId
