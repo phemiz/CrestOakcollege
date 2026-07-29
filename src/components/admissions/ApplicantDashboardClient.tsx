@@ -113,23 +113,23 @@ export default function ApplicantDashboardClient({
   return (
     <div className="space-y-8">
       {/* Title & Overview Banner */}
-      <div className="bg-gradient-to-r from-slate-950 via-slate-900 to-indigo-950 border border-slate-800 rounded-3xl p-6 md:p-8 relative overflow-hidden">
-        <div className="absolute top-0 right-0 h-32 w-32 bg-indigo-600/10 rounded-full blur-2xl pointer-events-none" />
+      <div className="bg-gradient-to-r from-slate-900 via-slate-800 to-red-950 border border-slate-800 rounded-3xl p-6 md:p-8 relative overflow-hidden text-white shadow-md">
+        <div className="absolute top-0 right-0 h-32 w-32 bg-red-600/10 rounded-full blur-2xl pointer-events-none" />
         <div className="relative z-10 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
           <div>
-            <span className="text-[10px] bg-indigo-600/15 border border-indigo-500/20 text-indigo-400 font-bold uppercase tracking-widest px-2.5 py-1 rounded-full">
+            <span className="text-[10px] bg-red-600/20 border border-red-400/30 text-red-300 font-bold uppercase tracking-widest px-2.5 py-1 rounded-full">
               Admissions Portal
             </span>
             <h2 className="text-xl md:text-3xl font-display font-black text-white mt-4 uppercase tracking-tight">
               Applicant Dashboard
             </h2>
-            <p className="text-slate-400 text-xs md:text-sm mt-2 max-w-lg font-medium">
+            <p className="text-slate-300 text-xs md:text-sm mt-2 max-w-lg font-medium">
               Welcome back! Complete your application wizard, monitor screening dates, and view communication alerts.
             </p>
           </div>
           {application && (
-            <div className="bg-slate-900 border border-slate-800 p-4 rounded-2xl flex flex-col gap-1 text-xs">
-              <span className="text-slate-400 font-semibold uppercase tracking-wider text-[9px]">Tracking Number</span>
+            <div className="bg-white/10 border border-white/20 p-4 rounded-2xl flex flex-col gap-1 text-xs backdrop-blur-xs">
+              <span className="text-slate-300 font-semibold uppercase tracking-wider text-[9px]">Tracking Number</span>
               <strong className="text-white font-mono text-sm">{application.applicationNo}</strong>
             </div>
           )}
@@ -143,8 +143,8 @@ export default function ApplicantDashboardClient({
         <div className="lg:col-span-8 space-y-6">
           
           {/* Status Tracker Steps Card */}
-          <div className="bg-slate-950 border border-slate-800 rounded-2xl p-6 space-y-6">
-            <h3 className="text-xs font-bold uppercase tracking-wider text-slate-200">
+          <div className="bg-white border border-slate-200 rounded-2xl p-6 space-y-6 shadow-sm">
+            <h3 className="text-xs font-bold uppercase tracking-wider text-slate-900">
               Application Tracker
             </h3>
 

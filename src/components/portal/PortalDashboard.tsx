@@ -128,7 +128,7 @@ export default function PortalDashboard({ initialUser }: { initialUser?: any }) 
   const [requestsList, setRequestsList] = useState<RequestItem[]>([]);
   const [requestType, setRequestType] = useState("transcript");
 
-  // Initialize client side simulation data
+  // Initialize client side data with live PHP MySQL API integration
   useEffect(() => {
     if (initialUser) {
       const mockProfile: StudentProfile = {
@@ -144,6 +144,28 @@ export default function PortalDashboard({ initialUser }: { initialUser?: any }) 
 
       setStudentProfile(mockProfile);
       setIsLoggedIn(true);
+
+      const reg = initialUser.registrationNumber || initialUser.username || "STU-2026-001";
+      fetch(`/api/student/dashboard.php?regNumber=${encodeURIComponent(reg)}`)
+        .then((res) => res.json())
+        .then((data) => {
+          if (data.success && data.student) {
+            setStudentProfile({
+              fullName: `${data.student.firstName || ''} ${data.student.lastName || ''}`.trim() || mockProfile.fullName,
+              regNumber: data.student.regNumber || mockProfile.regNumber,
+              email: data.student.email || mockProfile.email,
+              phone: data.student.phone || mockProfile.phone,
+              faculty: data.student.faculty || mockProfile.faculty,
+              semester: "1st Semester, 2026/2027",
+              level: data.student.level || mockProfile.level,
+              gpa: data.student.gpa || mockProfile.gpa
+            });
+            if (data.invoices && data.invoices.length > 0) {
+              setInvoices(data.invoices);
+            }
+          }
+        })
+        .catch((err) => console.warn("Live student API fetch notice:", err));
 
       let tuitionRate = 400000;
       const loadedFaculty = mockProfile.faculty;

@@ -1,58 +1,45 @@
 <?php
-header('Content-Type: application/json');
-header('Access-Control-Allow-Origin: *');
-header('Access-Control-Allow-Methods: POST, OPTIONS');
-header('Access-Control-Allow-Headers: Content-Type, Authorization');
+header("Access-Control-Allow-Origin: *");
+header("Access-Control-Allow-Methods: POST, OPTIONS");
+header("Access-Control-Allow-Headers: Content-Type, Authorization");
+header("Content-Type: application/json; charset=UTF-8");
 
 if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
     http_response_code(200);
     exit();
 }
 
-if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
-    http_response_code(405);
-    echo json_encode([
-        'success' => false,
-        'message' => 'Method Not Allowed. Only POST requests are accepted.'
-    ]);
-    exit();
-}
+require_once __DIR__ . '/../admin/db.php';
+$conn = getDbConnection();
 
-$rawInput = file_get_contents('php://input');
-$data = json_decode($rawInput, true);
+$data = json_decode(file_get_contents('php://input'), true);
 
 if (!$data) {
-    $data = $_POST;
-}
-
-$fullName = isset($data['fullName']) ? trim($data['fullName']) : '';
-$email = isset($data['email']) ? trim($data['email']) : '';
-$phone = isset($data['phone']) ? trim($data['phone']) : '';
-$course = isset($data['course']) ? trim($data['course']) : '';
-
-if (empty($fullName) || empty($email) || empty($phone)) {
-    http_response_code(400);
-    echo json_encode([
-        'success' => false,
-        'message' => 'Missing required fields: fullName, email, and phone are mandatory.'
-    ]);
+    echo json_encode(["success" => false, "message" => "Invalid application payload."]);
     exit();
 }
 
-// Generate application number
-$randomNumber = rand(1000, 9999);
-$applicationId = 'CCHSMT-2026-' . $randomNumber;
+$appNo = 'CCHSMT-' . date('Y') . '-' . rand(1000, 9999);
+$fullName = trim(($data['firstName'] ?? '') . ' ' . ($data['lastName'] ?? ''));
+$email = trim($data['email'] ?? '');
+$phone = trim($data['phone'] ?? '');
+$faculty = trim($data['faculty'] ?? 'health');
+$course = trim($data['course'] ?? 'Community Health Extension Worker (CHEW)');
+$status = 'PENDING';
+$date = date('Y-m-d H:i:s');
 
-// Respond with JSON success payload
+if ($conn) {
+    $stmt = $conn->prepare("INSERT INTO Application (appNo, fullName, email, phone, faculty, course, status, dateSubmitted) VALUES (?, ?, ?, ?, ?, ?, ?, ?)");
+    if ($stmt) {
+        $stmt->bind_param("ssssssss", $appNo, $fullName, $email, $phone, $faculty, $course, $status, $date);
+        $stmt->execute();
+        $stmt->close();
+    }
+    $conn->close();
+}
+
 echo json_encode([
-    'success' => true,
-    'message' => 'Application submitted successfully to CrestOAK College of Health Sciences & Medical Technology admissions office.',
-    'applicationId' => $applicationId,
-    'applicant' => [
-        'fullName' => $fullName,
-        'email' => $email,
-        'phone' => $phone,
-        'course' => $course
-    ],
-    'submittedAt' => date('Y-m-d H:i:s')
+    "success" => true,
+    "message" => "Application submitted successfully!",
+    "appNumber" => $appNo
 ]);

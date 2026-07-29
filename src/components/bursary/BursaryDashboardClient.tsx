@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useTransition } from "react";
+import React, { useState, useEffect, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { raiseBursaryInvoice, verifyPaystackPayment } from "@/app/actions/paystack-actions";
 import { 
@@ -148,34 +148,58 @@ export default function BursaryDashboardClient({
 
   const [isPending, startTransition] = useTransition();
 
+  const [livePayments, setLivePayments] = useState<Payment[]>(payments || []);
+  const [liveInvoices, setLiveInvoices] = useState<Invoice[]>(invoices || []);
+
+  useEffect(() => {
+    async function fetchLiveFees() {
+      try {
+        const res = await fetch("/api/admin/fees.php");
+        if (res.ok) {
+          const data = await res.json();
+          if (data.success) {
+            if (data.payments && data.payments.length > 0) setLivePayments(data.payments);
+            if (data.invoices && data.invoices.length > 0) setLiveInvoices(data.invoices);
+          }
+        }
+      } catch (err) {
+        console.warn("Live fees API fetch notice:", err);
+      }
+    }
+    fetchLiveFees();
+  }, []);
+
+  const currentPayments = livePayments.length > 0 ? livePayments : payments;
+  const currentInvoices = liveInvoices.length > 0 ? liveInvoices : invoices;
+
   // Metrics calculation
-  const totalCollections = payments
+  const totalCollections = currentPayments
     .filter(p => p.status === "PAID")
     .reduce((sum, p) => sum + Number(p.amountPaid), 0);
 
-  const tuitionCollections = payments
-    .filter(p => p.status === "PAID" && p.invoice.feeType === "TUITION")
+  const tuitionCollections = currentPayments
+    .filter(p => p.status === "PAID" && p.invoice?.feeType === "TUITION")
     .reduce((sum, p) => sum + Number(p.amountPaid), 0);
 
-  const hostelCollections = payments
-    .filter(p => p.status === "PAID" && p.invoice.feeType === "ACCOMMODATION")
+  const hostelCollections = currentPayments
+    .filter(p => p.status === "PAID" && p.invoice?.feeType === "ACCOMMODATION")
     .reduce((sum, p) => sum + Number(p.amountPaid), 0);
 
-  const acceptanceCollections = payments
-    .filter(p => p.status === "PAID" && p.invoice.feeType === "ACCEPTANCE")
+  const acceptanceCollections = currentPayments
+    .filter(p => p.status === "PAID" && p.invoice?.feeType === "ACCEPTANCE")
     .reduce((sum, p) => sum + Number(p.amountPaid), 0);
 
-  const applicationCollections = payments
-    .filter(p => p.status === "PAID" && p.invoice.feeType === "APPLICATION")
+  const applicationCollections = currentPayments
+    .filter(p => p.status === "PAID" && p.invoice?.feeType === "APPLICATION")
     .reduce((sum, p) => sum + Number(p.amountPaid), 0);
 
-  const transcriptCollections = payments
-    .filter(p => p.status === "PAID" && p.invoice.feeType === "TRANSCRIPT")
+  const transcriptCollections = currentPayments
+    .filter(p => p.status === "PAID" && p.invoice?.feeType === "TRANSCRIPT")
     .reduce((sum, p) => sum + Number(p.amountPaid), 0);
 
   const otherCollections = totalCollections - tuitionCollections - hostelCollections;
 
-  const totalOutstanding = invoices
+  const totalOutstanding = currentInvoices
     .filter(i => i.status !== "PAID" && i.status !== "CANCELLED")
     .reduce((sum, i) => sum + Number(i.amount), 0);
 
