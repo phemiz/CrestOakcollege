@@ -15,3 +15,10 @@
   RewriteCond %{DOCUMENT_ROOT}/$1/index.html -f
   RewriteRule ^(.*)/$ $1/index.html [L]
 </IfModule>
+
+<IfModule mod_headers.c>
+    <FilesMatch "\.(ttf|ttc|otf|eot|woff|woff2|font.css|css|png|jpg|jpeg|svg|webp|ico)$">
+        Header set Access-Control-Allow-Origin "*"
+        Header set Cache-Control "max-age=31536000, public"
+    </FilesMatch>
+</IfModule>
