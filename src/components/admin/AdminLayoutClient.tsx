@@ -51,7 +51,7 @@ export default function AdminLayoutClient({ children, user }: AdminLayoutClientP
   const navigation = [
     { name: "Dashboard", href: "/admin", icon: LayoutDashboard, roles: ["Super Admin", "Admin", "Bursary", "Staff"] },
     { name: "Admissions", href: "/admin/admissions", icon: UserCheck, roles: ["Super Admin", "Admin", "Staff"] },
-    { name: "Students Directory", href: "/admin/students", icon: Users, roles: ["Super Admin", "Admin", "Staff"] },
+    { name: "Students Management", href: "/admin/students", icon: Users, roles: ["Super Admin", "Admin", "Staff"] },
     { name: "Staff Management", href: "/admin/staff", icon: Briefcase, roles: ["Super Admin", "Admin"] },
     { name: "Fee Management", href: "/admin/fees", icon: CreditCard, roles: ["Super Admin", "Admin", "Bursary"] },
     { name: "News & Alerts", href: "/admin/news", icon: Newspaper, roles: ["Super Admin", "Admin", "Staff"] },

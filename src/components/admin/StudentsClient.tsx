@@ -375,7 +375,7 @@ export default function StudentsClient({
       {/* Title & Add Action */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
-          <h2 className="text-2xl font-display font-black text-slate-900">Students Registry</h2>
+          <h2 className="text-2xl font-display font-black text-slate-900">Students Management</h2>
           <p className="text-xs text-slate-500 mt-1">Manage active student credentials, levels, and department files in real time.</p>
         </div>
         <button
