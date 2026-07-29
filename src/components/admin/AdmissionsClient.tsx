@@ -1,11 +1,9 @@
 "use client";
 
-import React, { useState, useTransition } from "react";
-import { processApplicationDecision } from "@/app/actions/admin-actions";
-import { adminUpdateScreening } from "@/app/actions/admissions-actions";
+import React, { useState } from "react";
+import { useRouter } from "next/navigation";
 import {
   Search,
-  Filter,
   CheckCircle,
   XCircle,
   Clock,
@@ -16,38 +14,38 @@ import {
   Check,
   X,
   FileText,
-  Calendar,
-  Save,
-  Download
+  Loader2
 } from "lucide-react";
-import { useRouter } from "next/navigation";
 
 interface ApplicationItem {
   id: string;
   applicationNo: string;
-  status: "DRAFT" | "SUBMITTED" | "UNDER_REVIEW" | "APPROVED" | "REJECTED";
-  paymentStatus: "PENDING" | "PAID" | "FAILED";
-  createdAt: Date;
+  status: "DRAFT" | "SUBMITTED" | "UNDER_REVIEW" | "APPROVED" | "REJECTED" | string;
+  paymentStatus?: "PENDING" | "PAID" | "FAILED" | string;
+  createdAt: Date | string;
   applicant: {
+    id?: string;
     firstName: string;
     lastName: string;
     email: string;
     phoneNumber: string | null;
   };
   programme: {
+    id?: string;
     name: string;
-    code: string;
+    code?: string;
+    degreeAwarded?: string;
   };
-  documents: {
+  documents?: {
     id: string;
     documentName: string;
     documentUrl: string;
   }[];
-  screening?: {
-    screeningDate: Date;
+  screeningSchedule?: {
+    screeningDate: Date | string;
     venue: string;
     status: string;
-    notes: string | null;
+    notes?: string | null;
   } | null;
 }
 
@@ -55,16 +53,13 @@ interface AdmissionsClientProps {
   applications: ApplicationItem[];
 }
 
-export default function AdmissionsClient({ applications }: AdmissionsClientProps) {
+export default function AdmissionsClient({ applications: initialApps }: AdmissionsClientProps) {
   const router = useRouter();
-  const [isPending, startTransition] = useTransition();
+  const [applications, setApplications] = useState<ApplicationItem[]>(initialApps);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("ALL");
   const [selectedApp, setSelectedApp] = useState<ApplicationItem | null>(null);
-
-  // Screening form states
-  const [screeningStatus, setScreeningStatus] = useState("COMPLETED");
-  const [screeningNotes, setScreeningNotes] = useState("");
 
   // Pagination states
   const [currentPage, setCurrentPage] = useState(1);
@@ -89,36 +84,28 @@ export default function AdmissionsClient({ applications }: AdmissionsClientProps
   const paginatedApps = filteredApps.slice(startIndex, startIndex + itemsPerPage);
 
   const handleDecision = async (id: string, decision: "APPROVED" | "REJECTED") => {
-    startTransition(async () => {
-      const res = await processApplicationDecision(id, decision);
-      if (res.success) {
-        setSelectedApp(null);
-        router.refresh();
-      } else {
-        alert("Operation failed: " + res.error);
-      }
-    });
-  };
-
-  const handleUpdateScreening = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!selectedApp) return;
-
-    startTransition(async () => {
-      const res = await adminUpdateScreening({
-        applicationId: selectedApp.id,
-        status: screeningStatus as any,
-        notes: screeningNotes
+    setIsSubmitting(true);
+    try {
+      const res = await fetch("/api/admin/admissions.php", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ applicationId: id, decision })
       });
-
-      if (res.success) {
-        alert("Screening status updated successfully!");
+      const data = await res.json();
+      if (data.success) {
+        setApplications((prev) =>
+          prev.map((app) => (app.id === id ? { ...app, status: decision } : app))
+        );
         setSelectedApp(null);
         router.refresh();
       } else {
-        alert("Failed to update screening: " + res.error);
+        alert("Operation failed: " + (data.message || "Failed"));
       }
-    });
+    } catch (err: any) {
+      alert("Decision error: " + err.message);
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -126,297 +113,233 @@ export default function AdmissionsClient({ applications }: AdmissionsClientProps
       {/* Title Header */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
-          <h2 className="text-xl font-display font-black text-white text-left uppercase tracking-wider">Admissions Management</h2>
-          <p className="text-xs text-slate-400 mt-1">Screen candidate dossiers, audit entrance exams, and dispatch offer letters.</p>
+          <h2 className="text-2xl font-display font-black text-slate-900">Admissions Desk</h2>
+          <p className="text-xs text-slate-500 mt-1">Review, screen, and process candidate applications for CrestOak College in real time.</p>
         </div>
       </div>
 
-      {/* Filter and Search Bar */}
-      <div className="grid grid-cols-1 md:grid-cols-12 gap-4 bg-slate-950 p-4 rounded-2xl border border-slate-800">
+      {/* Search and Filters */}
+      <div className="grid grid-cols-1 md:grid-cols-12 gap-4 bg-white p-4 rounded-2xl border border-slate-200 shadow-xs">
         <div className="md:col-span-8 relative">
-          <Search className="absolute left-3.5 top-3.5 h-4 w-4 text-slate-500" />
+          <Search className="absolute left-3.5 top-3.5 h-4 w-4 text-slate-400" />
           <input
             type="text"
-            placeholder="Search candidates by name, application number, or programme..."
+            placeholder="Search candidate by name, application tracking number, or programme..."
             value={searchTerm}
             onChange={(e) => {
               setSearchTerm(e.target.value);
               setCurrentPage(1);
             }}
-            className="w-full pl-10 pr-4 py-3 bg-slate-900 border border-slate-850 rounded-xl text-xs font-semibold text-slate-200 placeholder:text-slate-500 focus:outline-none focus:border-red-600 transition-colors"
+            className="w-full pl-10 pr-4 py-2.5 bg-white border border-slate-300 rounded-xl text-xs font-semibold text-slate-900 placeholder:text-slate-400 focus:outline-none focus:border-slate-900 focus:ring-1 focus:ring-slate-900 transition-colors"
           />
         </div>
-        <div className="md:col-span-4 flex gap-2">
-          <div className="relative flex-1">
-            <Filter className="absolute left-3.5 top-3.5 h-4 w-4 text-slate-500 pointer-events-none" />
-            <select
-              value={statusFilter}
-              onChange={(e) => {
-                setStatusFilter(e.target.value);
-                setCurrentPage(1);
-              }}
-              className="w-full pl-10 pr-8 py-3 bg-slate-900 border border-slate-850 rounded-xl text-xs font-bold text-slate-200 focus:outline-none focus:border-red-600 transition-colors appearance-none cursor-pointer"
-            >
-              <option value="ALL">All Statuses</option>
-              <option value="SUBMITTED">Submitted</option>
-              <option value="UNDER_REVIEW">Under Review</option>
-              <option value="APPROVED">Approved (Admitted)</option>
-              <option value="REJECTED">Rejected</option>
-            </select>
-          </div>
+        <div className="md:col-span-4">
+          <select
+            value={statusFilter}
+            onChange={(e) => {
+              setStatusFilter(e.target.value);
+              setCurrentPage(1);
+            }}
+            className="w-full px-4 py-2.5 bg-white border border-slate-300 rounded-xl text-xs font-bold text-slate-800 focus:outline-none focus:border-slate-900 focus:ring-1 focus:ring-slate-900 transition-colors cursor-pointer"
+          >
+            <option value="ALL">All Application Statuses</option>
+            <option value="SUBMITTED">Submitted</option>
+            <option value="UNDER_REVIEW">Under Review</option>
+            <option value="APPROVED">Approved</option>
+            <option value="REJECTED">Declined</option>
+          </select>
         </div>
       </div>
 
-      {/* Dual Panel Layout: List and Preview details */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
-        {/* Main List */}
-        <div className="lg:col-span-7 bg-slate-950 border border-slate-800 rounded-2xl p-5 space-y-4">
-          <h3 className="text-xs font-bold uppercase tracking-wider text-slate-400 mb-2">
-            Candidates List ({filteredApps.length})
-          </h3>
-
-          {paginatedApps.length > 0 ? (
-            <div className="space-y-3">
-              {paginatedApps.map((app) => (
-                <div
-                  key={app.id}
-                  onClick={() => {
-                    setSelectedApp(app);
-                    setScreeningStatus(app.screening?.status || "COMPLETED");
-                    setScreeningNotes(app.screening?.notes || "");
-                  }}
-                  className={`bg-slate-900/60 border p-4 rounded-xl cursor-pointer transition-all hover:bg-slate-900 flex justify-between items-center ${
-                    selectedApp?.id === app.id ? "border-red-500 bg-slate-900" : "border-slate-850"
-                  }`}
-                >
-                  <div className="space-y-1.5 min-w-0">
-                    <div className="flex items-center gap-2">
-                      <span className="text-xs font-bold text-slate-200 truncate">
-                        {app.applicant.firstName} {app.applicant.lastName}
+      {/* Applications Table */}
+      <div className="bg-white border border-slate-200 rounded-2xl overflow-hidden shadow-xs">
+        {paginatedApps.length > 0 ? (
+          <div className="overflow-x-auto">
+            <table className="w-full text-left border-collapse text-xs text-slate-800">
+              <thead>
+                <tr className="border-b border-slate-200 bg-slate-50 text-slate-500 font-bold uppercase tracking-wider">
+                  <th className="py-3.5 px-5">Tracking No</th>
+                  <th className="py-3.5 px-5">Applicant Name</th>
+                  <th className="py-3.5 px-5">Target Programme</th>
+                  <th className="py-3.5 px-5">Submitted Date</th>
+                  <th className="py-3.5 px-5">Status</th>
+                  <th className="py-3.5 px-5 text-right">Actions</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100">
+                {paginatedApps.map((app) => (
+                  <tr key={app.id} className="hover:bg-slate-50/80 transition-colors">
+                    <td className="py-3.5 px-5 font-mono font-bold text-slate-900">{app.applicationNo}</td>
+                    <td className="py-3.5 px-5 font-semibold text-slate-900">
+                      {app.applicant.firstName} {app.applicant.lastName}
+                      <span className="block text-[11px] text-slate-500 font-normal mt-0.5">
+                        {app.applicant.email}
                       </span>
+                    </td>
+                    <td className="py-3.5 px-5 text-slate-700 font-medium">{app.programme.name}</td>
+                    <td className="py-3.5 px-5 text-slate-500 font-medium">
+                      {new Date(app.createdAt).toLocaleDateString()}
+                    </td>
+                    <td className="py-3.5 px-5">
                       <span
-                        className={`text-[9px] font-black uppercase px-2 py-0.5 rounded ${
+                        className={`inline-flex items-center gap-1 px-2.5 py-1 rounded text-[10px] font-bold uppercase tracking-wider ${
                           app.status === "APPROVED"
-                            ? "bg-emerald-950 text-emerald-400 border border-emerald-900/30"
+                            ? "bg-emerald-50 text-emerald-700 border border-emerald-200"
                             : app.status === "REJECTED"
-                            ? "bg-rose-950 text-rose-400 border border-rose-900/30"
-                            : app.status === "UNDER_REVIEW"
-                            ? "bg-amber-950 text-amber-400 border border-amber-900/30"
-                            : "bg-slate-800 text-slate-300"
+                            ? "bg-red-50 text-red-700 border border-red-200"
+                            : "bg-amber-50 text-amber-700 border border-amber-200"
                         }`}
                       >
-                        {app.status}
+                        {app.status === "APPROVED" ? (
+                          <CheckCircle className="h-3 w-3" />
+                        ) : app.status === "REJECTED" ? (
+                          <XCircle className="h-3 w-3" />
+                        ) : (
+                          <Clock className="h-3 w-3" />
+                        )}
+                        <span>{app.status}</span>
                       </span>
-                    </div>
-                    <p className="text-[10px] text-slate-400 font-medium">
-                      App No: <strong className="text-slate-300">{app.applicationNo}</strong> • Programme: {app.programme.code}
-                    </p>
-                  </div>
-                  <Eye className="h-4.5 w-4.5 text-slate-500 hover:text-slate-200 transition-colors" />
-                </div>
-              ))}
-            </div>
-          ) : (
-            <div className="py-16 border border-dashed border-slate-850 rounded-xl text-center text-slate-500 font-bold uppercase tracking-widest text-[11px] bg-slate-900/10">
-              No applications match criteria.
-            </div>
-          )}
-
-          {/* Pagination Controls */}
-          {totalPages > 1 && (
-            <div className="flex justify-between items-center pt-4 border-t border-slate-850 text-xs font-bold text-slate-400">
-              <span>
-                Page {currentPage} of {totalPages}
-              </span>
-              <div className="flex gap-2">
-                <button
-                  disabled={currentPage === 1}
-                  onClick={() => setCurrentPage((c) => Math.max(c - 1, 1))}
-                  className="p-2 bg-slate-900 border border-slate-800 hover:bg-slate-850 text-slate-200 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed transition-all"
-                >
-                  <ChevronLeft className="h-4 w-4" />
-                </button>
-                <button
-                  disabled={currentPage === totalPages}
-                  onClick={() => setCurrentPage((c) => Math.min(c + 1, totalPages))}
-                  className="p-2 bg-slate-900 border border-slate-800 hover:bg-slate-850 text-slate-200 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed transition-all"
-                >
-                  <ChevronRight className="h-4 w-4" />
-                </button>
-              </div>
-            </div>
-          )}
-        </div>
-
-        {/* Detailed Application Sidebar Preview */}
-        <div className="lg:col-span-5 bg-slate-950 border border-slate-800 rounded-2xl p-5 min-h-[300px]">
-          {selectedApp ? (
-            <div className="space-y-6">
-              <div>
-                <h3 className="text-xs font-bold uppercase tracking-wider text-slate-400 mb-4">
-                  Dossier Preview
-                </h3>
-                <div className="bg-slate-900/60 p-4 rounded-xl border border-slate-850 space-y-4">
-                  <div>
-                    <span className="text-[10px] text-slate-400 font-bold uppercase">Candidate Name</span>
-                    <p className="text-sm font-bold text-white mt-0.5">
-                      {selectedApp.applicant.firstName} {selectedApp.applicant.lastName}
-                    </p>
-                  </div>
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <span className="text-[10px] text-slate-400 font-bold uppercase">Application No</span>
-                      <p className="text-xs font-semibold text-slate-200 mt-0.5">{selectedApp.applicationNo}</p>
-                    </div>
-                    <div>
-                      <span className="text-[10px] text-slate-400 font-bold uppercase">Course Enrolling</span>
-                      <p className="text-xs font-semibold text-slate-200 mt-0.5">{selectedApp.programme.name}</p>
-                    </div>
-                  </div>
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <span className="text-[10px] text-slate-400 font-bold uppercase">Email Address</span>
-                      <p className="text-xs font-semibold text-slate-200 mt-0.5 truncate">{selectedApp.applicant.email}</p>
-                    </div>
-                    <div>
-                      <span className="text-[10px] text-slate-400 font-bold uppercase">Phone Number</span>
-                      <p className="text-xs font-semibold text-slate-200 mt-0.5">{selectedApp.applicant.phoneNumber || "—"}</p>
-                    </div>
-                  </div>
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <span className="text-[10px] text-slate-400 font-bold uppercase">Application Payment</span>
-                      <p className="text-xs font-semibold text-slate-200 mt-0.5 flex items-center gap-1.5">
-                        <span className={`h-2 w-2 rounded-full ${selectedApp.paymentStatus === "PAID" ? "bg-emerald-500" : "bg-amber-500"}`} />
-                        <span>{selectedApp.paymentStatus}</span>
-                      </p>
-                    </div>
-                    <div>
-                      <span className="text-[10px] text-slate-400 font-bold uppercase">Submission Date</span>
-                      <p className="text-xs font-semibold text-slate-200 mt-0.5">
-                        {new Date(selectedApp.createdAt).toLocaleDateString()}
-                      </p>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              {/* Uploaded Documents List */}
-              <div className="space-y-2">
-                <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Uploaded Dossiers ({selectedApp.documents.length})</span>
-                {selectedApp.documents.length > 0 ? (
-                  <div className="space-y-2">
-                    {selectedApp.documents.map((doc) => (
-                      <div
-                        key={doc.id}
-                        className="flex justify-between items-center bg-slate-900 border border-slate-850 px-3 py-2.5 rounded-xl text-[11px] text-slate-250 font-semibold"
+                    </td>
+                    <td className="py-3.5 px-5 text-right space-x-2">
+                      <button
+                        onClick={() => setSelectedApp(app)}
+                        className="p-2 bg-white border border-slate-200 hover:bg-slate-100 rounded-lg text-slate-600 transition-all cursor-pointer shadow-xs"
                       >
-                        <span className="truncate max-w-[180px]">{doc.documentName}</span>
-                        <a
-                          href={doc.documentUrl}
-                          target="_blank"
-                          rel="noreferrer"
-                          className="text-red-400 hover:text-white transition-colors flex items-center gap-1 text-[10px] uppercase font-bold"
+                        <Eye className="h-3.5 w-3.5" />
+                      </button>
+                      {app.status !== "APPROVED" && (
+                        <button
+                          disabled={isSubmitting}
+                          onClick={() => handleDecision(app.id, "APPROVED")}
+                          className="p-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg transition-all cursor-pointer shadow-xs disabled:opacity-50"
                         >
-                          <Download className="h-3.5 w-3.5" />
-                          <span>View</span>
-                        </a>
-                      </div>
-                    ))}
+                          <Check className="h-3.5 w-3.5" />
+                        </button>
+                      )}
+                      {app.status !== "REJECTED" && (
+                        <button
+                          disabled={isSubmitting}
+                          onClick={() => handleDecision(app.id, "REJECTED")}
+                          className="p-2 bg-red-600 hover:bg-red-700 text-white rounded-lg transition-all cursor-pointer shadow-xs disabled:opacity-50"
+                        >
+                          <X className="h-3.5 w-3.5" />
+                        </button>
+                      )}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        ) : (
+          <div className="py-16 text-center text-slate-500 font-bold uppercase tracking-widest text-xs bg-white">
+            No applications found matching search filter.
+          </div>
+        )}
+
+        {/* Pagination Footer */}
+        {totalPages > 1 && (
+          <div className="flex justify-between items-center px-5 py-3.5 border-t border-slate-200 text-xs font-bold text-slate-600 bg-slate-50">
+            <span>
+              Page {currentPage} of {totalPages}
+            </span>
+            <div className="flex gap-2">
+              <button
+                disabled={currentPage === 1}
+                onClick={() => setCurrentPage((c) => Math.max(c - 1, 1))}
+                className="p-2 bg-white border border-slate-200 hover:bg-slate-100 text-slate-700 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed transition-all cursor-pointer"
+              >
+                <ChevronLeft className="h-4 w-4" />
+              </button>
+              <button
+                disabled={currentPage === totalPages}
+                onClick={() => setCurrentPage((c) => Math.min(c + 1, totalPages))}
+                className="p-2 bg-white border border-slate-200 hover:bg-slate-100 text-slate-700 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed transition-all cursor-pointer"
+              >
+                <ChevronRight className="h-4 w-4" />
+              </button>
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* Application Detail View Modal */}
+      {selectedApp && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 backdrop-blur-xs p-4">
+          <div className="bg-white border border-slate-200 rounded-3xl w-full max-w-2xl max-h-[90vh] overflow-y-auto shadow-2xl">
+            <div className="h-16 border-b border-slate-200 flex items-center justify-between px-6 bg-white sticky top-0 z-10">
+              <div>
+                <h3 className="font-display font-black text-sm tracking-widest uppercase text-slate-900">
+                  Application Dossier Review
+                </h3>
+                <p className="text-[10px] font-mono text-slate-500">{selectedApp.applicationNo}</p>
+              </div>
+              <button
+                onClick={() => setSelectedApp(null)}
+                className="text-slate-400 hover:text-slate-900 transition-colors cursor-pointer"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+
+            <div className="p-6 space-y-6 text-xs text-slate-800">
+              {/* Applicant Info Card */}
+              <div className="bg-slate-50 p-4 rounded-2xl border border-slate-200 space-y-3">
+                <h4 className="font-display font-bold text-slate-900 uppercase text-[11px] tracking-wider">Candidate Bio</h4>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <span className="text-[10px] text-slate-500 uppercase font-bold block">Full Name</span>
+                    <strong className="text-slate-900 font-semibold">{selectedApp.applicant.firstName} {selectedApp.applicant.lastName}</strong>
                   </div>
-                ) : (
-                  <div className="p-3 bg-slate-900 border border-slate-850 rounded-xl text-center text-slate-500 font-bold">
-                    No files uploaded.
+                  <div>
+                    <span className="text-[10px] text-slate-500 uppercase font-bold block">Email</span>
+                    <strong className="text-slate-900 font-semibold">{selectedApp.applicant.email}</strong>
                   </div>
+                  <div>
+                    <span className="text-[10px] text-slate-500 uppercase font-bold block">Phone</span>
+                    <strong className="text-slate-900 font-semibold">{selectedApp.applicant.phoneNumber || "Not provided"}</strong>
+                  </div>
+                  <div>
+                    <span className="text-[10px] text-slate-500 uppercase font-bold block">Programme Choice</span>
+                    <strong className="text-slate-900 font-semibold">{selectedApp.programme.name}</strong>
+                  </div>
+                </div>
+              </div>
+
+              {/* Action Decisions */}
+              <div className="flex items-center justify-end gap-3 pt-4 border-t border-slate-200">
+                <button
+                  type="button"
+                  onClick={() => setSelectedApp(null)}
+                  className="bg-white hover:bg-slate-100 border border-slate-300 px-5 py-2.5 rounded-xl text-slate-700 font-bold cursor-pointer"
+                >
+                  Close
+                </button>
+                {selectedApp.status !== "APPROVED" && (
+                  <button
+                    disabled={isSubmitting}
+                    onClick={() => handleDecision(selectedApp.id, "APPROVED")}
+                    className="bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 text-white font-bold px-6 py-2.5 rounded-xl transition-all cursor-pointer flex items-center gap-1.5 shadow-xs"
+                  >
+                    {isSubmitting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" />}
+                    <span>Approve Admission</span>
+                  </button>
+                )}
+                {selectedApp.status !== "REJECTED" && (
+                  <button
+                    disabled={isSubmitting}
+                    onClick={() => handleDecision(selectedApp.id, "REJECTED")}
+                    className="bg-red-600 hover:bg-red-700 disabled:opacity-50 text-white font-bold px-6 py-2.5 rounded-xl transition-all cursor-pointer flex items-center gap-1.5 shadow-xs"
+                  >
+                    {isSubmitting ? <Loader2 className="h-4 w-4 animate-spin" /> : <X className="h-4 w-4" />}
+                    <span>Decline Application</span>
+                  </button>
                 )}
               </div>
-
-              {/* Screening Scheduling Reviews Form */}
-              {selectedApp.screening && (
-                <form onSubmit={handleUpdateScreening} className="space-y-3 bg-slate-900/60 p-4 rounded-xl border border-slate-850 text-xs text-slate-350">
-                  <h4 className="font-display font-extrabold text-[10px] text-indigo-400 uppercase tracking-widest leading-none flex items-center gap-1.5">
-                    <Calendar className="h-3.5 w-3.5" />
-                    <span>Entrance Exam Review</span>
-                  </h4>
-                  <div className="text-[10px] space-y-1">
-                    <p>Date: <strong className="text-slate-200">{new Date(selectedApp.screening.screeningDate).toLocaleString()}</strong></p>
-                    <p>Venue: <strong className="text-slate-200">{selectedApp.screening.venue}</strong></p>
-                  </div>
-                  
-                  <div className="flex flex-col gap-1">
-                    <label className="text-[10px] text-slate-400 uppercase tracking-wider">Attendance Status</label>
-                    <select
-                      value={screeningStatus}
-                      onChange={(e) => setScreeningStatus(e.target.value)}
-                      className="p-2.5 bg-slate-950 border border-slate-850 rounded-lg text-slate-200 focus:outline-none focus:border-indigo-500 font-bold"
-                    >
-                      <option value="PENDING">Pending Exam</option>
-                      <option value="COMPLETED">Attended / Passed</option>
-                      <option value="MISSED">Absent / Missed Slot</option>
-                    </select>
-                  </div>
-
-                  <div className="flex flex-col gap-1">
-                    <label className="text-[10px] text-slate-400 uppercase tracking-wider font-bold">Screening Notes</label>
-                    <input
-                      type="text"
-                      value={screeningNotes}
-                      onChange={(e) => setScreeningNotes(e.target.value)}
-                      placeholder="e.g. Scored 78% in interview, certified fit."
-                      className="p-2.5 bg-slate-950 border border-slate-850 rounded-lg text-slate-200 focus:outline-none"
-                    />
-                  </div>
-
-                  <button
-                    type="submit"
-                    disabled={isPending}
-                    className="w-full bg-indigo-650 hover:bg-indigo-700 text-white font-display font-bold py-2 rounded-lg transition-colors cursor-pointer text-[10px] uppercase tracking-wider flex items-center justify-center gap-1 shadow-md shadow-indigo-900/10"
-                  >
-                    <Save className="h-3.5 w-3.5" />
-                    <span>{isPending ? "Saving..." : "Update Screening Info"}</span>
-                  </button>
-                </form>
-              )}
-
-              {/* Action Buttons */}
-              {selectedApp.status !== "APPROVED" && selectedApp.status !== "REJECTED" ? (
-                <div className="space-y-2">
-                  <span className="text-[10px] text-slate-400 font-bold uppercase">Decision Panel</span>
-                  <div className="grid grid-cols-2 gap-3">
-                    <button
-                      disabled={isPending}
-                      onClick={() => handleDecision(selectedApp.id, "APPROVED")}
-                      className="bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 text-white font-bold py-3 rounded-xl transition-all cursor-pointer flex items-center justify-center gap-1.5 text-xs shadow-md shadow-emerald-900/10"
-                    >
-                      <Check className="h-4 w-4" />
-                      <span>{isPending ? "Processing..." : "Admit Candidate"}</span>
-                    </button>
-                    <button
-                      disabled={isPending}
-                      onClick={() => handleDecision(selectedApp.id, "REJECTED")}
-                      className="bg-slate-900 border border-slate-800 hover:bg-red-950/40 hover:text-red-400 hover:border-red-900/30 disabled:opacity-50 text-slate-300 font-bold py-3 rounded-xl transition-all cursor-pointer flex items-center justify-center gap-1.5 text-xs"
-                    >
-                      <X className="h-4 w-4" />
-                      <span>{isPending ? "Processing..." : "Reject Offer"}</span>
-                    </button>
-                  </div>
-                </div>
-              ) : (
-                <div className="bg-slate-900 p-4 rounded-xl border border-slate-850 flex items-center gap-3 text-xs text-slate-400 font-semibold">
-                  <UserCheck className="h-5 w-5 text-slate-400 shrink-0" />
-                  <span>This application decision has already been finalized and cannot be modified.</span>
-                </div>
-              )}
             </div>
-          ) : (
-            <div className="h-full flex flex-col items-center justify-center text-center text-slate-500 py-16">
-              <Clock className="h-8 w-8 mb-3 text-slate-650" />
-              <p className="text-xs font-bold uppercase tracking-wider">No dossier selected</p>
-              <p className="text-[10px] text-slate-400 mt-1 max-w-[200px]">Select a candidate from the list to preview details and make decisions.</p>
-            </div>
-          )}
+          </div>
         </div>
-      </div>
+      )}
     </div>
   );
 }

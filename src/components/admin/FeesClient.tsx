@@ -1,18 +1,17 @@
 "use client";
 
-import React, { useState, useTransition } from "react";
+import React, { useState } from "react";
 import { useRouter } from "next/navigation";
-import { createCustomInvoice } from "@/app/actions/admin-actions";
 import {
   Search,
-  Filter,
   Plus,
   ChevronLeft,
   ChevronRight,
   X,
   CreditCard,
   CheckCircle,
-  AlertCircle
+  AlertCircle,
+  Loader2
 } from "lucide-react";
 
 interface InvoiceItem {
@@ -20,19 +19,20 @@ interface InvoiceItem {
   invoiceNo: string;
   amount: number;
   description: string;
-  feeType: "TUITION" | "ACCOMMODATION" | "APPLICATION" | "ACCEPTANCE" | "LATE_REGISTRATION" | "TRANSCRIPT" | "OTHER";
-  status: "UNPAID" | "PARTIALLY_PAID" | "PAID" | "CANCELLED";
-  dueDate: Date;
-  createdAt: Date;
+  feeType: "TUITION" | "ACCOMMODATION" | "APPLICATION" | "ACCEPTANCE" | "LATE_REGISTRATION" | "TRANSCRIPT" | "OTHER" | string;
+  status: "UNPAID" | "PARTIALLY_PAID" | "PAID" | "CANCELLED" | string;
+  dueDate: Date | string;
+  createdAt: Date | string;
   user: {
+    id?: string;
     firstName: string;
     lastName: string;
     email: string;
   };
-  payments: {
+  payments?: {
     reference: string;
     amountPaid: number;
-    paidAt: Date | null;
+    paidAt: Date | string | null;
   }[];
 }
 
@@ -50,9 +50,10 @@ interface FeesClientProps {
   students: StudentItem[];
 }
 
-export default function FeesClient({ invoices, students }: FeesClientProps) {
+export default function FeesClient({ invoices: initialInvoices, students }: FeesClientProps) {
   const router = useRouter();
-  const [isPending, startTransition] = useTransition();
+  const [invoices, setInvoices] = useState<InvoiceItem[]>(initialInvoices);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Search & Filters
   const [searchTerm, setSearchTerm] = useState("");
@@ -68,16 +69,16 @@ export default function FeesClient({ invoices, students }: FeesClientProps) {
 
   // Form State
   const [formData, setFormData] = useState({
-    userId: students[0]?.id || "",
+    userId: students[0]?.id || "user-001",
     amount: 150000,
     description: "First Semester Course Administrative Charges",
-    feeType: "TUITION" as "TUITION" | "ACCOMMODATION" | "APPLICATION" | "ACCEPTANCE" | "LATE_REGISTRATION" | "TRANSCRIPT" | "OTHER",
+    feeType: "TUITION" as any,
     dueDate: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString().split("T")[0]
   });
 
   const openAddModal = () => {
     setFormData({
-      userId: students[0]?.id || "",
+      userId: students[0]?.id || "user-001",
       amount: 150000,
       description: "First Semester Course Administrative Charges",
       feeType: "TUITION",
@@ -88,28 +89,34 @@ export default function FeesClient({ invoices, students }: FeesClientProps) {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!formData.userId || !formData.amount || !formData.description) {
+    if (!formData.amount || !formData.description) {
       alert("Please fill in all required fields.");
       return;
     }
 
-    startTransition(async () => {
-      const payload = {
-        ...formData,
-        amount: Number(formData.amount),
-        dueDate: new Date(formData.dueDate)
-      };
-      const res = await createCustomInvoice(payload);
-      if (res.success) {
+    setIsSubmitting(true);
+    try {
+      const res = await fetch("/api/admin/fees.php", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(formData)
+      });
+      const data = await res.json();
+      if (data.success) {
+        setInvoices((prev) => [data.invoice, ...prev]);
         setIsModalOpen(false);
         router.refresh();
       } else {
-        alert("Error dispatching invoice: " + res.error);
+        alert("Error generating invoice: " + (data.message || "Failed"));
       }
-    });
+    } catch (err: any) {
+      alert("Submission error: " + err.message);
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
-  // Filter invoicing data
+  // Filter invoices
   const filteredInvoices = invoices.filter((inv) => {
     const fullName = `${inv.user.firstName} ${inv.user.lastName}`.toLowerCase();
     const searchMatch =
@@ -123,43 +130,47 @@ export default function FeesClient({ invoices, students }: FeesClientProps) {
     return searchMatch && statusMatch && typeMatch;
   });
 
-  // Pagination calculation
+  // Paginate items
   const totalPages = Math.ceil(filteredInvoices.length / itemsPerPage);
   const paginatedInvoices = filteredInvoices.slice(
     (currentPage - 1) * itemsPerPage,
     currentPage * itemsPerPage
   );
 
+  const formatCurrency = (amt: number) => {
+    return new Intl.NumberFormat("en-NG", { style: "currency", currency: "NGN" }).format(amt);
+  };
+
   return (
     <div className="space-y-6">
-      {/* Title & Dispatch Invoice Button */}
+      {/* Title & Add Action */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
-          <h2 className="text-xl font-display font-black text-white">Fee & Collections Ledger</h2>
-          <p className="text-xs text-slate-400 mt-1">Audit outstanding tuition structures, payment references, and generate invoices.</p>
+          <h2 className="text-2xl font-display font-black text-slate-900">Fee & Billing Management</h2>
+          <p className="text-xs text-slate-500 mt-1">Audit tuition schedules, student invoices, and Bursary transaction logs in real time.</p>
         </div>
         <button
           onClick={openAddModal}
-          className="bg-red-600 hover:bg-red-700 text-white font-display font-bold py-2.5 px-5 rounded-xl text-xs transition-all flex items-center gap-2 shadow-lg shadow-red-950/20"
+          className="bg-red-600 hover:bg-red-700 text-white font-display font-bold py-2.5 px-5 rounded-xl text-xs transition-all flex items-center gap-2 shadow-sm cursor-pointer"
         >
-          <Plus className="h-4.5 w-4.5" />
-          <span>Dispatch Custom Invoice</span>
+          <CreditCard className="h-4.5 w-4.5" />
+          <span>Generate Custom Invoice</span>
         </button>
       </div>
 
-      {/* Search & Filter bar */}
-      <div className="grid grid-cols-1 md:grid-cols-12 gap-4 bg-slate-950 p-4 rounded-2xl border border-slate-800">
+      {/* Search and Filters */}
+      <div className="grid grid-cols-1 md:grid-cols-12 gap-4 bg-white p-4 rounded-2xl border border-slate-200 shadow-xs">
         <div className="md:col-span-6 relative">
-          <Search className="absolute left-3.5 top-3.5 h-4 w-4 text-slate-500" />
+          <Search className="absolute left-3.5 top-3.5 h-4 w-4 text-slate-400" />
           <input
             type="text"
-            placeholder="Search ledger by name, invoice no, or description..."
+            placeholder="Search invoice number, student name, or fee description..."
             value={searchTerm}
             onChange={(e) => {
               setSearchTerm(e.target.value);
               setCurrentPage(1);
             }}
-            className="w-full pl-10 pr-4 py-3 bg-slate-900 border border-slate-850 rounded-xl text-xs font-semibold text-slate-200 placeholder:text-slate-500 focus:outline-none focus:border-red-600 transition-colors"
+            className="w-full pl-10 pr-4 py-2.5 bg-white border border-slate-300 rounded-xl text-xs font-semibold text-slate-900 placeholder:text-slate-400 focus:outline-none focus:border-slate-900 focus:ring-1 focus:ring-slate-900 transition-colors"
           />
         </div>
         <div className="md:col-span-3">
@@ -169,13 +180,12 @@ export default function FeesClient({ invoices, students }: FeesClientProps) {
               setStatusFilter(e.target.value);
               setCurrentPage(1);
             }}
-            className="w-full px-4 py-3 bg-slate-900 border border-slate-850 rounded-xl text-xs font-bold text-slate-200 focus:outline-none focus:border-red-600 transition-colors cursor-pointer"
+            className="w-full px-4 py-2.5 bg-white border border-slate-300 rounded-xl text-xs font-bold text-slate-800 focus:outline-none focus:border-slate-900 focus:ring-1 focus:ring-slate-900 transition-colors cursor-pointer"
           >
-            <option value="ALL">All Statuses</option>
-            <option value="PAID">Paid</option>
+            <option value="ALL">All Payment Statuses</option>
             <option value="UNPAID">Unpaid</option>
+            <option value="PAID">Paid</option>
             <option value="PARTIALLY_PAID">Partially Paid</option>
-            <option value="CANCELLED">Cancelled</option>
           </select>
         </div>
         <div className="md:col-span-3">
@@ -185,68 +195,59 @@ export default function FeesClient({ invoices, students }: FeesClientProps) {
               setTypeFilter(e.target.value);
               setCurrentPage(1);
             }}
-            className="w-full px-4 py-3 bg-slate-900 border border-slate-850 rounded-xl text-xs font-bold text-slate-200 focus:outline-none focus:border-red-600 transition-colors cursor-pointer"
+            className="w-full px-4 py-2.5 bg-white border border-slate-300 rounded-xl text-xs font-bold text-slate-800 focus:outline-none focus:border-slate-900 focus:ring-1 focus:ring-slate-900 transition-colors cursor-pointer"
           >
             <option value="ALL">All Fee Types</option>
             <option value="TUITION">Tuition Fee</option>
-            <option value="ACCOMMODATION">Accommodation Fee</option>
             <option value="ACCEPTANCE">Acceptance Fee</option>
-            <option value="LATE_REGISTRATION">Late Registration</option>
-            <option value="OTHER">Other Fees</option>
+            <option value="ACCOMMODATION">Accommodation Fee</option>
           </select>
         </div>
       </div>
 
-      {/* Ledger Table */}
-      <div className="bg-slate-950 border border-slate-800 rounded-2xl overflow-hidden">
+      {/* Invoices Data Grid */}
+      <div className="bg-white border border-slate-200 rounded-2xl overflow-hidden shadow-xs">
         {paginatedInvoices.length > 0 ? (
           <div className="overflow-x-auto">
-            <table className="w-full text-left border-collapse text-xs text-slate-300">
+            <table className="w-full text-left border-collapse text-xs text-slate-800">
               <thead>
-                <tr className="border-b border-slate-800 text-slate-400 font-bold uppercase tracking-wider">
-                  <th className="py-4 px-5">Student / Payee</th>
-                  <th className="py-4 px-5">Invoice No</th>
-                  <th className="py-4 px-5">Fee Type</th>
-                  <th className="py-4 px-5">Amount</th>
-                  <th className="py-4 px-5">Status</th>
-                  <th className="py-4 px-5">Due Date</th>
+                <tr className="border-b border-slate-200 bg-slate-50 text-slate-500 font-bold uppercase tracking-wider">
+                  <th className="py-3.5 px-5">Invoice No</th>
+                  <th className="py-3.5 px-5">Student</th>
+                  <th className="py-3.5 px-5">Description</th>
+                  <th className="py-3.5 px-5">Amount</th>
+                  <th className="py-3.5 px-5">Due Date</th>
+                  <th className="py-3.5 px-5">Status</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-800/40">
+              <tbody className="divide-y divide-slate-100">
                 {paginatedInvoices.map((inv) => (
-                  <tr key={inv.id} className="hover:bg-slate-900/30 transition-colors">
-                    <td className="py-4 px-5 font-semibold text-slate-200">
+                  <tr key={inv.id} className="hover:bg-slate-50/80 transition-colors">
+                    <td className="py-3.5 px-5 font-mono font-bold text-slate-900">{inv.invoiceNo}</td>
+                    <td className="py-3.5 px-5 font-semibold text-slate-900">
                       {inv.user.firstName} {inv.user.lastName}
-                      <span className="block text-[10px] text-slate-400 font-normal mt-0.5">
-                        {inv.description}
+                      <span className="block text-[11px] text-slate-500 font-normal mt-0.5">
+                        {inv.user.email}
                       </span>
                     </td>
-                    <td className="py-4 px-5 font-mono font-bold text-slate-350">{inv.invoiceNo}</td>
-                    <td className="py-4 px-5">
-                      <span className="bg-slate-900 px-2 py-0.5 rounded text-slate-300 border border-slate-800 font-bold text-[10px]">
-                        {inv.feeType}
-                      </span>
+                    <td className="py-3.5 px-5 text-slate-700 font-medium">{inv.description}</td>
+                    <td className="py-3.5 px-5 font-bold font-mono text-slate-900">
+                      {formatCurrency(Number(inv.amount))}
                     </td>
-                    <td className="py-4 px-5 font-mono font-bold text-slate-200">
-                      ₦{inv.amount.toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                    <td className="py-3.5 px-5 text-slate-500 font-medium">
+                      {new Date(inv.dueDate).toLocaleDateString()}
                     </td>
-                    <td className="py-4 px-5">
+                    <td className="py-3.5 px-5">
                       <span
-                        className={`inline-block text-[9px] font-black uppercase px-2 py-0.5 rounded ${
+                        className={`inline-flex items-center gap-1 px-2.5 py-1 rounded text-[10px] font-bold uppercase tracking-wider ${
                           inv.status === "PAID"
-                            ? "bg-emerald-950 text-emerald-400 border border-emerald-900/30"
-                            : inv.status === "UNPAID"
-                            ? "bg-rose-950 text-rose-400 border border-rose-900/30"
-                            : inv.status === "PARTIALLY_PAID"
-                            ? "bg-amber-950 text-amber-400 border border-amber-900/30"
-                            : "bg-slate-800 text-slate-400"
+                            ? "bg-emerald-50 text-emerald-700 border border-emerald-200"
+                            : "bg-amber-50 text-amber-700 border border-amber-200"
                         }`}
                       >
-                        {inv.status}
+                        {inv.status === "PAID" ? <CheckCircle className="h-3 w-3" /> : <AlertCircle className="h-3 w-3" />}
+                        <span>{inv.status}</span>
                       </span>
-                    </td>
-                    <td className="py-4 px-5 text-slate-450 font-medium">
-                      {new Date(inv.dueDate).toLocaleDateString()}
                     </td>
                   </tr>
                 ))}
@@ -254,14 +255,14 @@ export default function FeesClient({ invoices, students }: FeesClientProps) {
             </table>
           </div>
         ) : (
-          <div className="py-16 text-center text-slate-500 font-bold uppercase tracking-widest text-[11px] bg-slate-950">
-            No invoicing records found.
+          <div className="py-16 text-center text-slate-500 font-bold uppercase tracking-widest text-xs bg-white">
+            No invoices found in billing registry.
           </div>
         )}
 
         {/* Pagination Footer */}
         {totalPages > 1 && (
-          <div className="flex justify-between items-center px-5 py-4 border-t border-slate-800 text-xs font-bold text-slate-400 bg-slate-950/40">
+          <div className="flex justify-between items-center px-5 py-3.5 border-t border-slate-200 text-xs font-bold text-slate-600 bg-slate-50">
             <span>
               Page {currentPage} of {totalPages}
             </span>
@@ -269,14 +270,14 @@ export default function FeesClient({ invoices, students }: FeesClientProps) {
               <button
                 disabled={currentPage === 1}
                 onClick={() => setCurrentPage((c) => Math.max(c - 1, 1))}
-                className="p-2 bg-slate-900 border border-slate-800 hover:bg-slate-850 text-slate-200 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+                className="p-2 bg-white border border-slate-200 hover:bg-slate-100 text-slate-700 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed transition-all cursor-pointer"
               >
                 <ChevronLeft className="h-4 w-4" />
               </button>
               <button
                 disabled={currentPage === totalPages}
                 onClick={() => setCurrentPage((c) => Math.min(c + 1, totalPages))}
-                className="p-2 bg-slate-900 border border-slate-800 hover:bg-slate-850 text-slate-200 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+                className="p-2 bg-white border border-slate-200 hover:bg-slate-100 text-slate-700 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed transition-all cursor-pointer"
               >
                 <ChevronRight className="h-4 w-4" />
               </button>
@@ -285,107 +286,112 @@ export default function FeesClient({ invoices, students }: FeesClientProps) {
         )}
       </div>
 
-      {/* Dispatch Invoice Modal */}
+      {/* Generate Custom Invoice Modal */}
       {isModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4">
-          <div className="bg-slate-950 border border-slate-800 rounded-3xl w-full max-w-xl shadow-2xl">
-            {/* Modal Header */}
-            <div className="h-16 border-b border-slate-800 flex items-center justify-between px-6 bg-slate-950/50">
-              <h3 className="font-display font-black text-sm tracking-widest uppercase text-white">
-                Dispatch Student Invoice
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 backdrop-blur-xs p-4">
+          <div className="bg-white border border-slate-200 rounded-3xl w-full max-w-xl max-h-[90vh] overflow-y-auto shadow-2xl">
+            <div className="h-16 border-b border-slate-200 flex items-center justify-between px-6 bg-white sticky top-0 z-10">
+              <h3 className="font-display font-black text-sm tracking-widest uppercase text-slate-900">
+                Generate Custom Student Invoice
               </h3>
               <button
                 onClick={() => setIsModalOpen(false)}
-                className="text-slate-400 hover:text-white transition-colors"
+                className="text-slate-400 hover:text-slate-900 transition-colors cursor-pointer"
               >
                 <X className="h-5 w-5" />
               </button>
             </div>
 
-            {/* Modal Form */}
-            <form onSubmit={handleSubmit} className="p-6 space-y-4 text-xs font-semibold text-slate-350">
+            <form onSubmit={handleSubmit} className="p-6 space-y-4 text-xs font-semibold text-slate-800">
               <div className="flex flex-col gap-1">
-                <label className="text-[10px] uppercase font-bold text-slate-400">Select Student Payee *</label>
+                <label className="text-[10px] uppercase font-bold text-slate-700">Target Student *</label>
                 <select
                   value={formData.userId}
                   onChange={(e) => setFormData({ ...formData, userId: e.target.value })}
-                  className="p-3 bg-slate-900 border border-slate-850 rounded-xl focus:outline-none focus:border-red-600 text-slate-200 font-bold"
+                  className="p-2.5 bg-white border border-slate-300 rounded-xl focus:outline-none focus:border-slate-900 text-slate-900 font-bold"
                 >
-                  {students.map((stu) => (
-                    <option key={stu.id} value={stu.id}>
-                      {stu.user.firstName} {stu.user.lastName} ({stu.matricNo})
-                    </option>
-                  ))}
+                  {students && students.length > 0 ? (
+                    students.map((stu) => (
+                      <option key={stu.id} value={stu.id}>
+                        {stu.user.firstName} {stu.user.lastName} ({stu.matricNo})
+                      </option>
+                    ))
+                  ) : (
+                    <option value="user-001">Prospective Applicant / Student</option>
+                  )}
                 </select>
               </div>
 
               <div className="grid grid-cols-2 gap-4">
                 <div className="flex flex-col gap-1">
-                  <label className="text-[10px] uppercase font-bold text-slate-400">Billing Amount (₦) *</label>
+                  <label className="text-[10px] uppercase font-bold text-slate-700">Fee Category *</label>
+                  <select
+                    value={formData.feeType}
+                    onChange={(e) => setFormData({ ...formData, feeType: e.target.value as any })}
+                    className="p-2.5 bg-white border border-slate-300 rounded-xl focus:outline-none focus:border-slate-900 text-slate-900 font-bold"
+                  >
+                    <option value="TUITION">TUITION</option>
+                    <option value="ACCEPTANCE">ACCEPTANCE</option>
+                    <option value="ACCOMMODATION">ACCOMMODATION</option>
+                    <option value="APPLICATION">APPLICATION</option>
+                    <option value="TRANSCRIPT">TRANSCRIPT</option>
+                    <option value="OTHER">OTHER</option>
+                  </select>
+                </div>
+                <div className="flex flex-col gap-1">
+                  <label className="text-[10px] uppercase font-bold text-slate-700">Amount (NGN ₦) *</label>
                   <input
                     type="number"
                     required
                     value={formData.amount}
                     onChange={(e) => setFormData({ ...formData, amount: Number(e.target.value) })}
-                    className="p-3 bg-slate-900 border border-slate-850 rounded-xl focus:outline-none focus:border-red-600 text-slate-200 font-mono font-bold"
+                    className="p-2.5 bg-white border border-slate-300 rounded-xl focus:outline-none focus:border-slate-900 text-slate-900 font-mono font-bold"
                   />
-                </div>
-                <div className="flex flex-col gap-1">
-                  <label className="text-[10px] uppercase font-bold text-slate-400">Fee Category *</label>
-                  <select
-                    value={formData.feeType}
-                    onChange={(e) => setFormData({ ...formData, feeType: e.target.value as any })}
-                    className="p-3 bg-slate-900 border border-slate-850 rounded-xl focus:outline-none focus:border-red-600 text-slate-200 font-bold"
-                  >
-                    <option value="TUITION">Tuition Fees</option>
-                    <option value="ACCOMMODATION">Hostel Accommodation</option>
-                    <option value="ACCEPTANCE">Offer Acceptance</option>
-                    <option value="LATE_REGISTRATION">Late Registration</option>
-                    <option value="TRANSCRIPT">Official Transcript Fees</option>
-                    <option value="OTHER">Other Academic Levies</option>
-                  </select>
                 </div>
               </div>
 
               <div className="flex flex-col gap-1">
-                <label className="text-[10px] uppercase font-bold text-slate-400">Invoice Description *</label>
+                <label className="text-[10px] uppercase font-bold text-slate-700">Description *</label>
                 <input
                   type="text"
                   required
                   value={formData.description}
                   onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                  placeholder="e.g. Administrative Fees, Laboratory Materials"
-                  className="p-3 bg-slate-900 border border-slate-850 rounded-xl focus:outline-none focus:border-red-600 text-slate-200"
+                  placeholder="e.g. Late Registration Fine or Supplemental Lab Fee"
+                  className="p-2.5 bg-white border border-slate-300 rounded-xl focus:outline-none focus:border-slate-900 text-slate-900"
                 />
               </div>
 
               <div className="flex flex-col gap-1">
-                <label className="text-[10px] uppercase font-bold text-slate-400">Payment Due Date *</label>
+                <label className="text-[10px] uppercase font-bold text-slate-700">Payment Due Date *</label>
                 <input
                   type="date"
                   required
                   value={formData.dueDate}
                   onChange={(e) => setFormData({ ...formData, dueDate: e.target.value })}
-                  className="p-3 bg-slate-900 border border-slate-850 rounded-xl focus:outline-none focus:border-red-600 text-slate-200"
+                  className="p-2.5 bg-white border border-slate-300 rounded-xl focus:outline-none focus:border-slate-900 text-slate-900 font-bold"
                 />
               </div>
 
-              {/* Action Buttons */}
-              <div className="pt-4 flex justify-end gap-3 border-t border-slate-800">
+              <div className="pt-4 flex justify-end gap-3 border-t border-slate-200">
                 <button
                   type="button"
                   onClick={() => setIsModalOpen(false)}
-                  className="bg-slate-900 hover:bg-slate-850 border border-slate-800 px-5 py-3 rounded-xl text-slate-300 font-bold cursor-pointer"
+                  className="bg-white hover:bg-slate-100 border border-slate-300 px-5 py-2.5 rounded-xl text-slate-700 font-bold cursor-pointer transition-colors"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  disabled={isPending}
-                  className="bg-red-600 hover:bg-red-700 disabled:opacity-50 text-white font-bold px-6 py-3 rounded-xl transition-all cursor-pointer flex items-center gap-1.5 shadow-md shadow-red-950/10"
+                  disabled={isSubmitting}
+                  className="bg-slate-900 hover:bg-slate-800 disabled:opacity-50 text-white font-bold px-6 py-2.5 rounded-xl transition-all cursor-pointer flex items-center gap-1.5 shadow-sm"
                 >
-                  <CreditCard className="h-4 w-4" />
-                  <span>{isPending ? "Dispatching..." : "Dispatch Invoice"}</span>
+                  {isSubmitting ? (
+                    <Loader2 className="h-4 w-4 animate-spin text-white" />
+                  ) : (
+                    <Plus className="h-4 w-4" />
+                  )}
+                  <span>{isSubmitting ? "Generating..." : "Generate Invoice"}</span>
                 </button>
               </div>
             </form>
