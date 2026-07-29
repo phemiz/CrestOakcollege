@@ -37,7 +37,7 @@ export default async function StudentProfilePage() {
   if (!student) {
     student = {
       id: "demo-student-id",
-      matricNo: "CCHSMT/2026/001",
+      matricNo: "CCHMS/2026/SCS/0001",
       level: "200",
       user: {
         firstName: "Student",

@@ -47,7 +47,7 @@ export default async function ResultsCheckerPage() {
 
   if (!student) {
     student = {
-      matricNo: "CCHSMT/2026/001",
+      matricNo: "CCHMS/2026/SCS/0001",
       level: "200",
       cgpa: 3.85,
       user: { firstName: "Student", lastName: "User" },

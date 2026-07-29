@@ -154,7 +154,7 @@ function LoginForm() {
       subtitle: "Enter your Matric / Registration Number and Password to access your academic dashboard, course registration, and results.",
       badge: "Official CrestOak Student Portal Gateway",
       usernameLabel: "Matriculation / Student Reg. Number",
-      placeholder: "e.g., student1 or CCHSMT/2026/001",
+      placeholder: "e.g., student1 or CCHMS/2026/SCS/0001",
       redirectUrl: "/portal/dashboard/",
       icon: GraduationCap,
       securityNotice: "Official student gateway for CrestOak College (CCHSMT).",

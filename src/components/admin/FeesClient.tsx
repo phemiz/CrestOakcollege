@@ -55,8 +55,8 @@ export default function FeesClient({ invoices: initialInvoices, students: rawStu
   const students = (rawStudents && rawStudents.length > 0)
     ? rawStudents
     : [
-        { id: "user-001", matricNo: "UG/2026/NUR/1042", user: { firstName: "Azeez", lastName: "Okunola" } },
-        { id: "user-002", matricNo: "UG/2026/CHEW/2081", user: { firstName: "Fatima", lastName: "Abubakar" } }
+        { id: "user-001", matricNo: "CCHMS/2026/NUR/0042", user: { firstName: "Azeez", lastName: "Okunola" } },
+        { id: "user-002", matricNo: "CCHMS/2026/CHEW/0081", user: { firstName: "Fatima", lastName: "Abubakar" } }
       ];
 
   const router = useRouter();

@@ -34,7 +34,7 @@ $defaultSemesters = [
 $defaultStudents = [
     [
         "id" => "stu-001",
-        "matricNo" => "UG/2026/NUR/1042",
+        "matricNo" => "CCHMS/2026/NUR/0042",
         "level" => 100,
         "cgpa" => 4.25,
         "gpa" => 4.30,
@@ -53,7 +53,7 @@ $defaultStudents = [
     ],
     [
         "id" => "stu-002",
-        "matricNo" => "UG/2026/CHEW/2081",
+        "matricNo" => "CCHMS/2026/CHEW/0081",
         "level" => 200,
         "cgpa" => 3.85,
         "gpa" => 3.90,
@@ -125,7 +125,7 @@ if ($method === 'POST' || $method === 'PUT') {
     $firstName = $input['firstName'] ?? '';
     $lastName = $input['lastName'] ?? '';
     $email = $input['email'] ?? '';
-    $matricNo = $input['matricNo'] ?? ('UG/2026/REG/' . rand(1000, 9999));
+    $matricNo = $input['matricNo'] ?? ('CCHMS/2026/REG/' . str_pad(rand(1, 999), 4, '0', STR_PAD_LEFT));
     $level = intval($input['level'] ?? 100);
 
     echo json_encode([

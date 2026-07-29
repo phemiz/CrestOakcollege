@@ -16,7 +16,7 @@ export const AdmissionLetterTab: React.FC<AdmissionLetterTabProps> = ({ tracking
   };
 
   const app = trackingApplication || {
-    regNumber: "CCHSMT/2026/8294",
+    regNumber: "CCHMS/2026/NUR/0042",
     fullName: "Olawale Tunde Joseph",
     course: "nursing",
     faculty: "health",

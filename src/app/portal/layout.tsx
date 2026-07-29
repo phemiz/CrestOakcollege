@@ -15,7 +15,7 @@ export default async function PortalLayout({ children }: { children: React.React
   let serializedUser = {
     id: "demo-student-id",
     fullName: "Student User",
-    matricNo: "CCHSMT/2026/001",
+    matricNo: "CCHMS/2026/SCS/0001",
     email: "student1@crestoakcollege.com.ng",
     department: "Community Health",
     programme: "Community Health Extension (CHEW)",

@@ -488,7 +488,7 @@ export default function PortalDashboard({ initialUser }: { initialUser?: any }) 
                   <label className="text-[10px] font-black uppercase text-slate-500 tracking-wider">Registration Number</label>
                   <input
                     type="text"
-                    placeholder="e.g. CCHSMT/2026/8294"
+                    placeholder="e.g. CCHMS/2026/SCS/0001"
                     value={studentId}
                     onChange={(e) => setStudentId(e.target.value)}
                     className="p-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:border-brand-blue font-bold text-sm"
@@ -517,7 +517,7 @@ export default function PortalDashboard({ initialUser }: { initialUser?: any }) 
 
               <div className="mt-6 border-t border-slate-100 pt-4 text-center">
                 <p className="text-[10px] text-slate-400 font-bold leading-relaxed">
-                  * Note: If you don&apos;t have a registration number, apply first via the Admissions tab, or type a mock number like <strong className="text-brand-blue">CCHSMT/2026/1234</strong> with any password to try the simulator.
+                  * Note: If you don&apos;t have a registration number, apply first via the Admissions tab, or type a mock number like <strong className="text-brand-blue">CCHMS/2026/SCS/0001</strong> with any password to try the simulator.
                 </p>
               </div>
             </div>

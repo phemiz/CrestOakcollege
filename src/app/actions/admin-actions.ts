@@ -374,7 +374,7 @@ export async function processApplicationDecision(applicationId: string, decision
       });
 
       // 4. Create Student profile
-      const matricNo = `UG/2026/${application.programme.code}/${Math.floor(1000 + Math.random() * 9000)}`;
+      const matricNo = `CCHMS/2026/${application.programme.code}/${String(Math.floor(1 + Math.random() * 999)).padStart(4, "0")}`;
       
       const activeSession = await db.academicSession.findFirst({ where: { isActive: true } });
       const firstSemester = await db.semester.findFirst({ where: { name: "FIRST", sessionId: activeSession?.id } });

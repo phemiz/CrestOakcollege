@@ -53,7 +53,7 @@ export default async function StudentBillingPage() {
 
   if (!student) {
     student = {
-      matricNo: "CCHSMT/2026/001",
+      matricNo: "CCHMS/2026/SCS/0001",
       user: { firstName: "Student", lastName: "User" }
     };
     invoices = [

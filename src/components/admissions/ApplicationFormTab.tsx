@@ -193,7 +193,7 @@ export const ApplicationFormTab: React.FC<ApplicationFormTabProps> = ({
 
     // Success Generation
     const randId = Math.floor(1000 + Math.random() * 9000);
-    const generatedReg = `CCHSMT/2026/${randId}`;
+    const generatedReg = `CCHMS/2026/ADM/${String(Math.floor(1 + Math.random() * 999)).padStart(4, "0")}`;
     const generatedVerify = Math.random().toString(36).substring(2, 8).toUpperCase();
     
     setRegNumber(generatedReg);

@@ -93,7 +93,7 @@ export const AdmissionTrackerTab: React.FC<AdmissionTrackerTabProps> = ({
       <form onSubmit={handleTrackSearch} className="flex gap-3 mb-8">
         <input
           type="text"
-          placeholder="e.g. CCHSMT/2026/1234"
+          placeholder="e.g. CCHMS/2026/CODE/0001"
           value={searchRegNum}
           onChange={(e) => setSearchRegNum(e.target.value)}
           className="flex-grow p-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-bold focus:outline-none focus:border-brand-blue"

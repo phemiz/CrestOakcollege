@@ -123,7 +123,7 @@ export default function StudentsClient({
       lastName: "",
       middleName: "",
       phoneNumber: "",
-      matricNo: `UG/2026/${departments[0]?.name.substring(0, 3).toUpperCase() || "CSC"}/${Math.floor(1000 + Math.random() * 9000)}`,
+      matricNo: `CCHMS/2026/${departments[0]?.name.substring(0, 3).toUpperCase() || "SCS"}/${String(Math.floor(1 + Math.random() * 999)).padStart(4, "0")}`,
       level: 100,
       departmentId: departments[0]?.id || "",
       programmeId: programmes[0]?.id || "",
