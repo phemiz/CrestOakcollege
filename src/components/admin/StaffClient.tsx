@@ -83,20 +83,62 @@ export default function StaffClient({ staffList: initialStaff, departments: rawD
   useEffect(() => {
     const fetchStaffMembers = async () => {
       try {
-        const res = await fetch("/api/admin/staff.php");
+        const res = await fetch("/api/admin/staff.php?_t=" + Date.now());
         if (res.ok) {
           const data = await res.json();
-          const list = data.staffList || data;
-          if (Array.isArray(list) && list.length > 0) {
-            setStaffList(list);
+          const liveList = Array.isArray(data) ? data : (data.staffList || data.data || []);
+          
+          if (Array.isArray(liveList) && liveList.length > 0) {
+            const mergedMap = new Map();
+            
+            // Add default entries first as baseline fallback
+            (DEFAULT_STAFF_MEMBERS as any[]).forEach((item: any) => {
+              const key = item.user?.username || item.username || item.staffNo || item.id;
+              if (key) mergedMap.set(key, item);
+            });
+            
+            // Overwrite or append with real database records
+            liveList.forEach((item: any) => {
+              const key = item.user?.username || item.username || item.staffNo || item.staff_id || item.id;
+              if (key) {
+                const normalizedItem: StaffItem = {
+                  id: item.id || item.staff_id || item.staffNo,
+                  staffNo: item.staffNo || item.staff_id || item.staffId || 'CCHMS/STAFF/SCS/001',
+                  designation: item.designation || 'Staff',
+                  joiningDate: item.joiningDate || item.joining_date || new Date().toISOString().split('T')[0],
+                  user: {
+                    id: item.user?.id || item.id,
+                    username: item.user?.username || item.username || '',
+                    firstName: item.user?.firstName || item.firstName || item.first_name || '',
+                    lastName: item.user?.lastName || item.lastName || item.last_name || '',
+                    middleName: item.user?.middleName || item.middleName || item.middle_name || '',
+                    email: item.user?.email || item.email || '',
+                    phoneNumber: item.user?.phoneNumber || item.phone || item.phoneNumber || '',
+                    role: {
+                      name: item.user?.role?.name || item.roleName || item.role || 'LECTURER'
+                    }
+                  },
+                  department: {
+                    id: item.department?.id || ('dept-' + String(item.department?.name || item.department || '1').toLowerCase().replace(/[^a-z0-9]/g, '-')),
+                    name: item.department?.name || item.department || 'Department'
+                  },
+                  lecturer: (item.lecturer || item.academicRank || item.academic_rank) ? {
+                    rank: item.lecturer?.rank || item.academicRank || item.academic_rank || 'LECTURER_II',
+                    specialization: item.lecturer?.specialization || item.specialization || ''
+                  } : null
+                };
+                mergedMap.set(key, normalizedItem);
+              }
+            });
+            
+            setStaffList(Array.from(mergedMap.values()));
             return;
           }
         }
       } catch (error) {
-        console.warn("Live database fetch failed, loading default institutional staff records...");
+        console.warn("Could not fetch live staff records, displaying defaults.", error);
       }
-
-      // Default Fallback Array if database is empty or connection fails
+      
       setStaffList(DEFAULT_STAFF_MEMBERS as any);
     };
 

@@ -107,49 +107,86 @@ try {
     ];
 
     if ($method === 'GET') {
-        $staffList = $defaultStaff;
+        $dbStaff = [];
 
         if ($conn) {
             try {
-                $res = @$conn->query("SELECT s.*, u.username, u.firstName, u.lastName, u.middleName, u.email, u.phoneNumber, r.name as roleName, d.name as deptName, l.rank, l.specialization FROM Staff s JOIN User u ON s.id = u.id LEFT JOIN Role r ON u.roleId = r.id LEFT JOIN Department d ON s.departmentId = d.id LEFT JOIN Lecturer l ON s.id = l.id WHERE s.isDeleted = 0 OR s.isDeleted IS NULL");
+                // Dynamic Schema Alteration Safeguards
+                @$conn->query("CREATE TABLE IF NOT EXISTS staff (
+                    id VARCHAR(64) PRIMARY KEY,
+                    staff_id VARCHAR(64),
+                    first_name VARCHAR(100),
+                    last_name VARCHAR(100),
+                    middle_name VARCHAR(100),
+                    username VARCHAR(100),
+                    email VARCHAR(150),
+                    phone VARCHAR(50),
+                    role VARCHAR(50),
+                    department VARCHAR(150),
+                    designation VARCHAR(150),
+                    academic_rank VARCHAR(100),
+                    specialization VARCHAR(255),
+                    password_hash VARCHAR(255),
+                    joining_date DATE,
+                    isDeleted TINYINT(1) DEFAULT 0,
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
+
+                $res = @$conn->query("SELECT * FROM staff WHERE (isDeleted = 0 OR isDeleted IS NULL) ORDER BY created_at DESC");
                 if ($res && $res->num_rows > 0) {
-                    $dbStaff = [];
                     while ($row = $res->fetch_assoc()) {
                         $dbStaff[] = [
-                            "id" => $row['id'],
-                            "staffNo" => $row['staffNo'] ?? $row['staff_id'] ?? '',
+                            "id" => $row['id'] ?? $row['staff_id'],
+                            "staffNo" => $row['staff_id'] ?? $row['staffNo'] ?? '',
                             "designation" => $row['designation'] ?? 'Staff',
-                            "joiningDate" => $row['joiningDate'] ?? $row['joining_date'] ?? date('Y-m-d'),
+                            "joiningDate" => $row['joining_date'] ?? $row['joiningDate'] ?? date('Y-m-d'),
                             "user" => [
-                                "id" => $row['id'],
+                                "id" => $row['id'] ?? $row['staff_id'],
                                 "username" => $row['username'] ?? '',
-                                "firstName" => $row['firstName'] ?? $row['first_name'] ?? '',
-                                "lastName" => $row['lastName'] ?? $row['last_name'] ?? '',
-                                "middleName" => $row['middleName'] ?? $row['middle_name'] ?? '',
+                                "firstName" => $row['first_name'] ?? $row['firstName'] ?? '',
+                                "lastName" => $row['last_name'] ?? $row['lastName'] ?? '',
+                                "middleName" => $row['middle_name'] ?? $row['middleName'] ?? '',
                                 "email" => $row['email'] ?? '',
-                                "phoneNumber" => $row['phoneNumber'] ?? $row['phone'] ?? '',
-                                "role" => ["name" => $row['roleName'] ?? $row['role'] ?? 'STAFF']
+                                "phoneNumber" => $row['phone'] ?? $row['phoneNumber'] ?? '',
+                                "role" => ["name" => strtoupper($row['role'] ?? 'LECTURER')]
                             ],
-                            "department" => ["id" => $row['departmentId'] ?? 'dept-1', "name" => $row['deptName'] ?? 'Department'],
-                            "lecturer" => !empty($row['rank']) ? [
-                                "rank" => $row['rank'],
+                            "department" => [
+                                "id" => "dept-" . md5($row['department'] ?? 'General'),
+                                "name" => $row['department'] ?? 'Department of Nursing Sciences'
+                            ],
+                            "lecturer" => !empty($row['academic_rank']) ? [
+                                "rank" => $row['academic_rank'],
                                 "specialization" => $row['specialization'] ?? ''
                             ] : null
                         ];
                     }
-                    if (count($dbStaff) > 0) {
-                        $staffList = $dbStaff;
-                    }
                 }
             } catch (Throwable $e) {
-                // Fallback to defaultStaff if query fails
+                // Ignore DB query errors silently
             }
             @$conn->close();
         }
 
+        // Merge DB staff with default staff (DB staff prioritized)
+        $mergedMap = [];
+        foreach ($dbStaff as $item) {
+            $key = $item['user']['username'] ?? $item['staffNo'] ?? $item['id'];
+            if (!empty($key)) {
+                $mergedMap[$key] = $item;
+            }
+        }
+        foreach ($defaultStaff as $item) {
+            $key = $item['user']['username'] ?? $item['staffNo'] ?? $item['id'];
+            if (!empty($key) && !isset($mergedMap[$key])) {
+                $mergedMap[$key] = $item;
+            }
+        }
+
+        $finalStaffList = array_values($mergedMap);
+
         echo json_encode([
             "success" => true,
-            "staffList" => $staffList,
+            "staffList" => $finalStaffList,
             "departments" => $defaultDepartments,
             "roles" => $defaultRoles
         ]);
@@ -200,8 +237,7 @@ try {
                     password_hash VARCHAR(255),
                     joining_date DATE,
                     isDeleted TINYINT(1) DEFAULT 0,
-                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
                 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
 
                 if ($passwordHash) {
@@ -300,7 +336,7 @@ try {
                 ],
                 "department" => ["id" => $departmentId, "name" => "Selected Department"],
                 "lecturer" => $roleName === 'LECTURER' ? [
-                    "rank" => $academicRank || 'LECTURER_II',
+                    "rank" => $academicRank ?: 'LECTURER_II',
                     "specialization" => $specialization
                 ] : null
             ]
