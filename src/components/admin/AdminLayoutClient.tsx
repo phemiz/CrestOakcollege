@@ -175,6 +175,7 @@ export default function AdminLayoutClient({ children, user }: AdminLayoutClientP
               <Link
                 key={item.name}
                 href={item.href}
+                prefetch={false}
                 onClick={() => setIsSidebarOpen(false)}
                 className={`flex items-center gap-3 px-4 py-3 rounded-xl text-xs font-bold transition-all ${
                   isActive

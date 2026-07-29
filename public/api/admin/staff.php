@@ -67,11 +67,32 @@ try {
         ],
         [
             "id" => "staff-002",
+            "staffNo" => "CCHMS/STAFF/SCS/001",
+            "designation" => "Head of Department & Senior Lecturer",
+            "joiningDate" => "2024-10-15",
+            "user" => [
+                "id" => "u-staff-002",
+                "username" => "femi.adebayo",
+                "firstName" => "Femi",
+                "lastName" => "Adebayo",
+                "middleName" => "Olayinka",
+                "email" => "femi.adebayo@crestoakcollege.com.ng",
+                "phoneNumber" => "08034567890",
+                "role" => ["name" => "LECTURER"]
+            ],
+            "department" => ["id" => "dept-tech-001", "name" => "Department of Computer Science & IT"],
+            "lecturer" => [
+                "rank" => "SENIOR_LECTURER",
+                "specialization" => "Software Engineering & Systems Architecture"
+            ]
+        ],
+        [
+            "id" => "staff-003",
             "staffNo" => "CCHMS/STAFF/BUS/001",
             "designation" => "Bursary Financial Accountant",
             "joiningDate" => "2025-01-15",
             "user" => [
-                "id" => "u-staff-002",
+                "id" => "u-staff-003",
                 "username" => "grace.okoro",
                 "firstName" => "Grace",
                 "lastName" => "Okoro",

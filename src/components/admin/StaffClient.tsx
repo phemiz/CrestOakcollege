@@ -16,7 +16,7 @@ import {
   EyeOff,
   Zap
 } from "lucide-react";
-import { DEFAULT_DEPARTMENTS } from "@/constants/institutionalData";
+import { DEFAULT_DEPARTMENTS, DEFAULT_STAFF_MEMBERS } from "@/constants/institutionalData";
 
 interface StaffItem {
   id: string;
@@ -74,9 +74,34 @@ export default function StaffClient({ staffList: initialStaff, departments: rawD
     : DEFAULT_DEPARTMENTS.map((d, i) => ({ id: `dept-${i + 1}`, name: d }));
 
   const router = useRouter();
-  const [staffList, setStaffList] = useState<StaffItem[]>(initialStaff);
+  const [staffList, setStaffList] = useState<StaffItem[]>(
+    (initialStaff && initialStaff.length > 0) ? initialStaff : (DEFAULT_STAFF_MEMBERS as any)
+  );
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+
+  useEffect(() => {
+    const fetchStaffMembers = async () => {
+      try {
+        const res = await fetch("/api/admin/staff.php");
+        if (res.ok) {
+          const data = await res.json();
+          const list = data.staffList || data;
+          if (Array.isArray(list) && list.length > 0) {
+            setStaffList(list);
+            return;
+          }
+        }
+      } catch (error) {
+        console.warn("Live database fetch failed, loading default institutional staff records...");
+      }
+
+      // Default Fallback Array if database is empty or connection fails
+      setStaffList(DEFAULT_STAFF_MEMBERS as any);
+    };
+
+    fetchStaffMembers();
+  }, []);
 
   // Search & Filters
   const [searchTerm, setSearchTerm] = useState("");

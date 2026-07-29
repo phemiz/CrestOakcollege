@@ -58,3 +58,66 @@ export const DEFAULT_FEE_TYPES = [
   "Matriculation Fee",
   "Examination Fee"
 ];
+
+export const DEFAULT_STAFF_MEMBERS = [
+  {
+    id: "staff-001",
+    staffNo: "CCHMS/STAFF/NUR/001",
+    designation: "Senior Lecturer & Clinical Supervisor",
+    joiningDate: "2024-09-01",
+    user: {
+      id: "u-staff-001",
+      username: "emmanuel.adeyemi",
+      firstName: "Dr. Emmanuel",
+      lastName: "Adeyemi",
+      middleName: "Oluwaseun",
+      email: "emmanuel.adeyemi@crestoakcollege.com.ng",
+      phoneNumber: "08023456789",
+      role: { name: "LECTURER" }
+    },
+    department: { id: "dept-health-001", name: "Department of Nursing Sciences" },
+    lecturer: {
+      rank: "SENIOR_LECTURER",
+      specialization: "Clinical Nursing & Maternal Health"
+    }
+  },
+  {
+    id: "staff-002",
+    staffNo: "CCHMS/STAFF/SCS/001",
+    designation: "Head of Department & Senior Lecturer",
+    joiningDate: "2024-10-15",
+    user: {
+      id: "u-staff-002",
+      username: "femi.adebayo",
+      firstName: "Femi",
+      lastName: "Adebayo",
+      middleName: "Olayinka",
+      email: "femi.adebayo@crestoakcollege.com.ng",
+      phoneNumber: "08034567890",
+      role: { name: "LECTURER" }
+    },
+    department: { id: "dept-tech-001", name: "Department of Computer Science & IT" },
+    lecturer: {
+      rank: "SENIOR_LECTURER",
+      specialization: "Software Engineering & Systems Architecture"
+    }
+  },
+  {
+    id: "staff-003",
+    staffNo: "CCHMS/STAFF/BUS/001",
+    designation: "Bursary Financial Accountant",
+    joiningDate: "2025-01-15",
+    user: {
+      id: "u-staff-003",
+      username: "grace.okoro",
+      firstName: "Grace",
+      lastName: "Okoro",
+      middleName: "Chidimma",
+      email: "grace.okoro@crestoakcollege.com.ng",
+      phoneNumber: "08129876543",
+      role: { name: "BURSAR" }
+    },
+    department: { id: "dept-mgmt-001", name: "Department of Business Administration" },
+    lecturer: null
+  }
+];

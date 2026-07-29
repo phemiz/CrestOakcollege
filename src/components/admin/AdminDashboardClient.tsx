@@ -174,6 +174,7 @@ export default function AdminDashboardClient() {
           return (
             <Link
               href={stat.href}
+              prefetch={false}
               key={stat.name}
               className="group block bg-white border border-slate-200 rounded-2xl p-5 hover:border-red-300 transition-all hover:-translate-y-1 shadow-sm hover:shadow-md relative overflow-hidden"
             >
@@ -231,6 +232,7 @@ export default function AdminDashboardClient() {
             </span>
             <Link
               href="/admin/fees"
+              prefetch={false}
               className="text-red-600 hover:text-red-700 font-bold transition-colors flex items-center gap-1"
             >
               <span>Ledger details</span>
@@ -257,6 +259,7 @@ export default function AdminDashboardClient() {
               <Link
                 key={btn.label}
                 href={btn.href}
+                prefetch={false}
                 className={`bg-slate-50 border border-slate-200 p-4 rounded-xl text-center text-xs font-bold text-slate-700 transition-all ${btn.color} shadow-xs hover:shadow-sm`}
               >
                 {btn.label}
