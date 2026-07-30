@@ -135,9 +135,28 @@ try {
                 $res = @$conn->query("SELECT * FROM staff WHERE (isDeleted = 0 OR isDeleted IS NULL) ORDER BY created_at DESC");
                 if ($res && $res->num_rows > 0) {
                     while ($row = $res->fetch_assoc()) {
+                        $rawDept = $row['department'] ?? '';
+                        $staffId = $row['staff_id'] ?? $row['staffNo'] ?? '';
+                        if (empty($rawDept) || $rawDept === 'Selected Department' || strpos($rawDept, 'dept-') === 0) {
+                            $codeMatch = [];
+                            preg_match('/STAFF\/([A-Z]{3})\//i', $staffId, $codeMatch);
+                            $code = !empty($codeMatch[1]) ? strtoupper($codeMatch[1]) : '';
+                            $deptMap = [
+                                'SCS' => 'Department of Computer Science & IT',
+                                'NUR' => 'Department of Nursing Sciences',
+                                'MLS' => 'Department of Medical Laboratory Science',
+                                'CHS' => 'Department of Community Health Sciences',
+                                'BUS' => 'Department of Business Administration',
+                                'LAW' => 'Department of Law & Criminology',
+                                'REG' => 'Registry & Academic Affairs',
+                                'BUR' => 'Bursary & Financial Services'
+                            ];
+                            $rawDept = $deptMap[$code] ?? 'Department of Nursing Sciences';
+                        }
+
                         $dbStaff[] = [
                             "id" => $row['id'] ?? $row['staff_id'],
-                            "staffNo" => $row['staff_id'] ?? $row['staffNo'] ?? '',
+                            "staffNo" => $staffId,
                             "designation" => $row['designation'] ?? 'Staff',
                             "joiningDate" => $row['joining_date'] ?? $row['joiningDate'] ?? date('Y-m-d'),
                             "user" => [
@@ -151,8 +170,8 @@ try {
                                 "role" => ["name" => strtoupper($row['role'] ?? 'LECTURER')]
                             ],
                             "department" => [
-                                "id" => "dept-" . md5($row['department'] ?? 'General'),
-                                "name" => $row['department'] ?? 'Department of Nursing Sciences'
+                                "id" => "dept-" . md5($rawDept),
+                                "name" => $rawDept
                             ],
                             "lecturer" => !empty($row['academic_rank']) ? [
                                 "rank" => $row['academic_rank'],
@@ -218,6 +237,39 @@ try {
         $rawPassword = $input['password'] ?? '';
         $passwordHash = !empty($rawPassword) ? password_hash($rawPassword, PASSWORD_DEFAULT) : null;
 
+        // Resolve clean department title
+        $departmentInput = $input['department'] ?? $input['departmentId'] ?? '';
+        $deptName = 'Department of Nursing Sciences';
+
+        if (!empty($departmentInput) && $departmentInput !== 'Selected Department' && strpos($departmentInput, 'dept-') !== 0) {
+            $deptName = $departmentInput;
+        } else {
+            foreach ($defaultDepartments as $d) {
+                if ($d['id'] === $departmentId || $d['id'] === $departmentInput) {
+                    $deptName = $d['name'];
+                    break;
+                }
+            }
+            if (($deptName === 'Department of Nursing Sciences' || empty($deptName)) && !empty($staffNo)) {
+                $codeMatch = [];
+                preg_match('/STAFF\/([A-Z]{3})\//i', $staffNo, $codeMatch);
+                $code = !empty($codeMatch[1]) ? strtoupper($codeMatch[1]) : '';
+                $deptMap = [
+                    'SCS' => 'Department of Computer Science & IT',
+                    'NUR' => 'Department of Nursing Sciences',
+                    'MLS' => 'Department of Medical Laboratory Science',
+                    'CHS' => 'Department of Community Health Sciences',
+                    'BUS' => 'Department of Business Administration',
+                    'LAW' => 'Department of Law & Criminology',
+                    'REG' => 'Registry & Academic Affairs',
+                    'BUR' => 'Bursary & Financial Services'
+                ];
+                if (isset($deptMap[$code])) {
+                    $deptName = $deptMap[$code];
+                }
+            }
+        }
+
         if ($conn) {
             try {
                 @$conn->query("CREATE TABLE IF NOT EXISTS staff (
@@ -259,7 +311,7 @@ try {
                         password_hash = VALUES(password_hash),
                         joining_date = VALUES(joining_date)");
                     if ($stmt) {
-                        $stmt->bind_param("sssssssssssssss", $id, $staffNo, $firstName, $lastName, $middleName, $username, $email, $phone, $roleName, $departmentId, $designation, $academicRank, $specialization, $passwordHash, $joiningDate);
+                        $stmt->bind_param("sssssssssssssss", $id, $staffNo, $firstName, $lastName, $middleName, $username, $email, $phone, $roleName, $deptName, $designation, $academicRank, $specialization, $passwordHash, $joiningDate);
                         @$stmt->execute();
                         @$stmt->close();
                     }
@@ -281,7 +333,7 @@ try {
                         specialization = VALUES(specialization),
                         joining_date = VALUES(joining_date)");
                     if ($stmt) {
-                        $stmt->bind_param("ssssssssssssss", $id, $staffNo, $firstName, $lastName, $middleName, $username, $email, $phone, $roleName, $departmentId, $designation, $academicRank, $specialization, $joiningDate);
+                        $stmt->bind_param("ssssssssssssss", $id, $staffNo, $firstName, $lastName, $middleName, $username, $email, $phone, $roleName, $deptName, $designation, $academicRank, $specialization, $joiningDate);
                         @$stmt->execute();
                         @$stmt->close();
                     }
@@ -334,7 +386,7 @@ try {
                     "phoneNumber" => $phone,
                     "role" => ["name" => $roleName]
                 ],
-                "department" => ["id" => $departmentId, "name" => "Selected Department"],
+                "department" => ["id" => $departmentId, "name" => $deptName],
                 "lecturer" => $roleName === 'LECTURER' ? [
                     "rank" => $academicRank ?: 'LECTURER_II',
                     "specialization" => $specialization

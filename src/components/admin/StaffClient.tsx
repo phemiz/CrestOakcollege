@@ -55,6 +55,29 @@ interface StaffClientProps {
   departments: DropdownItem[];
 }
 
+export const resolveDepartment = (dept: string = "", staffId: string = "") => {
+  if (dept && dept !== "Selected Department" && dept.trim() !== "") {
+    return dept;
+  }
+  
+  // Extract 3-letter code from Staff ID (e.g. CCHMS/STAFF/SCS/001 -> SCS)
+  const codeMatch = staffId ? staffId.match(/STAFF\/([A-Z]{3})\//i) : null;
+  const code = codeMatch ? codeMatch[1].toUpperCase() : '';
+  
+  const DEPT_MAP: Record<string, string> = {
+    'SCS': 'Department of Computer Science & IT',
+    'NUR': 'Department of Nursing Sciences',
+    'MLS': 'Department of Medical Laboratory Science',
+    'CHS': 'Department of Community Health Sciences',
+    'BUS': 'Department of Business Administration',
+    'LAW': 'Department of Law & Criminology',
+    'REG': 'Registry & Academic Affairs',
+    'BUR': 'Bursary & Financial Services'
+  };
+
+  return DEPT_MAP[code] || 'General Administration';
+};
+
 function getStaffDeptCode(deptName: string = "") {
   const upper = deptName.toUpperCase();
   if (upper.includes("NURSING")) return "NUR";
@@ -101,9 +124,11 @@ export default function StaffClient({ staffList: initialStaff, departments: rawD
             liveList.forEach((item: any) => {
               const key = item.user?.username || item.username || item.staffNo || item.staff_id || item.id;
               if (key) {
+                const sNo = item.staffNo || item.staff_id || item.staffId || 'CCHMS/STAFF/SCS/001';
+                const dName = resolveDepartment(item.department?.name || item.department || '', sNo);
                 const normalizedItem: StaffItem = {
                   id: item.id || item.staff_id || item.staffNo,
-                  staffNo: item.staffNo || item.staff_id || item.staffId || 'CCHMS/STAFF/SCS/001',
+                  staffNo: sNo,
                   designation: item.designation || 'Staff',
                   joiningDate: item.joiningDate || item.joining_date || new Date().toISOString().split('T')[0],
                   user: {
@@ -119,8 +144,8 @@ export default function StaffClient({ staffList: initialStaff, departments: rawD
                     }
                   },
                   department: {
-                    id: item.department?.id || ('dept-' + String(item.department?.name || item.department || '1').toLowerCase().replace(/[^a-z0-9]/g, '-')),
-                    name: item.department?.name || item.department || 'Department'
+                    id: item.department?.id || ('dept-' + String(dName).toLowerCase().replace(/[^a-z0-9]/g, '-')),
+                    name: dName
                   },
                   lecturer: (item.lecturer || item.academicRank || item.academic_rank) ? {
                     rank: item.lecturer?.rank || item.academicRank || item.academic_rank || 'LECTURER_II',
@@ -277,12 +302,16 @@ export default function StaffClient({ staffList: initialStaff, departments: rawD
       finalStaffNo = computeStaffNo(activeDeptId);
     }
 
+    const selectedDept = departments.find((d) => d.id === formData.departmentId);
+    const resolvedDeptName = selectedDept?.name || resolveDepartment("", finalStaffNo);
+
     setIsSubmitting(true);
     try {
       const payload = {
         ...formData,
         staffNo: finalStaffNo,
         departmentId: formData.departmentId || departments[0]?.id,
+        department: resolvedDeptName,
         id: editingStaff?.id
       };
       const res = await fetch("/api/admin/staff.php", {
@@ -455,7 +484,7 @@ export default function StaffClient({ staffList: initialStaff, departments: rawD
                       <div className="text-[11px] text-slate-400">{staff.user.email}</div>
                     </td>
                     <td className="py-3.5 px-4 font-mono font-bold text-slate-700">{staff.staffNo}</td>
-                    <td className="py-3.5 px-4 font-semibold text-slate-700">{staff.department.name}</td>
+                    <td className="py-3.5 px-4 font-semibold text-slate-700">{resolveDepartment(staff.department?.name, staff.staffNo)}</td>
                     <td className="py-3.5 px-4">
                       <div className="font-semibold text-slate-800">{staff.designation}</div>
                       {staff.lecturer?.specialization && (
