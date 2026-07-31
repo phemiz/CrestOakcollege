@@ -43,6 +43,8 @@ interface StudentItem {
   gpa: number;
   status: "ACTIVE" | "FINANCIAL_HOLD" | "DISCIPLINARY_HOLD" | "SUSPENDED";
   holdReason?: string | null;
+  departmentName?: string;
+  programmeName?: string;
   user: {
     firstName: string;
     lastName: string;
@@ -244,8 +246,44 @@ export default function StudentsClient({
 
   const router = useRouter();
   const [students, setStudents] = useState<StudentItem[]>(initialStudents);
+  const [departmentsList, setDepartmentsList] = useState<DropdownItem[]>(departments);
+  const [programmesList, setProgrammesList] = useState<DropdownItem[]>(programmes);
   const [logs, setLogs] = useState<AuditLogItem[]>(initialLogs);
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  useEffect(() => {
+    const fetchStudentsData = async () => {
+      try {
+        const response = await fetch('/api/admin/students.php?t=' + Date.now());
+        const data = await response.json();
+
+        if (data.success && Array.isArray(data.students)) {
+          // Map numerical fields cleanly to handle level/cgpa safely
+          const normalizedStudents = data.students.map((student: any) => ({
+            ...student,
+            level: Number(student.level || 100),
+            cgpa: Number(student.cgpa || 0),
+            departmentName: student.department?.name || 'Unassigned',
+            programmeName: student.programme?.name || 'Unassigned'
+          }));
+
+          setStudents(normalizedStudents);
+          if (data.departments && Array.isArray(data.departments)) {
+            setDepartmentsList(data.departments);
+          }
+          if (data.programmes && Array.isArray(data.programmes)) {
+            setProgrammesList(data.programmes);
+          }
+        } else {
+          console.error('Unexpected payload format:', data);
+        }
+      } catch (err) {
+        console.error('Error fetching student registry:', err);
+      }
+    };
+
+    fetchStudentsData();
+  }, []);
 
   // Search & Filter
   const [searchTerm, setSearchTerm] = useState("");
@@ -376,7 +414,7 @@ export default function StudentsClient({
       password: "",
       sendEmail: false,
       forcePasswordChange: true,
-      level: student.level,
+      level: Number(student.level || 100),
       status: student.status,
       departmentId: student.department.id,
       programmeId: student.programme.id,
