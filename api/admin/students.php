@@ -52,59 +52,80 @@ function writeJsonStore($filePath, array $items) {
 function sendViaSMTP($toEmail, $subject, $htmlMessage, $portalName = 'CrestOak College Portal') {
     $from = 'noreply@crestoakcollege.com.ng';
     $replyTo = 'info@crestoakcollege.com.ng';
-
-    // DirectAdmin Local SMTP Settings
-    $smtpHost = 'ssl://mail.crestoakcollege.com.ng';
-    $smtpPort = 465;
     $username = 'noreply@crestoakcollege.com.ng';
     $password = 'CrestOakMailer2026!';
-
     $mailSent = false;
 
-    if (function_exists('fsockopen')) {
-        try {
-            $socket = @fsockopen($smtpHost, $smtpPort, $errno, $errstr, 5);
-            if ($socket) {
-                fgets($socket, 512);
-                fputs($socket, "EHLO crestoakcollege.com.ng\r\n");
-                fgets($socket, 512);
-                
-                fputs($socket, "AUTH LOGIN\r\n");
-                fgets($socket, 512);
-                fputs($socket, base64_encode($username) . "\r\n");
-                fgets($socket, 512);
-                fputs($socket, base64_encode($password) . "\r\n");
-                $authResp = fgets($socket, 512);
+    // Direct local and remote host array to test socket connections
+    $hosts = [
+        ['host' => 'ssl://127.0.0.1', 'port' => 465],
+        ['host' => 'ssl://localhost', 'port' => 465],
+        ['host' => 'ssl://mail.crestoakcollege.com.ng', 'port' => 465]
+    ];
 
-                if (strpos($authResp, '235') !== false || strpos($authResp, '250') !== false) {
-                    fputs($socket, "MAIL FROM: <$from>\r\n");
-                    fgets($socket, 512);
-                    fputs($socket, "RCPT TO: <$toEmail>\r\n");
-                    fgets($socket, 512);
-                    fputs($socket, "DATA\r\n");
-                    fgets($socket, 512);
+    if (function_exists('stream_socket_client') || function_exists('fsockopen')) {
+        foreach ($hosts as $server) {
+            try {
+                $context = stream_context_create([
+                    'ssl' => [
+                        'verify_peer' => false,
+                        'verify_peer_name' => false,
+                        'allow_self_signed' => true
+                    ]
+                ]);
+                $socket = @stream_socket_client(
+                    $server['host'] . ':' . $server['port'],
+                    $errno, $errstr,
+                    3, // 3-second quick timeout
+                    STREAM_CLIENT_CONNECT,
+                    $context
+                );
 
-                    $headers = "MIME-Version: 1.0\r\n";
-                    $headers .= "Content-Type: text/html; charset=UTF-8\r\n";
-                    $headers .= "From: $portalName <$from>\r\n";
-                    $headers .= "To: <$toEmail>\r\n";
-                    $headers .= "Reply-To: $replyTo\r\n";
-                    $headers .= "Subject: $subject\r\n\r\n";
+                if ($socket) {
+                    stream_set_timeout($socket, 3);
+                    fgets($socket, 512);
+                    fputs($socket, "EHLO crestoakcollege.com.ng\r\n");
+                    fgets($socket, 512);
+                    fputs($socket, "AUTH LOGIN\r\n");
+                    fgets($socket, 512);
+                    fputs($socket, base64_encode($username) . "\r\n");
+                    fgets($socket, 512);
+                    fputs($socket, base64_encode($password) . "\r\n");
+                    $authResp = fgets($socket, 512);
 
-                    fputs($socket, $headers . $htmlMessage . "\r\n.\r\n");
-                    $dataResp = fgets($socket, 512);
-                    if (strpos($dataResp, '250') !== false) {
-                        $mailSent = true;
+                    if (strpos($authResp, '235') !== false || strpos($authResp, '250') !== false) {
+                        fputs($socket, "MAIL FROM: <$from>\r\n");
+                        fgets($socket, 512);
+                        fputs($socket, "RCPT TO: <$toEmail>\r\n");
+                        fgets($socket, 512);
+                        fputs($socket, "DATA\r\n");
+                        fgets($socket, 512);
+
+                        $headers  = "MIME-Version: 1.0\r\n";
+                        $headers .= "Content-Type: text/html; charset=UTF-8\r\n";
+                        $headers .= "From: $portalName <$from>\r\n";
+                        $headers .= "To: <$toEmail>\r\n";
+                        $headers .= "Reply-To: $replyTo\r\n";
+                        $headers .= "Subject: $subject\r\n\r\n";
+
+                        fputs($socket, $headers . $htmlMessage . "\r\n.\r\n");
+                        $dataResp = fgets($socket, 512);
+                        if (strpos($dataResp, '250') !== false) {
+                            $mailSent = true;
+                        }
+                        fputs($socket, "QUIT\r\n");
+                        fclose($socket);
+                        break; // Connection succeeded, break loop
                     }
-                    fputs($socket, "QUIT\r\n");
-                    fclose($socket);
-                } else {
                     fclose($socket);
                 }
+            } catch (Throwable $e) {
+                // Try next host candidate
             }
-        } catch (Throwable $e) {}
+        }
     }
 
+    // Last Resort Fallback via PHP mail with envelope flag
     if (!$mailSent) {
         $headers  = "MIME-Version: 1.0\r\n";
         $headers .= "Content-Type: text/html; charset=UTF-8\r\n";
@@ -112,17 +133,15 @@ function sendViaSMTP($toEmail, $subject, $htmlMessage, $portalName = 'CrestOak C
         $headers .= "Reply-To: " . $replyTo . "\r\n";
         $headers .= "X-Mailer: PHP/" . phpversion();
 
-        $additionalParams = "-f" . $from;
-        $mailSent = @mail($toEmail, $subject, $htmlMessage, $headers, $additionalParams);
+        $mailSent = @mail($toEmail, $subject, $htmlMessage, $headers, "-f" . $from);
         if (!$mailSent) {
             $mailSent = @mail($toEmail, $subject, $htmlMessage, $headers);
         }
     }
 
     if (!$mailSent) {
-        error_log("SMTP_FAIL: Could not deliver email to " . $toEmail);
+        error_log("MAIL_CRITICAL_FAIL: Unable to send email to " . $toEmail);
     }
-
     return $mailSent;
 }
 
