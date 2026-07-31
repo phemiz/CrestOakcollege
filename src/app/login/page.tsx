@@ -288,6 +288,7 @@ function LoginForm() {
         credentials: "include",
         body: JSON.stringify({
           username: username.trim(),
+          matricNo: username.trim(),
           password,
           role: roleContext,
         }),
@@ -295,19 +296,20 @@ function LoginForm() {
 
       const data = await response.json();
 
-      if (!response.ok || !data.success) {
-        throw new Error(data.message || "Invalid username or password.");
-      }
+      if (data.success) {
+        if (typeof window !== "undefined") {
+          localStorage.setItem("user", JSON.stringify(data.user));
+          localStorage.setItem("isAuthenticated", "true");
+          localStorage.setItem("userRole", data.user.role || roleContext);
+          localStorage.setItem("cchsmt_user_session", JSON.stringify(data.user));
+          localStorage.setItem("crestoak_session", JSON.stringify(data.user));
+        }
 
-      if (typeof window !== "undefined") {
-        localStorage.setItem("user", JSON.stringify(data.user));
-        localStorage.setItem("isAuthenticated", "true");
-        localStorage.setItem("userRole", data.user.role);
-        localStorage.setItem("cchsmt_user_session", JSON.stringify(data.user));
+        const targetUrl = data.redirectUrl || data.redirect || gatewayConfig.redirectUrl || "/portal/dashboard";
+        window.location.href = targetUrl;
+      } else {
+        setErrorMsg(data.message || "Invalid portal credentials.");
       }
-
-      const targetUrl = data.redirectUrl || data.redirect || gatewayConfig.redirectUrl;
-      window.location.replace(targetUrl);
     } catch (err: any) {
       setErrorMsg(err.message || "Authentication failed. Please check your credentials.");
     } finally {
