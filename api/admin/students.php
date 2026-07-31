@@ -18,6 +18,83 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
     exit();
 }
 
+function sendStudentCredentialEmail($toEmail, $recipientName, $matricNo, $password) {
+    if (empty($toEmail)) {
+        return false;
+    }
+    
+    $portalUrl = "https://portal.crestoakcollege.com.ng";
+    $subject = "Welcome to CrestOak College - Your Portal Credentials";
+
+    $htmlMessage = '
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <meta charset="utf-8">
+      <title>' . htmlspecialchars($subject) . '</title>
+    </head>
+    <body style="font-family: Arial, sans-serif; background-color: #f8fafc; margin: 0; padding: 20px; color: #1e293b;">
+      <div style="max-width: 600px; margin: 0 auto; background-color: #ffffff; border-radius: 16px; padding: 32px; border: 1px solid #e2e8f0; box-shadow: 0 4px 12px rgba(0,0,0,0.05);">
+        
+        <!-- Header -->
+        <div style="text-align: center; border-bottom: 2px solid #991b1b; padding-bottom: 20px; margin-bottom: 24px;">
+          <h1 style="color: #991b1b; margin: 0; font-size: 22px; font-weight: 900; letter-spacing: 0.5px;">CRESTOAK COLLEGE</h1>
+          <p style="color: #64748b; margin: 4px 0 0 0; font-size: 12px; font-weight: bold; text-transform: uppercase;">Health Sciences, Management & Technology</p>
+        </div>
+
+        <!-- Greeting -->
+        <p style="font-size: 15px; font-weight: bold; color: #0f172a; margin-bottom: 16px;">Dear ' . htmlspecialchars($recipientName) . ',</p>
+        <p style="font-size: 14px; line-height: 1.6; color: #334155; margin-bottom: 24px;">
+          Welcome to CrestOak College! Your student portal account has been successfully created. Below are your official access credentials:
+        </p>
+
+        <!-- Credentials Box -->
+        <div style="background-color: #f1f5f9; border-left: 4px solid #991b1b; padding: 20px; border-radius: 8px; margin-bottom: 28px;">
+          <table style="width: 100%; font-size: 14px;">
+            <tr>
+              <td style="padding: 6px 0; color: #64748b; font-weight: bold; width: 45%;">Matriculation Number:</td>
+              <td style="padding: 6px 0; color: #0f172a; font-family: monospace; font-weight: bold; font-size: 15px;">' . htmlspecialchars($matricNo) . '</td>
+            </tr>
+            <tr>
+              <td style="padding: 6px 0; color: #64748b; font-weight: bold;">Temporary Password:</td>
+              <td style="padding: 6px 0; color: #991b1b; font-family: monospace; font-weight: bold; font-size: 15px;">' . htmlspecialchars($password) . '</td>
+            </tr>
+            <tr>
+              <td style="padding: 6px 0; color: #64748b; font-weight: bold;">Portal Login URL:</td>
+              <td style="padding: 6px 0; color: #2563eb; font-weight: bold;"><a href="' . $portalUrl . '" style="color: #2563eb; text-decoration: underline;">' . $portalUrl . '</a></td>
+            </tr>
+          </table>
+        </div>
+
+        <!-- Action Button -->
+        <div style="text-align: center; margin-bottom: 32px;">
+          <a href="' . $portalUrl . '" style="background-color: #991b1b; color: #ffffff; text-decoration: none; padding: 14px 28px; border-radius: 10px; font-weight: bold; font-size: 14px; display: inline-block;">Access Student Portal</a>
+        </div>
+
+        <!-- Security Note -->
+        <div style="background-color: #fffbebfb; border: 1px solid #fef3c7; padding: 14px; border-radius: 8px; font-size: 12px; color: #92400e; margin-bottom: 24px;">
+          <strong>Security Notice:</strong> You will be required to change your initial password upon first portal sign-in. Keep your credentials private at all times.
+        </div>
+
+        <!-- Footer -->
+        <div style="border-top: 1px solid #e2e8f0; padding-top: 20px; text-align: center; font-size: 11px; color: #94a3b8;">
+          <p style="margin: 0 0 4px 0;">CrestOak College of Health Sciences, Management & Technology</p>
+          <p style="margin: 0;">Academic Affairs & Student Registry • <a href="mailto:info@crestoakcollege.com.ng" style="color: #64748b;">info@crestoakcollege.com.ng</a></p>
+        </div>
+
+      </div>
+    </body>
+    </html>
+    ';
+
+    $headers  = "MIME-Version: 1.0" . "\r\n";
+    $headers .= "Content-type:text/html;charset=UTF-8" . "\r\n";
+    $headers .= "From: CrestOak College Portal <noreply@crestoakcollege.com.ng>" . "\r\n";
+    $headers .= "Reply-To: info@crestoakcollege.com.ng" . "\r\n";
+
+    return @mail($toEmail, $subject, $htmlMessage, $headers);
+}
+
 try {
     require_once __DIR__ . '/db.php';
 
@@ -273,10 +350,17 @@ try {
             $hashedPassword = password_hash($rawPassword, PASSWORD_BCRYPT);
             $magicLink = "https://portal.crestoakcollege.com.ng/login?magicToken=" . md5($matricNo . time());
             
+            $mailSent = false;
+            if (!empty($email)) {
+                $recipientName = trim("$firstName $lastName") ?: "Student";
+                $mailSent = sendStudentCredentialEmail($email, $recipientName, $matricNo, $rawPassword);
+            }
+
             echo json_encode([
                 "success" => true,
                 "message" => "Password reset successfully.",
                 "magicLink" => $magicLink,
+                "emailSent" => $mailSent,
                 "credentials" => [
                     "matricNo" => $matricNo,
                     "temporaryPassword" => $rawPassword,
@@ -305,9 +389,17 @@ try {
             if ($p['id'] === $programmeId) $progName = $p['name'];
         }
 
+        // Dispatch credential email if requested or if valid email provided
+        $mailSent = false;
+        if ($sendEmail && !empty($email)) {
+            $recipientName = trim("$firstName $lastName") ?: "Student";
+            $mailSent = sendStudentCredentialEmail($email, $recipientName, $matricNo, $rawPassword);
+        }
+
         echo json_encode([
             "success" => true,
             "message" => "Student created successfully.",
+            "emailSent" => $mailSent,
             "student" => [
                 "id" => $id,
                 "matricNo" => $matricNo,
