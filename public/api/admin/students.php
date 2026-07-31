@@ -497,11 +497,11 @@ try {
         $persistenceSuccess = $dbWriteSuccess || $fileWriteSuccess;
 
         if (!$persistenceSuccess) {
-            http_response_code(200);
+            http_response_code(500);
             echo json_encode([
                 "success" => false,
                 "persistenceSuccess" => false,
-                "error" => "Failed to write record to persistent database."
+                "error" => "Failed to write student to persistent storage on host server."
             ]);
             exit();
         }
@@ -586,7 +586,7 @@ try {
 
     echo json_encode(["success" => false, "message" => "Invalid request method."]);
 } catch (Throwable $e) {
-    http_response_code(200);
+    http_response_code(500);
     echo json_encode(["success" => false, "persistenceSuccess" => false, "error" => $e->getMessage()]);
     exit();
 }

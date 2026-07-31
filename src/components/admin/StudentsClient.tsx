@@ -412,6 +412,7 @@ export default function StudentsClient({
         body: JSON.stringify(payload)
       });
       const data = await res.json();
+      console.log('API Response:', data);
       if (data.success && data.persistenceSuccess !== false) {
         // Re-fetch the student list directly from the GET endpoint (/api/admin/students.php) upon successful creation to confirm database persistence
         try {
