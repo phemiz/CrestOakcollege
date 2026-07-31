@@ -44,7 +44,13 @@ export default withAuth(
 
     // Role-Based Access Control Checks
     if (path.startsWith("/admin")) {
-      if (role !== "Admin" && role !== "Super Admin" && role !== "ADMIN") {
+      if (
+        role !== "Admin" &&
+        role !== "Super Admin" &&
+        role !== "ADMIN" &&
+        role !== "REGISTRAR" &&
+        role !== "Registrar"
+      ) {
         return NextResponse.redirect(new URL("/login?error=AccessDenied", req.url));
       }
     }
@@ -76,6 +82,7 @@ export default withAuth(
         role !== "HOD" &&
         role !== "DEAN" &&
         role !== "REGISTRAR" &&
+        role !== "Registrar" &&
         role !== "Admin" &&
         role !== "Super Admin" &&
         role !== "ADMIN"
