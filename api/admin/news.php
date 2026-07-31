@@ -16,10 +16,10 @@ $defaultNews = [
     ],
     [
         "id" => "news-2",
-        "title" => "Academic Partnership Supervision Review with Atiba University",
-        "slug" => "academic-partnership-review-atiba-university",
-        "content" => "Delegates from Atiba University Oyo concluded their annual academic audit...",
-        "featuredImage" => "/atiba-university-banner.png",
+        "title" => "Academic Excellence & Quality Assurance Review",
+        "slug" => "academic-excellence-quality-assurance-review",
+        "content" => "Delegates from national accreditation boards concluded their annual academic audit...",
+        "featuredImage" => "/crestoak-poster.jpg",
         "isPublished" => true,
         "publishedAt" => "2026-06-20T10:00:00Z"
     ]

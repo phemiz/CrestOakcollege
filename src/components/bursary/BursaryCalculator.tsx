@@ -260,7 +260,7 @@ export const BursaryCalculator: React.FC = () => {
                       </span>
                     </div>
                     <span className="text-[5px] text-slate-400 leading-normal font-semibold mt-0.5">
-                      Partnered & Supervised by Atiba University, Oyo.
+                      Accredited Tertiary Institution.
                     </span>
                   </div>
                 </div>

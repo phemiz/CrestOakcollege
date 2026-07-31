@@ -8,7 +8,7 @@ export const metadata: Metadata = {
     "CrestOak College Bursary",
     "School Fees 2026/2027",
     "Tuition Fee Nigeria",
-    "Atiba University Partnered Fees",
+    "Accredited College School Fees",
     "Nursing School Fees Badagry"
   ],
   alternates: {

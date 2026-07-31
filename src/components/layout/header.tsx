@@ -87,7 +87,7 @@ const searchDatabase = [
   { title: "Approved Fee Structure (2026/2027)", category: "Bursary", href: "/bursary", details: "Official fee schedule and calculator for tuition, hostel, and admin charges." },
   { title: "Bursary Department Details", category: "Bursary", href: "/bursary", details: "Bank account details, payment methods, and installment rules." },
   { title: "Screening Dates & Entry Exams", category: "Admissions", href: "/admissions", details: "Admission screening schedules." },
-  { title: "Atiba University Partnership Details", category: "Admissions", href: "/about", details: "Official degrees supervised by Atiba University, Oyo." },
+  { title: "Academic Accreditation & Quality Standards", category: "Admissions", href: "/about", details: "Official academic standards and quality assurance supervision." },
 
   // Portal & Info
   { title: "Student Portal Login", category: "Portal", href: "/portal", details: "Course registration, results, fee payment portal." },

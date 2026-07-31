@@ -54,7 +54,7 @@ const galleryData = [
     id: 6,
     title: "Academic Matriculation Ceremony",
     category: "events",
-    desc: "Welcoming 2025/2026 session freshers into the CrestOak and Atiba University partnership academic register.",
+    desc: "Welcoming 2025/2026 session freshers into the official CrestOak College academic register.",
     gradient: "from-red-500/20 via-pink-500/20 to-brand-blue/30",
     iconName: "GraduationCap",
     date: "December 2025"

@@ -9,13 +9,13 @@ import { StructuredData } from "@/components/seo/StructuredData";
 
 export const metadata: Metadata = generateSEO({
   title: "About Our Institution & Accreditations",
-  description: "Learn about CrestOak College (CCHSMT) Badagry, Lagos. Read our provost letter, mission, core values, accreditations, and regulatory board partners with Atiba University Oyo.",
+  description: "Learn about CrestOak College (CCHSMT) Badagry, Lagos. Read our provost letter, mission, core values, accreditations, and regulatory board partners.",
   path: "/about",
   keywords: [
     "About CrestOak College",
     "CCHSMT Badagry Lagos",
     "Rector Dr Ajisefinni",
-    "Atiba University Badagry Partnership",
+    "Accredited University Partnerships",
     "Accredited Health Science Nigeria"
   ]
 });
@@ -51,7 +51,7 @@ export default function About() {
     "@context": "https://schema.org",
     "@type": "AboutPage",
     "name": "About CrestOak College",
-    "description": "About CrestOak College of Health Sciences, Management & Technology (Badagry, Lagos) and its partnership with Atiba University Oyo.",
+    "description": "About CrestOak College of Health Sciences, Management & Technology (Badagry, Lagos) and its accredited higher education programs.",
     "mainEntity": {
       "@type": "CollegeOrUniversity",
       "name": "CrestOak College",
@@ -208,17 +208,17 @@ export default function About() {
             <div className="lg:col-span-7 flex flex-col gap-6">
               <span className="text-brand-red font-bold text-sm uppercase tracking-widest">Academic Collaboration</span>
               <h2 className="font-display text-3xl font-extrabold text-brand-blue-dark tracking-tight">
-                Our Partnership with Atiba University, Oyo
+                Academic Standards & Degree Verification
               </h2>
               <div className="text-slate-600 leading-relaxed font-medium flex flex-col gap-4 text-sm sm:text-base">
                 <p>
-                  CrestOak College of Health Sciences, Management and Technology operates under the <span className="font-display font-bold text-brand-blue-dark">academic partnership and supervision of Atiba University, Oyo, Nigeria</span>. 
+                  CrestOak College of Health Sciences, Management and Technology operates under <span className="font-display font-bold text-brand-blue-dark">accredited university-level academic frameworks and verified quality assurance supervision</span>. 
                 </p>
                 <p>
-                  This strategic academic partnership ensures that our course curricula are designed in direct alignment with university-level standards. Our students benefit from collaborative resources, standard examinations, transfer pathways, and certificates/degrees awarded with the endorsement and supervision of Atiba University.
+                  This strategic academic oversight ensures that our course curricula are designed in direct alignment with national university standards. Our students benefit from collaborative resources, standard examinations, transfer pathways, and recognized professional qualifications.
                 </p>
                 <p>
-                  Through this partnership, we maintain rigorous oversight of all our departments across Applied Health, Arts, Law, Social & Management Sciences, Agriculture, and Applied Sciences.
+                  Through these rigorous standards, we maintain complete oversight of all our departments across Applied Health, Arts, Law, Social & Management Sciences, Agriculture, and Applied Sciences.
                 </p>
               </div>
             </div>
@@ -230,20 +230,20 @@ export default function About() {
               >
                 <div className="w-full flex items-center justify-center py-4 bg-white rounded-2xl border border-slate-150 p-2 shadow-inner">
                   <Image 
-                    src="/atiba-university-banner.png" 
-                    alt="Atiba University Logo Banner" 
-                    width={180}
-                    height={72}
+                    src="/crestoak-seal.png" 
+                    alt="CrestOak College Seal" 
+                    width={100}
+                    height={100}
                     loading="lazy"
                     className="object-contain max-h-24 w-auto rounded" 
                   />
                 </div>
                 
                 <div className="text-center w-full border-t border-slate-200/60 pt-4">
-                  <h4 className="font-display text-brand-blue-dark font-extrabold text-base">Atiba University, Oyo</h4>
-                  <p className="text-xs text-brand-red font-semibold uppercase tracking-wider mt-1">Partner Institution</p>
-                  <p className="text-slate-500 text-xs mt-3 leading-relaxed">
-                    KM 5, Oyo-Iseyin Road, PMB 1077, Oyo State, Nigeria.
+                  <h4 className="font-display text-brand-blue-dark font-extrabold text-base">Accredited Higher Education Standards</h4>
+                  <p className="text-xs text-brand-red font-semibold uppercase tracking-wider mt-1">Verified Academic Partner</p>
+                  <p className="text-slate-500 text-xs mt-3 leading-relaxed font-medium">
+                    Accredited Higher Institution
                   </p>
                 </div>
               </div>

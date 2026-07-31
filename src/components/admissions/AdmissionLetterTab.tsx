@@ -67,7 +67,7 @@ export const AdmissionLetterTab: React.FC<AdmissionLetterTabProps> = ({ tracking
                 </span>
               </div>
               <span className="text-[6px] tracking-tight font-semibold text-slate-500 leading-normal mt-1 max-w-[200px]">
-                Partnered & Supervised by Atiba University, Oyo, Nigeria.
+                Accredited & Verified Higher Institution.
               </span>
             </div>
           </div>
@@ -92,7 +92,7 @@ export const AdmissionLetterTab: React.FC<AdmissionLetterTabProps> = ({ tracking
           </div>
 
           <p>
-            Following your successful screening and eligibility audits, we are pleased to offer you provisional admission to study at <strong>CrestOak College of Health Sciences Management and Technology</strong> (Badagry, Lagos campus) under the academic supervision and partnership of <strong>Atiba University, Oyo</strong>.
+            Following your successful screening and eligibility audits, we are pleased to offer you provisional admission to study at <strong>CrestOak College of Health Sciences Management and Technology</strong> (Badagry, Lagos campus) under accredited university-level academic frameworks.
           </p>
 
           <p>
@@ -119,8 +119,8 @@ export const AdmissionLetterTab: React.FC<AdmissionLetterTabProps> = ({ tracking
               </span>
             </div>
             <div>
-              <span className="text-slate-400 block uppercase mb-0.5">Academic partnership</span>
-              <span className="text-brand-blue-dark font-extrabold">Atiba University, Oyo</span>
+              <span className="text-slate-400 block uppercase mb-0.5">Accreditation Status</span>
+              <span className="text-brand-blue-dark font-extrabold">Accredited Tertiary Institution</span>
             </div>
           </div>
 

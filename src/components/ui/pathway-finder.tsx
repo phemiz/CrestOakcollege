@@ -62,7 +62,7 @@ export const PathwayFinder: React.FC = () => {
             jambCutoff: 200,
             accreditation: "NMCN / NUC Accredited",
             outcomes: ["Clinical Nurse Specialist", "Nurse Educator", "Health Consultant"],
-            desc: "A premium clinical training pathway preparing licensed nursing professionals under the academic partnership and supervision of Atiba University."
+            desc: "A premium clinical training pathway preparing licensed nursing professionals under accredited university-level academic frameworks."
           };
         } else {
           return {
@@ -168,7 +168,7 @@ export const PathwayFinder: React.FC = () => {
           level: "postgraduate",
           duration: "2 Years",
           tuition: 300000,
-          accreditation: "Atiba University Partnered",
+          accreditation: "Accredited University Program",
           outcomes: ["Senior Software Architect", "Data Scientist", "Research Academic"],
           desc: "Advanced modules in computing science, cloud architectures, artificial intelligence, and database design."
         };

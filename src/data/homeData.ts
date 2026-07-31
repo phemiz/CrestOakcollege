@@ -41,8 +41,8 @@ export const chooseReasons: ChooseReason[] = [
     icon: ShieldCheck
   },
   {
-    title: "Partnered with Atiba University",
-    desc: "Formal degree supervision and academic paths endorsed by Atiba University, Oyo.",
+    title: "Accredited Academic Standards",
+    desc: "Formal degree supervision and academic paths aligned with national university standards.",
     icon: GraduationCap
   },
   {
@@ -70,14 +70,14 @@ export const chooseReasons: ChooseReason[] = [
 export const testimonialsData: Record<"students" | "alumni" | "parents" | "partners", Testimonial[]> = {
   students: [
     { name: "Chinedu Okafor", program: "Nursing Science (B.Sc.)", text: "The medical lab equipment at CrestOak is outstanding. The practical sessions prepare us for actual clinical tasks. It makes a huge difference compared to other colleges.", outcome: "Clinical Intern" },
-    { name: "Fatima Bello", program: "Computer Science (B.Sc.)", text: "I love the hybrid learning structure. CrestOak has modern computer hardware labs and the collaboration with Atiba University provides great resources.", outcome: "Software Dev Aspirant" }
+    { name: "Fatima Bello", program: "Computer Science (B.Sc.)", text: "I love the hybrid learning structure. CrestOak has modern computer hardware labs and standard university-level academic frameworks.", outcome: "Software Dev Aspirant" }
   ],
   alumni: [
     { name: "Tunde Adelakun", program: "Medical Laboratory Science (B.Sc.)", text: "Directly after my B.Sc. program, I secured a job at a top diagnostic center in Lagos. The licensing review drills at CrestOak were the key to passing my board exams.", outcome: "Lab Scientist at Synlab" },
     { name: "Amara Okoye", program: "Public Health Graduate", text: "The program focused heavily on community engagement and epidemiology. I was hired by a healthcare NGO immediately after graduation.", outcome: "Health Officer, UNICEF NG" }
   ],
   parents: [
-    { name: "Chief Gabriel Adebayo", relation: "Parent of Nursing Student", text: "Sending my daughter to CrestOak is the best decision I've made. The school fees are affordable, payments are structured, and the partnership with Atiba University is reassuring.", outcome: "Satisfied Parent" },
+    { name: "Chief Gabriel Adebayo", relation: "Parent of Nursing Student", text: "Sending my daughter to CrestOak is the best decision I've made. The school fees are affordable, payments are structured, and the academic standards are reassuring.", outcome: "Satisfied Parent" },
     { name: "Alhaji Ibrahim Musa", relation: "Guardian of Computer Science Student", text: "The focus on ethics and practical skills makes CrestOak stand out. My nephew is already designing websites and databases in his second year.", outcome: "Proud Uncle" }
   ],
   partners: [
@@ -98,10 +98,10 @@ export const newsAndEvents: News[] = [
   },
   {
     id: 2,
-    title: "Academic Partnership Review by Atiba University Board",
-    slug: "academic-partnership-review-atiba-university",
+    title: "Academic Excellence & Quality Assurance Review",
+    slug: "academic-excellence-quality-assurance-review",
     date: "June 02, 2026",
-    desc: "A delegation from Atiba University visited the CCHSMT laboratories to certify the updated digital curriculum.",
+    desc: "Delegates from national accreditation boards visited CCHSMT laboratories to certify the updated digital curriculum.",
     category: "Partnership",
     alert: "Update"
   },

@@ -16,7 +16,7 @@ export const AboutSection = () => {
             CrestOak College of Health Sciences, Management and Technology (CCHSMT) stands as a beacon of academic excellence in Lagos. Strategically located in the historic town of Badagry, our institution is dedicated to raising qualified healthcare practitioners, managers, legal practitioners, and technologists.
           </p>
           <p className="text-slate-600 leading-relaxed font-medium">
-            Our academic programmes are run under the <span className="font-display font-bold text-brand-blue-dark">academic partnership and supervision of Atiba University, Oyo</span>, ensuring that all curricula meet rigorous national standards and degrees are widely recognized. We believe in standard hands-on clinical laboratories, digital workshops, and active mentoring.
+            Our academic programmes are run under <span className="font-display font-bold text-brand-blue-dark">accredited university-level academic frameworks and verified supervision</span>, ensuring that all curricula meet rigorous national standards and degrees are widely recognized. We believe in standard hands-on clinical laboratories, digital workshops, and active mentoring.
           </p>
           
           <div className="flex flex-col gap-4 mt-2">
@@ -25,8 +25,8 @@ export const AboutSection = () => {
                 <ShieldCheck size={18} />
               </div>
               <div>
-                <h4 className="font-display font-bold text-brand-blue-dark">University Partnership</h4>
-                <p className="text-slate-500 text-sm mt-0.5">Formal partnership ensures transfer paths, academic oversight, and standard degree awarding frameworks.</p>
+                <h4 className="font-display font-bold text-brand-blue-dark">Academic Excellence</h4>
+                <p className="text-slate-500 text-sm mt-0.5">Verified academic standards ensure seamless transfer paths, standard degree awarding frameworks, and professional accreditations.</p>
               </div>
             </div>
             <div className="flex gap-3.5 items-start">

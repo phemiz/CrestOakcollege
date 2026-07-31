@@ -13,10 +13,10 @@ export const Footer: React.FC = () => {
             <Logo size={68} showText={true} lightText={true} />
           </Link>
           <p className="text-sm text-slate-400 leading-relaxed font-medium">
-            Empowering next-generation professionals in Health Sciences, Management, Law, and Applied Technologies in academic partnership with <strong>Atiba University, Oyo</strong>.
+            Empowering next-generation professionals in Health Sciences, Management, Law, and Applied Technologies.
           </p>
           <div className="border-l-2 border-brand-red pl-4 italic text-xs text-white/90">
-            &quot;Under the academic supervision of Atiba University&quot;
+            &quot;Igniting Changes Through Knowledge&quot;
           </div>
         </div>
 
@@ -82,16 +82,16 @@ export const Footer: React.FC = () => {
         {/* Academic Affiliation details */}
         <div>
           <h3 className="font-display text-white text-[16px] font-bold tracking-wide mb-6 uppercase border-b border-brand-red pb-2 w-fit">
-            Affiliations
+            Academic Standards
           </h3>
           <div className="flex flex-col gap-4 text-xs">
             <div className="bg-white/5 border border-white/10 rounded-2xl p-4 flex flex-col gap-2">
               <span className="font-display text-brand-gold font-extrabold uppercase text-[10px] tracking-wider">
-                Partner University
+                Verified Academic Partner
               </span>
-              <p className="font-bold text-white leading-tight">Atiba University, Oyo</p>
+              <p className="font-bold text-white leading-tight">Accredited Tertiary Institution</p>
               <p className="text-slate-400 leading-relaxed font-medium mt-1">
-                KM 5, Oyo-Iseyin Road, Oyo State. Curricula aligned under university-level academic audits.
+                Verified Academic Partner. Curricula aligned under university-level academic audits and national accreditation bodies.
               </p>
             </div>
           </div>
@@ -104,7 +104,7 @@ export const Footer: React.FC = () => {
           &copy; {new Date().getFullYear()} CrestOak College (CCHSMT). All rights reserved.
         </p>
         <p className="flex items-center gap-1.5 text-center md:text-right">
-          <span>Supervised by Atiba University Registry</span>
+          <span>Accredited Tertiary Institution</span>
         </p>
       </div>
     </footer>

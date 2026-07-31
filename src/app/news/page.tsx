@@ -17,7 +17,7 @@ export const metadata: Metadata = generateSEO({
     "CrestOak news",
     "CrestOak college announcements",
     "CCHSMT Badagry updates",
-    "Atiba University partnership news",
+    "Academic accreditation updates",
     "Lagos health science admissions updates"
   ]
 });

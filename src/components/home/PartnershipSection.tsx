@@ -19,29 +19,29 @@ export const PartnershipSection = () => {
               Academic Collaboration
             </span>
             <h2 className="font-display text-3xl sm:text-4xl font-extrabold leading-tight">
-              Supervised & Endorsed by <br />
-              <span className="text-brand-gold">Atiba University, Oyo</span>
+              Accredited & Supervised Academic <br />
+              <span className="text-brand-gold">Higher Education Standards</span>
             </h2>
             <p className="text-slate-300 text-sm sm:text-base leading-relaxed">
-              All degree programmes and scientific syllabi are directly monitored and validated by the academic senate of Atiba University, ensuring seamless graduation, official NUC transcript clearances, and standard qualifications.
+              All degree programmes and scientific syllabi are directly monitored and validated under national accreditation guidelines, ensuring seamless graduation, official transcript clearances, and recognized professional qualifications.
             </p>
             
             {/* Logo Badge Card */}
             <div className="bg-white/5 border border-white/10 backdrop-blur-sm rounded-2xl p-5 flex items-center gap-5 w-fit">
               <div className="bg-white p-2 rounded-xl shrink-0">
                 <Image 
-                  src="/atiba-university-banner.png" 
-                  alt="Atiba University Logo" 
-                  width={120}
+                  src="/crestoak-seal.png" 
+                  alt="CrestOak College Seal" 
+                  width={48}
                   height={48}
                   loading="lazy"
                   className="h-12 w-auto object-contain"
                 />
               </div>
               <div>
-                <p className="text-xs font-bold text-slate-400 uppercase tracking-wider">Supervising Institution</p>
-                <p className="text-sm font-extrabold text-white">Atiba University, Oyo</p>
-                <p className="text-[10px] text-brand-gold font-semibold mt-0.5">Approved Degree Pathways</p>
+                <p className="text-xs font-bold text-slate-400 uppercase tracking-wider">Quality Standards</p>
+                <p className="text-sm font-extrabold text-white">Accredited Tertiary Institution</p>
+                <p className="text-[10px] text-brand-gold font-semibold mt-0.5">Verified Academic Partner</p>
               </div>
             </div>
           </div>
@@ -54,7 +54,7 @@ export const PartnershipSection = () => {
               </div>
               <h4 className="font-display font-bold text-white text-base">Direct B.Sc. Pathways</h4>
               <p className="text-slate-400 text-xs sm:text-sm mt-2 leading-relaxed">
-                Study curriculum structures aligned directly with Atiba University requirements, providing smooth degree transitions.
+                Study curriculum structures aligned directly with national university requirements, providing smooth degree transitions.
               </p>
             </div>
 

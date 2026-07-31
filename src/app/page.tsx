@@ -18,13 +18,13 @@ import {
 
 export const metadata: Metadata = generateSEO({
   title: "CrestOak College | Badagry Campus Health & Technology Programs",
-  description: "CrestOak College (CCHSMT) Badagry Lagos. Leading Health Sciences, Management, Law, and Technology programs partnered with Atiba University, Oyo. Start your online application today.",
+  description: "CrestOak College (CCHSMT) Badagry Lagos. Leading Health Sciences, Management, Law, and Technology programs. Start your online application today.",
   path: "",
   keywords: [
     "CrestOak College Home",
     "CCHSMT Badagry",
     "Applied Health Lagos",
-    "Atiba University partnership",
+    "Accredited University Programs",
     "Nursing entry requirements Nigeria"
   ]
 });

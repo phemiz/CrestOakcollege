@@ -34,7 +34,7 @@ export function generateSEO({
       "CrestOak College Badagry",
       "Health Sciences Nigeria",
       "Nursing Sciences badagry",
-      "Atiba University partner",
+      "Accredited University programs",
       "Criminology studies Lagos",
       "Management and Technology Lagos",
       ...keywords

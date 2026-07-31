@@ -7,7 +7,7 @@ export function JsonLd() {
     "name": "CrestOak College of Health Sciences, Management & Technology",
     "alternateName": "CCHSMT",
     "url": "https://crestoakcollege.com.ng",
-    "logo": "https://crestoakcollege.com.ng/atiba-crestoak-logo.png",
+    "logo": "https://crestoakcollege.com.ng/crestoak-seal.png",
     "contactPoint": {
       "@type": "ContactPoint",
       "telephone": "+2348155884804",

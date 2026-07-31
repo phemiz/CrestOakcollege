@@ -5,7 +5,7 @@ interface LogoProps {
   size?: number;
   showText?: boolean;
   className?: string;
-  variant?: "crestoak" | "atiba";
+  variant?: "crestoak";
   lightText?: boolean;
 }
 
@@ -16,8 +16,8 @@ export const Logo: React.FC<LogoProps> = ({
   variant = "crestoak",
   lightText = false
 }) => {
-  const imgSrc = variant === "atiba" ? "/atiba-logo.png" : "/crestoak-logo.png";
-  const imgAlt = variant === "atiba" ? "Atiba University Seal" : "CrestOak College Seal";
+  const imgSrc = "/crestoak-logo.png";
+  const imgAlt = "CrestOak College Seal";
 
   return (
     <div className={`flex items-center gap-3 ${className || ""}`}>

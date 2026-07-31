@@ -468,7 +468,7 @@ export default function PortalDashboard({ initialUser }: { initialUser?: any }) 
               <div className="absolute top-0 left-0 right-0 h-1.5 bg-brand-red" />
               
               <div className="flex flex-col items-center text-center gap-6 mb-8">
-                <Logo variant="atiba" size={60} showText={false} />
+                <Logo size={60} showText={false} />
                 <div>
                   <h3 className="font-display font-black text-2xl text-brand-blue-dark">Student Portal Login</h3>
                   <p className="text-slate-400 text-xs mt-1 leading-relaxed font-semibold">

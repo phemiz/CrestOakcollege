@@ -257,10 +257,10 @@ export default async function NewsDetailPage({ params }: PageProps) {
                       Affiliation Notice
                     </span>
                     <h4 className="font-display font-black text-white text-base leading-tight">
-                      Atiba University, Oyo Partnership
+                      Academic Quality Standards
                     </h4>
                     <p className="text-slate-300 text-xs font-medium leading-relaxed">
-                      CrestOak College academic programs are supervised and verified in compliance with Atiba University guidelines and quality assurance standards.
+                      CrestOak College academic programs are supervised and verified in compliance with national higher education guidelines and quality assurance standards.
                     </p>
                     <Link
                       href="/about"

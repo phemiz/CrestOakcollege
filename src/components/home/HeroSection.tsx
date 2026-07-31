@@ -28,14 +28,14 @@ export const HeroSection = () => {
               className="inline-flex items-center gap-1.5 bg-brand-blue-light/10 border border-brand-blue-light/30 px-3.5 py-1.5 rounded-full text-brand-blue-light font-semibold text-[10px] sm:text-xs uppercase tracking-wider w-fit"
             >
               <Image
-                src="/atiba-university-banner.png"
-                alt="Atiba University Logo"
+                src="/crestoak-seal.png"
+                alt="CrestOak College Seal"
                 width={16}
                 height={16}
                 priority
-                className="w-4 h-4 rounded-full object-cover object-left"
+                className="w-4 h-4 rounded-full object-cover"
               />
-              <span>Partnered with Atiba University</span>
+              <span>Accredited Tertiary Institution</span>
             </div>
           </div>
 
@@ -49,7 +49,7 @@ export const HeroSection = () => {
           </h1>
 
           <p className="text-slate-300 text-base sm:text-lg leading-relaxed max-w-xl mx-auto lg:mx-0 font-medium">
-            Igniting Changes Through Knowledge. Under the academic partnership and supervision of Atiba University, Oyo, discover comprehensive professional programs to build your clinical and technical expertise.
+            Igniting Changes Through Knowledge. Discover comprehensive professional programs in Health Sciences, Management, Law, and Applied Technology designed to build your clinical and technical expertise.
           </p>
 
           {/* CTAs */}

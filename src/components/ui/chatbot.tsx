@@ -101,8 +101,8 @@ export const AdmissionsChatbot: React.FC = () => {
       return "All programs run by CrestOak College are fully aligned with National Universities Commission (NUC) standards. Furthermore, our professional healthcare modules are accredited by the Nursing and Midwifery Council of Nigeria (NMCN) and the Medical Laboratory Science Council of Nigeria (MLSCN).";
     }
 
-    if (text.includes("atiba") || text.includes("affiliate") || text.includes("partner") || text.includes("supervise") || text.includes("degree") || text.includes("university")) {
-      return "CrestOak operates in direct academic partnership and supervision with Atiba University, Oyo. This means your course curriculum is supervised by Atiba board professors, and your final degree is awarded by Atiba University, qualifying you for the National Youth Service Corps (NYSC) program.";
+    if (text.includes("affiliate") || text.includes("partner") || text.includes("supervise") || text.includes("degree") || text.includes("university")) {
+      return "CrestOak College operates under accredited university-level academic frameworks and verified supervision. This ensures your course curriculum is supervised by standard academic boards, qualifying you for professional licensing and the National Youth Service Corps (NYSC) program.";
     }
 
     if (text.includes("contact") || text.includes("phone") || text.includes("call") || text.includes("whatsapp") || text.includes("email") || text.includes("support")) {
@@ -241,7 +241,7 @@ export const AdmissionsChatbot: React.FC = () => {
                     { text: "What is the JAMB cut-off mark?", icon: ShieldCheck },
                     { text: "What are the school fees splits?", icon: DollarSign },
                     { text: "Where and when are screenings held?", icon: MapPin },
-                    { text: "Is CrestOak in partnership with Atiba University?", icon: Bookmark }
+                    { text: "Is CrestOak an accredited institution?", icon: Bookmark }
                   ].map((q, qIdx) => {
                     const Icon = q.icon;
                     return (

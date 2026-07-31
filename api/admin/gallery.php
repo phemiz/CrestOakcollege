@@ -16,7 +16,7 @@ $defaultGallery = [
         "id" => "gal-2",
         "title" => "Badagry Campus Lecture Theatres",
         "description" => "Main campus lecture halls equipped with digital presentation systems.",
-        "imageUrl" => "/atiba-university-banner.png",
+        "imageUrl" => "/crestoak-poster.jpg",
         "album" => "Academic Halls"
     ]
 ];

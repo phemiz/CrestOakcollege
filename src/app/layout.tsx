@@ -53,7 +53,7 @@ export const metadata: Metadata = {
     siteName: "CrestOak College of Health Sciences, Management & Technology",
     images: [
       {
-        url: "/atiba-crestoak-logo.png",
+        url: "/crestoak-seal.png",
         width: 1200,
         height: 630,
         alt: "CrestOak College Seal"
@@ -79,7 +79,7 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     title: "CrestOak College | Badagry Campus Health & Technology",
     description: "CrestOak College of Health Sciences, Management & Technology",
-    images: ["/atiba-crestoak-logo.png"]
+    images: ["/crestoak-seal.png"]
   }
 };
 

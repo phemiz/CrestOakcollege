@@ -169,7 +169,7 @@ export default function ClientPortalShell({ children, user, announcements }: Cli
             {/* Drawer */}
             <div className="relative flex flex-col w-4/5 max-w-sm bg-white h-full p-6 shadow-2xl z-10 animate-fade-in-up">
               <div className="flex justify-between items-center mb-6">
-                <Logo variant="atiba" size={40} showText={false} />
+                <Logo size={40} showText={false} />
                 <button
                   onClick={() => setMobileMenuOpen(false)}
                   className="p-1.5 border border-slate-200 rounded-lg text-slate-600 hover:bg-slate-50 cursor-pointer"
