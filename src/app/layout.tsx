@@ -29,10 +29,10 @@ const inter = Inter({
 export const metadata: Metadata = {
   metadataBase: new URL("https://crestoakcollege.com.ng"),
   title: {
-    default: "CrestOak College of Health Sciences, Management & Technology",
+    default: "CrestOak College | Badagry Campus Health & Technology",
     template: "%s | CrestOak College of Health Sciences, Management & Technology"
   },
-  description: "Official portal for CrestOak College of Health Sciences, Management & Technology. Offering accredited programs in health sciences, technology, and management.",
+  description: "CrestOak College of Health Sciences, Management & Technology. Accredited tertiary institution offering diploma and degree programs in Nursing, MLS, CHEW, Computer Science, and Business.",
   keywords: [
     "CrestOak College",
     "health sciences",
@@ -47,8 +47,8 @@ export const metadata: Metadata = {
     canonical: "https://crestoakcollege.com.ng"
   },
   openGraph: {
-    title: "CrestOak College of Health Sciences, Management & Technology",
-    description: "Official portal for CrestOak College of Health Sciences, Management & Technology. Offering accredited programs in health sciences, technology, and management.",
+    title: "CrestOak College | Badagry Campus Health & Technology",
+    description: "CrestOak College of Health Sciences, Management & Technology. Accredited tertiary institution offering diploma and degree programs in Nursing, MLS, CHEW, Computer Science, and Business.",
     url: "https://crestoakcollege.com.ng",
     siteName: "CrestOak College of Health Sciences, Management & Technology",
     images: [
@@ -56,7 +56,7 @@ export const metadata: Metadata = {
         url: "/atiba-crestoak-logo.png",
         width: 1200,
         height: 630,
-        alt: "CrestOak College Logo"
+        alt: "CrestOak College Seal"
       }
     ],
     locale: "en_NG",
@@ -64,22 +64,21 @@ export const metadata: Metadata = {
   },
   icons: {
     icon: [
-      { url: "/favicon-32x32.png", sizes: "32x32", type: "image/png" },
-      { url: "/favicon-16x16.png", sizes: "16x16", type: "image/png" },
-      { url: "/favicon-48x48.png", sizes: "48x48", type: "image/png" },
-      { url: "/icon.png", sizes: "512x512", type: "image/png" },
-      { url: "/favicon.ico" },
+      { url: "/favicon.ico", sizes: "any" },
+      { url: "/favicon.png", type: "image/png", sizes: "192x192" },
+      { url: "/icon.png", type: "image/png", sizes: "512x512" },
     ],
-    shortcut: "/favicon.ico",
+    shortcut: ["/favicon.ico"],
     apple: [
+      { url: "/apple-icon.png", sizes: "180x180", type: "image/png" },
       { url: "/apple-touch-icon.png", sizes: "180x180", type: "image/png" },
     ],
   },
   manifest: "/site.webmanifest",
   twitter: {
     card: "summary_large_image",
-    title: "CrestOak College of Health Sciences, Management & Technology",
-    description: "Official portal for CrestOak College of Health Sciences, Management & Technology. Offering accredited programs in health sciences, technology, and management.",
+    title: "CrestOak College | Badagry Campus Health & Technology",
+    description: "CrestOak College of Health Sciences, Management & Technology",
     images: ["/atiba-crestoak-logo.png"]
   }
 };
@@ -94,6 +93,13 @@ export default function RootLayout({
       lang="en"
       className={`${montserrat.variable} ${inter.variable} h-full antialiased`}
     >
+      <head>
+        <link rel="icon" href="/favicon.ico" sizes="any" />
+        <link rel="icon" href="/favicon.png" type="image/png" sizes="192x192" />
+        <link rel="shortcut icon" href="/favicon.ico" />
+        <link rel="apple-touch-icon" href="/apple-touch-icon.png" sizes="180x180" />
+        <link rel="apple-touch-icon" href="/apple-icon.png" sizes="180x180" />
+      </head>
       <body className="min-h-full flex flex-col font-sans bg-white text-slate-900">
         <JsonLd />
         <Analytics />
@@ -105,6 +111,3 @@ export default function RootLayout({
     </html>
   );
 }
-
-
-
