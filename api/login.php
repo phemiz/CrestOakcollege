@@ -163,9 +163,13 @@ try {
 
     // B. Check Persistent JSON Stores (`students_store.json` & `staff_store.json`)
     if (!$matchedUser) {
-        $studentStorePath = __DIR__ . '/admin/students_store.json';
-        if (!file_exists($studentStorePath)) $studentStorePath = __DIR__ . '/../admin/students_store.json';
-        $students = readJsonStore($studentStorePath);
+        $jsonStorePath = __DIR__ . '/admin/students_store.json';
+        if (!file_exists($jsonStorePath) && file_exists(__DIR__ . '/students_store.json')) {
+            $jsonStorePath = __DIR__ . '/students_store.json';
+        } else if (!file_exists($jsonStorePath) && file_exists(__DIR__ . '/../admin/students_store.json')) {
+            $jsonStorePath = __DIR__ . '/../admin/students_store.json';
+        }
+        $students = readJsonStore($jsonStorePath);
         foreach ($students as $stu) {
             $storedMatric = cleanId($stu['matricNo'] ?? '');
             $storedEmail  = strtolower(trim($stu['user']['email'] ?? $stu['email'] ?? ''));
@@ -197,7 +201,11 @@ try {
 
     if (!$matchedUser) {
         $staffStorePath = __DIR__ . '/admin/staff_store.json';
-        if (!file_exists($staffStorePath)) $staffStorePath = __DIR__ . '/../admin/staff_store.json';
+        if (!file_exists($staffStorePath) && file_exists(__DIR__ . '/staff_store.json')) {
+            $staffStorePath = __DIR__ . '/staff_store.json';
+        } else if (!file_exists($staffStorePath) && file_exists(__DIR__ . '/../admin/staff_store.json')) {
+            $staffStorePath = __DIR__ . '/../admin/staff_store.json';
+        }
         $staffMembers = readJsonStore($staffStorePath);
         foreach ($staffMembers as $stf) {
             $storedStaffNo = cleanId($stf['staffNo'] ?? '');

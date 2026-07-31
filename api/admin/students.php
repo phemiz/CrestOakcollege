@@ -18,7 +18,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
     exit();
 }
 
-$storeFile = __DIR__ . '/students_store.json';
+$jsonStorePath = __DIR__ . '/admin/students_store.json';
+if (!file_exists($jsonStorePath) && file_exists(__DIR__ . '/students_store.json')) {
+    $jsonStorePath = __DIR__ . '/students_store.json';
+} else if (!file_exists($jsonStorePath) && file_exists(__DIR__ . '/../admin/students_store.json')) {
+    $jsonStorePath = __DIR__ . '/../admin/students_store.json';
+}
+$storeFile = $jsonStorePath;
 
 if (!file_exists($storeFile)) {
     @file_put_contents($storeFile, json_encode([], JSON_PRETTY_PRINT));
@@ -413,37 +419,74 @@ try {
             $hashedPassword = password_hash($rawPassword, PASSWORD_BCRYPT);
             $magicLink = "https://portal.crestoakcollege.com.ng/login?magicToken=" . md5($matricNo . time());
             
+            // 1. Update password fields in persistent JSON store BEFORE email dispatch
+            $currentStore = readJsonStore($storeFile);
+            $foundIndex = -1;
+            foreach ($currentStore as $idx => $s) {
+                if (($s['matricNo'] ?? '') === $matricNo || ($s['id'] ?? '') === $id || (!empty($email) && strtolower(trim($s['user']['email'] ?? $s['email'] ?? '')) === strtolower(trim($email)))) {
+                    $foundIndex = $idx;
+                    break;
+                }
+            }
+            if ($foundIndex >= 0) {
+                $currentStore[$foundIndex]['password'] = $rawPassword;
+                $currentStore[$foundIndex]['password_hash'] = $hashedPassword;
+                if (isset($currentStore[$foundIndex]['user'])) {
+                    $currentStore[$foundIndex]['user']['password'] = $rawPassword;
+                }
+            } else {
+                $currentStore[] = [
+                    "id" => $id,
+                    "matricNo" => $matricNo,
+                    "password" => $rawPassword,
+                    "password_hash" => $hashedPassword,
+                    "initialPassword" => $rawPassword,
+                    "user" => [
+                        "firstName" => $firstName,
+                        "lastName" => $lastName,
+                        "email" => $email,
+                        "password" => $rawPassword
+                    ]
+                ];
+            }
+            writeJsonStore($storeFile, array_values($currentStore));
+
+            // 2. NOW dispatch email wrapped in non-blocking try-catch
             $mailSent = false;
             if (!empty($email)) {
-                $toEmail = $email;
-                $fullName = trim("$firstName $lastName") ?: "Student";
-                $identifier = $matricNo;
+                try {
+                    $toEmail = $email;
+                    $fullName = trim("$firstName $lastName") ?: "Student";
+                    $identifier = $matricNo;
 
-                $subject = "Welcome to CrestOak College - Your Portal Credentials";
-                $message = "
-                <html>
-                <head>
-                  <title>CrestOak College Portal Access</title>
-                </head>
-                <body style='font-family: Arial, sans-serif; color: #333; line-height: 1.6;'>
-                  <div style='max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e0e0e0; border-radius: 8px;'>
-                    <h2 style='color: #0d2e58;'>CrestOak College - Portal Credentials</h2>
-                    <p>Hello <strong>" . htmlspecialchars($fullName) . "</strong>,</p>
-                    <p>Your institutional portal account has been provisioned successfully. Below are your login credentials:</p>
-                    <div style='background-color: #f4f6f9; padding: 15px; border-left: 4px solid #0d2e58; margin: 20px 0;'>
-                      <p style='margin: 5px 0;'><strong>Portal Identifier / ID:</strong> " . htmlspecialchars($identifier) . "</p>
-                      <p style='margin: 5px 0;'><strong>Temporary Password:</strong> " . htmlspecialchars($rawPassword) . "</p>
-                      <p style='margin: 5px 0;'><strong>Portal Login URL:</strong> <a href='https://portal.crestoakcollege.com.ng' style='color: #0d2e58; text-decoration: underline;'>https://portal.crestoakcollege.com.ng</a></p>
-                    </div>
-                    <p>Please log in immediately and update your temporary password.</p>
-                    <hr style='border: none; border-top: 1px solid #eee; margin: 20px 0;' />
-                    <p style='font-size: 12px; color: #777;'>This is an automated system email from CrestOak College of Health Sciences & Medical Technology. Please do not reply directly to this email.</p>
-                  </div>
-                </body>
-                </html>
-                ";
+                    $subject = "Welcome to CrestOak College - Your Portal Credentials";
+                    $message = "
+                    <html>
+                    <head>
+                      <title>CrestOak College Portal Access</title>
+                    </head>
+                    <body style='font-family: Arial, sans-serif; color: #333; line-height: 1.6;'>
+                      <div style='max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e0e0e0; border-radius: 8px;'>
+                        <h2 style='color: #0d2e58;'>CrestOak College - Portal Credentials</h2>
+                        <p>Hello <strong>" . htmlspecialchars($fullName) . "</strong>,</p>
+                        <p>Your institutional portal account has been provisioned successfully. Below are your login credentials:</p>
+                        <div style='background-color: #f4f6f9; padding: 15px; border-left: 4px solid #0d2e58; margin: 20px 0;'>
+                          <p style='margin: 5px 0;'><strong>Portal Identifier / ID:</strong> " . htmlspecialchars($identifier) . "</p>
+                          <p style='margin: 5px 0;'><strong>Temporary Password:</strong> " . htmlspecialchars($rawPassword) . "</p>
+                          <p style='margin: 5px 0;'><strong>Portal Login URL:</strong> <a href='https://portal.crestoakcollege.com.ng' style='color: #0d2e58; text-decoration: underline;'>https://portal.crestoakcollege.com.ng</a></p>
+                        </div>
+                        <p>Please log in immediately and update your temporary password.</p>
+                        <hr style='border: none; border-top: 1px solid #eee; margin: 20px 0;' />
+                        <p style='font-size: 12px; color: #777;'>This is an automated system email from CrestOak College of Health Sciences & Medical Technology. Please do not reply directly to this email.</p>
+                      </div>
+                    </body>
+                    </html>
+                    ";
 
-                $mailSent = sendViaSMTP($toEmail, $subject, $message, "CrestOak College Student Portal");
+                    $mailSent = sendViaSMTP($toEmail, $subject, $message, "CrestOak College Student Portal");
+                } catch (Throwable $e) {
+                    error_log("MAIL_ERR: " . $e->getMessage());
+                }
             }
 
             echo json_encode([
@@ -483,6 +526,9 @@ try {
         $studentObject = [
             "id" => $id,
             "matricNo" => $matricNo,
+            "password" => $rawPassword,
+            "password_hash" => $hashedPassword,
+            "initialPassword" => $rawPassword,
             "level" => intval($data['level'] ?? 100),
             "cgpa" => floatval($data['cgpa'] ?? 4.0),
             "gpa" => floatval($data['gpa'] ?? 4.0),
@@ -494,7 +540,8 @@ try {
                 "middleName" => $data['middleName'] ?? "",
                 "email" => $email,
                 "phoneNumber" => $data['phoneNumber'] ?? "",
-                "dob" => $data['dob'] ?? "2004-01-01"
+                "dob" => $data['dob'] ?? "2004-01-01",
+                "password" => $rawPassword
             ],
             "department" => ["id" => $departmentId, "name" => $deptName],
             "programme" => ["id" => $programmeId, "name" => $progName],
@@ -593,41 +640,45 @@ try {
             exit();
         }
 
-        // Native HTML Mail Delivery Snippet via sendViaSMTP helper
+        // Native HTML Mail Delivery Snippet via sendViaSMTP helper (wrapped in non-blocking try-catch)
         $mailSent = false;
         if (!empty($data['sendEmail']) && !empty($data['email'])) {
-            $toEmail = $data['email'];
-            $fullName = trim(($data['firstName'] ?? '') . ' ' . ($data['lastName'] ?? '')) ?: 'Student';
-            $identifier = $data['matricNo'] ?? $data['staffId'] ?? $data['email'];
-            $rawPassword = $data['password'] ?? $data['initialPassword'] ?? $rawPassword;
+            try {
+                $toEmail = $data['email'];
+                $fullName = trim(($data['firstName'] ?? '') . ' ' . ($data['lastName'] ?? '')) ?: 'Student';
+                $identifier = $data['matricNo'] ?? $data['staffId'] ?? $data['email'];
+                $rawPassword = $data['password'] ?? $data['initialPassword'] ?? $rawPassword;
 
-            $subject = "Welcome to CrestOak College - Your Portal Credentials";
-            
-            // HTML Email Template
-            $message = "
-            <html>
-            <head>
-              <title>CrestOak College Portal Access</title>
-            </head>
-            <body style='font-family: Arial, sans-serif; color: #333; line-height: 1.6;'>
-              <div style='max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e0e0e0; border-radius: 8px;'>
-                <h2 style='color: #0d2e58;'>CrestOak College - Portal Credentials</h2>
-                <p>Hello <strong>" . htmlspecialchars($fullName) . "</strong>,</p>
-                <p>Your institutional portal account has been provisioned successfully. Below are your login credentials:</p>
-                <div style='background-color: #f4f6f9; padding: 15px; border-left: 4px solid #0d2e58; margin: 20px 0;'>
-                  <p style='margin: 5px 0;'><strong>Portal Identifier / ID:</strong> " . htmlspecialchars($identifier) . "</p>
-                  <p style='margin: 5px 0;'><strong>Temporary Password:</strong> " . htmlspecialchars($rawPassword) . "</p>
-                  <p style='margin: 5px 0;'><strong>Portal Login URL:</strong> <a href='https://portal.crestoakcollege.com.ng' style='color: #0d2e58; text-decoration: underline;'>https://portal.crestoakcollege.com.ng</a></p>
-                </div>
-                <p>Please log in immediately and update your temporary password.</p>
-                <hr style='border: none; border-top: 1px solid #eee; margin: 20px 0;' />
-                <p style='font-size: 12px; color: #777;'>This is an automated system email from CrestOak College of Health Sciences & Medical Technology. Please do not reply directly to this email.</p>
-              </div>
-            </body>
-            </html>
-            ";
+                $subject = "Welcome to CrestOak College - Your Portal Credentials";
+                
+                // HTML Email Template
+                $message = "
+                <html>
+                <head>
+                  <title>CrestOak College Portal Access</title>
+                </head>
+                <body style='font-family: Arial, sans-serif; color: #333; line-height: 1.6;'>
+                  <div style='max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e0e0e0; border-radius: 8px;'>
+                    <h2 style='color: #0d2e58;'>CrestOak College - Portal Credentials</h2>
+                    <p>Hello <strong>" . htmlspecialchars($fullName) . "</strong>,</p>
+                    <p>Your institutional portal account has been provisioned successfully. Below are your login credentials:</p>
+                    <div style='background-color: #f4f6f9; padding: 15px; border-left: 4px solid #0d2e58; margin: 20px 0;'>
+                      <p style='margin: 5px 0;'><strong>Portal Identifier / ID:</strong> " . htmlspecialchars($identifier) . "</p>
+                      <p style='margin: 5px 0;'><strong>Temporary Password:</strong> " . htmlspecialchars($rawPassword) . "</p>
+                      <p style='margin: 5px 0;'><strong>Portal Login URL:</strong> <a href='https://portal.crestoakcollege.com.ng' style='color: #0d2e58; text-decoration: underline;'>https://portal.crestoakcollege.com.ng</a></p>
+                    </div>
+                    <p>Please log in immediately and update your temporary password.</p>
+                    <hr style='border: none; border-top: 1px solid #eee; margin: 20px 0;' />
+                    <p style='font-size: 12px; color: #777;'>This is an automated system email from CrestOak College of Health Sciences & Medical Technology. Please do not reply directly to this email.</p>
+                  </div>
+                </body>
+                </html>
+                ";
 
-            $mailSent = sendViaSMTP($toEmail, $subject, $message, "CrestOak College Student Portal");
+                $mailSent = sendViaSMTP($toEmail, $subject, $message, "CrestOak College Student Portal");
+            } catch (Throwable $e) {
+                error_log("MAIL_ERR: " . $e->getMessage());
+            }
         }
 
         echo json_encode([
