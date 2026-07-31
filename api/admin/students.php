@@ -18,6 +18,24 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
     exit();
 }
 
+$storeFile = __DIR__ . '/students_store.json';
+
+function readJsonStore($filePath) {
+    if (file_exists($filePath)) {
+        $content = @file_get_contents($filePath);
+        $data = @json_decode($content, true);
+        if (is_array($data)) {
+            return $data;
+        }
+    }
+    return [];
+}
+
+function writeJsonStore($filePath, array $items) {
+    $json = json_encode($items, JSON_PRETTY_PRINT);
+    return @file_put_contents($filePath, $json) !== false;
+}
+
 try {
     require_once __DIR__ . '/db.php';
 
@@ -149,6 +167,7 @@ try {
     if ($method === 'GET') {
         $dbStudents = [];
 
+        // 1. Fetch MySQL Database Records
         if ($conn) {
             try {
                 @$conn->query("CREATE TABLE IF NOT EXISTS students (
@@ -212,8 +231,16 @@ try {
             @$conn->close();
         }
 
+        // 2. Fetch File Storage Records
+        $fileStoreStudents = readJsonStore($storeFile);
+
+        // 3. Merge MySQL DB, File Store, & Defaults (Prioritizing Live Persistent Data)
         $mergedMap = [];
         foreach ($dbStudents as $item) {
+            $key = $item['matricNo'] ?? $item['id'];
+            if (!empty($key)) $mergedMap[$key] = $item;
+        }
+        foreach ($fileStoreStudents as $item) {
             $key = $item['matricNo'] ?? $item['id'];
             if (!empty($key)) $mergedMap[$key] = $item;
         }
@@ -226,6 +253,7 @@ try {
 
         echo json_encode([
             "success" => true,
+            "persistenceSuccess" => true,
             "students" => array_values($mergedMap),
             "departments" => $defaultDepartments,
             "programmes" => $defaultProgrammes,
@@ -250,6 +278,7 @@ try {
             
             echo json_encode([
                 "success" => true,
+                "persistenceSuccess" => true,
                 "message" => "Student administrative hold updated successfully.",
                 "status" => $newStatus,
                 "holdReason" => $holdReason
@@ -262,6 +291,7 @@ try {
             $reason = $data['reason'] ?? 'Grade Rectification';
             echo json_encode([
                 "success" => true,
+                "persistenceSuccess" => true,
                 "message" => "Academic override applied successfully.",
                 "cgpa" => $newCgpa,
                 "reason" => $reason
@@ -310,11 +340,15 @@ try {
                 $headers .= "Reply-To: info@crestoakcollege.com.ng\r\n";
                 $headers .= "X-Mailer: PHP/" . phpversion();
 
-                $mailSent = @mail($toEmail, $subject, $message, $headers);
+                $mailSent = mail($toEmail, $subject, $message, $headers);
+                if (!$mailSent) {
+                    error_log("MAIL_ERROR: Failed sending email to " . $toEmail);
+                }
             }
 
             echo json_encode([
                 "success" => true,
+                "persistenceSuccess" => true,
                 "message" => "Password reset successfully.",
                 "magicLink" => $magicLink,
                 "emailSent" => $mailSent,
@@ -344,6 +378,119 @@ try {
         }
         foreach ($defaultProgrammes as $p) {
             if ($p['id'] === $programmeId) $progName = $p['name'];
+        }
+
+        $studentObject = [
+            "id" => $id,
+            "matricNo" => $matricNo,
+            "level" => intval($data['level'] ?? 100),
+            "cgpa" => floatval($data['cgpa'] ?? 4.0),
+            "gpa" => floatval($data['gpa'] ?? 4.0),
+            "status" => $data['status'] ?? 'ACTIVE',
+            "holdReason" => $data['holdReason'] ?? null,
+            "user" => [
+                "firstName" => $firstName,
+                "lastName" => $lastName,
+                "middleName" => $data['middleName'] ?? "",
+                "email" => $email,
+                "phoneNumber" => $data['phoneNumber'] ?? "",
+                "dob" => $data['dob'] ?? "2004-01-01"
+            ],
+            "department" => ["id" => $departmentId, "name" => $deptName],
+            "programme" => ["id" => $programmeId, "name" => $progName],
+            "entrySessionId" => "sess-2026",
+            "currentSessionId" => "sess-2026",
+            "currentSemesterId" => "sem-first"
+        ];
+
+        // PERSISTENCE ENGINE: 1. MySQL Write
+        $dbWriteSuccess = false;
+        if ($conn) {
+            try {
+                @$conn->query("CREATE TABLE IF NOT EXISTS students (
+                    id VARCHAR(64) PRIMARY KEY,
+                    matric_no VARCHAR(64),
+                    first_name VARCHAR(100),
+                    last_name VARCHAR(100),
+                    middle_name VARCHAR(100),
+                    email VARCHAR(150),
+                    phone VARCHAR(50),
+                    dob DATE,
+                    department_id VARCHAR(64),
+                    department_name VARCHAR(150),
+                    programme_id VARCHAR(64),
+                    programme_name VARCHAR(150),
+                    level INT DEFAULT 100,
+                    cgpa DECIMAL(3,2) DEFAULT 4.00,
+                    gpa DECIMAL(3,2) DEFAULT 4.00,
+                    status VARCHAR(50) DEFAULT 'ACTIVE',
+                    hold_reason TEXT,
+                    password_hash VARCHAR(255),
+                    force_password_change TINYINT(1) DEFAULT 1,
+                    isDeleted TINYINT(1) DEFAULT 0,
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
+
+                $stmt = @$conn->prepare("INSERT INTO students (id, matric_no, first_name, last_name, middle_name, email, phone, dob, department_id, department_name, programme_id, programme_name, level, cgpa, gpa, status, hold_reason, password_hash)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                    ON DUPLICATE KEY UPDATE
+                    matric_no = VALUES(matric_no),
+                    first_name = VALUES(first_name),
+                    last_name = VALUES(last_name),
+                    middle_name = VALUES(middle_name),
+                    email = VALUES(email),
+                    phone = VALUES(phone),
+                    dob = VALUES(dob),
+                    department_id = VALUES(department_id),
+                    department_name = VALUES(department_name),
+                    programme_id = VALUES(programme_id),
+                    programme_name = VALUES(programme_name),
+                    level = VALUES(level),
+                    cgpa = VALUES(cgpa),
+                    gpa = VALUES(gpa),
+                    status = VALUES(status),
+                    hold_reason = VALUES(hold_reason),
+                    password_hash = VALUES(password_hash)");
+                if ($stmt) {
+                    $phone = $data['phoneNumber'] ?? '';
+                    $dob = $data['dob'] ?? '2004-01-01';
+                    $level = intval($data['level'] ?? 100);
+                    $cgpa = floatval($data['cgpa'] ?? 4.0);
+                    $gpa = floatval($data['gpa'] ?? 4.0);
+                    $status = $data['status'] ?? 'ACTIVE';
+                    $holdReason = $data['holdReason'] ?? '';
+                    $middleName = $data['middleName'] ?? '';
+
+                    $stmt->bind_param("sssssssssssiiddsss", $id, $matricNo, $firstName, $lastName, $middleName, $email, $phone, $dob, $departmentId, $deptName, $programmeId, $progName, $level, $cgpa, $gpa, $status, $holdReason, $hashedPassword);
+                    if ($stmt->execute()) {
+                        $dbWriteSuccess = true;
+                    }
+                    @$stmt->close();
+                }
+            } catch (Throwable $e) {
+                error_log("DB_PERSISTENCE_ERROR: " . $e->getMessage());
+            }
+            @$conn->close();
+        }
+
+        // PERSISTENCE ENGINE: 2. File Store Write
+        $currentStore = readJsonStore($storeFile);
+        $filteredStore = array_filter($currentStore, function($s) use ($id, $matricNo) {
+            return ($s['id'] ?? '') !== $id && ($s['matricNo'] ?? '') !== $matricNo;
+        });
+        array_unshift($filteredStore, $studentObject);
+        $fileWriteSuccess = writeJsonStore($storeFile, array_values($filteredStore));
+
+        $persistenceSuccess = $dbWriteSuccess || $fileWriteSuccess;
+
+        if (!$persistenceSuccess) {
+            http_response_code(200);
+            echo json_encode([
+                "success" => false,
+                "persistenceSuccess" => false,
+                "error" => "Failed to write record to persistent database."
+            ]);
+            exit();
         }
 
         // Native HTML Mail Delivery Snippet
@@ -388,35 +535,18 @@ try {
             $headers .= "X-Mailer: PHP/" . phpversion();
 
             // Send Mail
-            $mailSent = @mail($toEmail, $subject, $message, $headers);
+            $mailSent = mail($toEmail, $subject, $message, $headers);
+            if (!$mailSent) {
+                error_log("MAIL_ERROR: Failed sending email to " . $toEmail);
+            }
         }
 
         echo json_encode([
             "success" => true,
-            "message" => "Student created successfully.",
+            "persistenceSuccess" => true,
+            "message" => "Student created and persisted successfully.",
             "emailSent" => $mailSent,
-            "student" => [
-                "id" => $id,
-                "matricNo" => $matricNo,
-                "level" => intval($data['level'] ?? 100),
-                "cgpa" => floatval($data['cgpa'] ?? 4.0),
-                "gpa" => floatval($data['gpa'] ?? 4.0),
-                "status" => $data['status'] ?? 'ACTIVE',
-                "holdReason" => $data['holdReason'] ?? null,
-                "user" => [
-                    "firstName" => $firstName,
-                    "lastName" => $lastName,
-                    "middleName" => $data['middleName'] ?? "",
-                    "email" => $email,
-                    "phoneNumber" => $data['phoneNumber'] ?? "",
-                    "dob" => $data['dob'] ?? "2004-01-01"
-                ],
-                "department" => ["id" => $departmentId, "name" => $deptName],
-                "programme" => ["id" => $programmeId, "name" => $progName],
-                "entrySessionId" => "sess-2026",
-                "currentSessionId" => "sess-2026",
-                "currentSemesterId" => "sem-first"
-            ],
+            "student" => $studentObject,
             "credentials" => [
                 "matricNo" => $matricNo,
                 "temporaryPassword" => $rawPassword,
@@ -429,13 +559,21 @@ try {
     }
 
     if ($method === 'DELETE') {
-        echo json_encode(["success" => true, "message" => "Student deleted successfully."]);
+        $id = $data['id'] ?? '';
+        if ($id) {
+            $currentStore = readJsonStore($storeFile);
+            $filteredStore = array_filter($currentStore, function($s) use ($id) {
+                return ($s['id'] ?? '') !== $id;
+            });
+            writeJsonStore($storeFile, array_values($filteredStore));
+        }
+        echo json_encode(["success" => true, "persistenceSuccess" => true, "message" => "Student deleted successfully."]);
         exit();
     }
 
     echo json_encode(["success" => false, "message" => "Invalid request method."]);
 } catch (Throwable $e) {
     http_response_code(200);
-    echo json_encode(["success" => false, "message" => $e->getMessage()]);
+    echo json_encode(["success" => false, "persistenceSuccess" => false, "error" => $e->getMessage()]);
     exit();
 }

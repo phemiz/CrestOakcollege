@@ -412,14 +412,30 @@ export default function StudentsClient({
         body: JSON.stringify(payload)
       });
       const data = await res.json();
-      if (data.success) {
-        if (editingStudent) {
-          setStudents((prev) =>
-            prev.map((s) => (s.id === editingStudent.id ? { ...s, ...data.student } : s))
-          );
-        } else {
-          setStudents((prev) => [data.student, ...prev]);
+      if (data.success && data.persistenceSuccess !== false) {
+        // Re-fetch the student list directly from the GET endpoint (/api/admin/students.php) upon successful creation to confirm database persistence
+        try {
+          const getRes = await fetch("/api/admin/students.php?t=" + Date.now());
+          const getData = await getRes.json();
+          if (getData.students && Array.isArray(getData.students)) {
+            setStudents(getData.students);
+          } else if (editingStudent) {
+            setStudents((prev) =>
+              prev.map((s) => (s.id === editingStudent.id ? { ...s, ...data.student } : s))
+            );
+          } else if (data.student) {
+            setStudents((prev) => [data.student, ...prev]);
+          }
+        } catch {
+          if (editingStudent) {
+            setStudents((prev) =>
+              prev.map((s) => (s.id === editingStudent.id ? { ...s, ...data.student } : s))
+            );
+          } else if (data.student) {
+            setStudents((prev) => [data.student, ...prev]);
+          }
         }
+
         setIsModalOpen(false);
 
         // Visual confirmation modal for new credentials payload
@@ -434,10 +450,10 @@ export default function StudentsClient({
         }
         router.refresh();
       } else {
-        alert("Error saving student profile: " + (data.message || "Failed to submit."));
+        alert("Registration Error: Server failed to save record. " + (data.error || data.message || "Failed to write record to persistent database."));
       }
     } catch (err: any) {
-      alert("Submission error: " + err.message);
+      alert("Registration Error: Server failed to save record. " + err.message);
     } finally {
       setIsSubmitting(false);
     }

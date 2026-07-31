@@ -421,41 +421,55 @@ export default function StaffClient({ staffList: initialStaff, departments: rawD
       });
       const data = await res.json();
 
-      if (data.success || data.staff) {
-        const returnedStaff = data.staff || data.data;
-        const normalized: StaffItem = {
-          id: editingStaff?.id || returnedStaff?.id || `staff-${Date.now()}`,
-          staffNo: computedStaffNo,
-          designation: formData.designation || "Lecturer",
-          joiningDate: formData.joiningDate,
-          status: formData.status,
-          lastLogin: new Date().toLocaleString(),
-          allocatedCourses: editingStaff?.allocatedCourses || ["NUR101"],
-          user: {
-            id: editingStaff?.user.id || `usr-${Date.now()}`,
-            username: formData.username,
-            firstName: formData.firstName,
-            lastName: formData.lastName,
-            middleName: formData.middleName || "",
-            email: formData.email,
-            phoneNumber: formData.phoneNumber || "",
-            role: { name: formData.roleName }
-          },
-          department: {
-            id: formData.departmentId,
-            name: deptName
-          },
-          lecturer: {
-            rank: formData.rank,
-            specialization: formData.specialization
-          }
-        };
-
-        if (editingStaff) {
-          setStaffList((prev) => prev.map((s) => (s.id === editingStaff.id ? normalized : s)));
-        } else {
-          setStaffList((prev) => [normalized, ...prev]);
+      const returnedStaff = data.staff || data.data;
+      const normalized: StaffItem = {
+        id: editingStaff?.id || returnedStaff?.id || `staff-${Date.now()}`,
+        staffNo: computedStaffNo,
+        designation: formData.designation || "Lecturer",
+        joiningDate: formData.joiningDate,
+        status: formData.status,
+        lastLogin: new Date().toLocaleString(),
+        allocatedCourses: editingStaff?.allocatedCourses || ["NUR101"],
+        user: {
+          id: editingStaff?.user.id || `usr-${Date.now()}`,
+          username: formData.username,
+          firstName: formData.firstName,
+          lastName: formData.lastName,
+          middleName: formData.middleName || "",
+          email: formData.email,
+          phoneNumber: formData.phoneNumber || "",
+          role: { name: formData.roleName }
+        },
+        department: {
+          id: formData.departmentId,
+          name: deptName
+        },
+        lecturer: {
+          rank: formData.rank,
+          specialization: formData.specialization
         }
+      };
+
+      if ((data.success || data.staff) && data.persistenceSuccess !== false) {
+        // Re-fetch the staff list directly from the GET endpoint (/api/admin/staff.php) upon successful creation to confirm database persistence
+        try {
+          const getRes = await fetch("/api/admin/staff.php?t=" + Date.now());
+          const getData = await getRes.json();
+          if (getData.staffList && Array.isArray(getData.staffList)) {
+            setStaffList(getData.staffList);
+          } else if (editingStaff) {
+            setStaffList((prev) => prev.map((s) => (s.id === editingStaff.id ? normalized : s)));
+          } else {
+            setStaffList((prev) => [normalized, ...prev]);
+          }
+        } catch {
+          if (editingStaff) {
+            setStaffList((prev) => prev.map((s) => (s.id === editingStaff.id ? normalized : s)));
+          } else {
+            setStaffList((prev) => [normalized, ...prev]);
+          }
+        }
+
         setIsModalOpen(false);
 
         // Issued credentials visual confirmation modal
@@ -471,10 +485,10 @@ export default function StaffClient({ staffList: initialStaff, departments: rawD
         }
         router.refresh();
       } else {
-        alert("Error saving staff record: " + (data.message || "Failed"));
+        alert("Registration Error: Server failed to save record. " + (data.error || data.message || "Failed to write record to persistent database."));
       }
     } catch (err: any) {
-      alert("Submission error: " + err.message);
+      alert("Registration Error: Server failed to save record. " + err.message);
     } finally {
       setIsSubmitting(false);
     }

@@ -19,6 +19,24 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
     exit();
 }
 
+$storeFile = __DIR__ . '/staff_store.json';
+
+function readStaffJsonStore($filePath) {
+    if (file_exists($filePath)) {
+        $content = @file_get_contents($filePath);
+        $data = @json_decode($content, true);
+        if (is_array($data)) {
+            return $data;
+        }
+    }
+    return [];
+}
+
+function writeStaffJsonStore($filePath, array $items) {
+    $json = json_encode($items, JSON_PRETTY_PRINT);
+    return @file_put_contents($filePath, $json) !== false;
+}
+
 try {
     require_once __DIR__ . '/db.php';
 
@@ -146,6 +164,7 @@ try {
     if ($method === 'GET') {
         $dbStaff = [];
 
+        // 1. Fetch MySQL Database Records
         if ($conn) {
             try {
                 @$conn->query("CREATE TABLE IF NOT EXISTS staff (
@@ -209,12 +228,18 @@ try {
             @$conn->close();
         }
 
+        // 2. Fetch File Storage Records
+        $fileStoreStaff = readStaffJsonStore($storeFile);
+
+        // 3. Merge MySQL DB, File Store, & Defaults (Prioritizing Persistent Data)
         $mergedMap = [];
         foreach ($dbStaff as $item) {
             $key = $item['user']['username'] ?? $item['staffNo'] ?? $item['id'];
-            if (!empty($key)) {
-                $mergedMap[$key] = $item;
-            }
+            if (!empty($key)) $mergedMap[$key] = $item;
+        }
+        foreach ($fileStoreStaff as $item) {
+            $key = $item['user']['username'] ?? $item['staffNo'] ?? $item['id'];
+            if (!empty($key)) $mergedMap[$key] = $item;
         }
         foreach ($defaultStaff as $item) {
             $key = $item['user']['username'] ?? $item['staffNo'] ?? $item['id'];
@@ -225,6 +250,7 @@ try {
 
         echo json_encode([
             "success" => true,
+            "persistenceSuccess" => true,
             "staffList" => array_values($mergedMap),
             "departments" => $defaultDepartments,
             "roles" => $defaultRoles
@@ -278,11 +304,15 @@ try {
                 $headers .= "Reply-To: info@crestoakcollege.com.ng\r\n";
                 $headers .= "X-Mailer: PHP/" . phpversion();
 
-                $mailSent = @mail($toEmail, $subject, $message, $headers);
+                $mailSent = mail($toEmail, $subject, $message, $headers);
+                if (!$mailSent) {
+                    error_log("MAIL_ERROR: Failed sending email to " . $toEmail);
+                }
             }
 
             echo json_encode([
                 "success" => true,
+                "persistenceSuccess" => true,
                 "message" => "Staff credentials updated successfully.",
                 "emailSent" => $mailSent,
                 "staff" => [
@@ -301,7 +331,7 @@ try {
 
         if (empty($firstName) || empty($lastName)) {
             http_response_code(200);
-            echo json_encode(['success' => false, 'message' => 'First Name and Last Name are required.']);
+            echo json_encode(['success' => false, 'persistenceSuccess' => false, 'message' => 'First Name and Last Name are required.']);
             exit();
         }
 
@@ -329,6 +359,109 @@ try {
                 $deptName = $d['name'];
                 break;
             }
+        }
+
+        $staffObject = [
+            "id" => $id,
+            "staffId" => $staffNo,
+            "staffNo" => $staffNo,
+            "designation" => $designation,
+            "joiningDate" => $joiningDate,
+            "status" => $status,
+            "lastLogin" => date('Y-m-d H:i:s'),
+            "allocatedCourses" => $data['allocatedCourses'] ?? ["NUR101"],
+            "user" => [
+                "id" => $id,
+                "username" => $username,
+                "firstName" => $firstName,
+                "lastName" => $lastName,
+                "middleName" => $middleName,
+                "email" => $email,
+                "phoneNumber" => $phone,
+                "role" => ["name" => $roleName]
+            ],
+            "department" => ["id" => $departmentId, "name" => $deptName],
+            "lecturer" => $roleName === 'LECTURER' ? [
+                "rank" => $academicRank ?: 'LECTURER_II',
+                "specialization" => $specialization
+            ] : null
+        ];
+
+        // PERSISTENCE ENGINE: 1. MySQL Write
+        $dbWriteSuccess = false;
+        if ($conn) {
+            try {
+                @$conn->query("CREATE TABLE IF NOT EXISTS staff (
+                    id VARCHAR(64) PRIMARY KEY,
+                    staff_id VARCHAR(64),
+                    first_name VARCHAR(100),
+                    last_name VARCHAR(100),
+                    middle_name VARCHAR(100),
+                    username VARCHAR(100),
+                    email VARCHAR(150),
+                    phone VARCHAR(50),
+                    role VARCHAR(50),
+                    department VARCHAR(150),
+                    designation VARCHAR(150),
+                    academic_rank VARCHAR(100),
+                    specialization VARCHAR(255),
+                    status VARCHAR(50) DEFAULT 'ACTIVE',
+                    last_login DATETIME,
+                    password_hash VARCHAR(255),
+                    joining_date DATE,
+                    isDeleted TINYINT(1) DEFAULT 0,
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
+
+                $stmt = @$conn->prepare("INSERT INTO staff (id, staff_id, first_name, last_name, middle_name, username, email, phone, role, department, designation, academic_rank, specialization, status, password_hash, joining_date)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                    ON DUPLICATE KEY UPDATE
+                    staff_id = VALUES(staff_id),
+                    first_name = VALUES(first_name),
+                    last_name = VALUES(last_name),
+                    middle_name = VALUES(middle_name),
+                    username = VALUES(username),
+                    email = VALUES(email),
+                    phone = VALUES(phone),
+                    role = VALUES(role),
+                    department = VALUES(department),
+                    designation = VALUES(designation),
+                    academic_rank = VALUES(academic_rank),
+                    specialization = VALUES(specialization),
+                    status = VALUES(status),
+                    password_hash = VALUES(password_hash),
+                    joining_date = VALUES(joining_date)");
+                if ($stmt) {
+                    $stmt->bind_param("ssssssssssssssss", $id, $staffNo, $firstName, $lastName, $middleName, $username, $email, $phone, $roleName, $deptName, $designation, $academicRank, $specialization, $status, $passwordHash, $joiningDate);
+                    if ($stmt->execute()) {
+                        $dbWriteSuccess = true;
+                    }
+                    @$stmt->close();
+                }
+            } catch (Throwable $e) {
+                error_log("STAFF_DB_PERSISTENCE_ERROR: " . $e->getMessage());
+            }
+            @$conn->close();
+        }
+
+        // PERSISTENCE ENGINE: 2. File Store Write
+        $currentStore = readStaffJsonStore($storeFile);
+        $filteredStore = array_filter($currentStore, function($s) use ($id, $staffNo) {
+            return ($s['id'] ?? '') !== $id && ($s['staffNo'] ?? '') !== $staffNo;
+        });
+        array_unshift($filteredStore, $staffObject);
+        $fileWriteSuccess = writeStaffJsonStore($storeFile, array_values($filteredStore));
+
+        $persistenceSuccess = $dbWriteSuccess || $fileWriteSuccess;
+
+        if (!$persistenceSuccess) {
+            http_response_code(200);
+            echo json_encode([
+                "success" => false,
+                "persistenceSuccess" => false,
+                "error" => "Failed to write record to persistent database."
+            ]);
+            exit();
         }
 
         // Native HTML Email Dispatch Snippet
@@ -373,49 +506,39 @@ try {
             $headers .= "X-Mailer: PHP/" . phpversion();
 
             // Send Mail
-            $mailSent = @mail($toEmail, $subject, $message, $headers);
+            $mailSent = mail($toEmail, $subject, $message, $headers);
+            if (!$mailSent) {
+                error_log("MAIL_ERROR: Failed sending email to " . $toEmail);
+            }
         }
 
         echo json_encode([
             "success" => true,
-            "message" => "Staff account created successfully",
+            "persistenceSuccess" => true,
+            "message" => "Staff account created and persisted successfully.",
             "emailSent" => $mailSent,
-            "staff" => [
-                "id" => $id,
+            "staff" => $staffObject,
+            "credentials" => [
                 "staffId" => $staffNo,
-                "staffNo" => $staffNo,
-                "designation" => $designation,
-                "joiningDate" => $joiningDate,
-                "status" => $status,
-                "lastLogin" => date('Y-m-d H:i:s'),
-                "allocatedCourses" => $data['allocatedCourses'] ?? ["NUR101"],
                 "temporaryPassword" => $rawPassword,
                 "email" => $email,
-                "role" => $roleName,
                 "sendEmail" => $sendEmail,
-                "forcePasswordChange" => $forcePasswordChange,
-                "user" => [
-                    "id" => $id,
-                    "username" => $username,
-                    "firstName" => $firstName,
-                    "lastName" => $lastName,
-                    "middleName" => $middleName,
-                    "email" => $email,
-                    "phoneNumber" => $phone,
-                    "role" => ["name" => $roleName]
-                ],
-                "department" => ["id" => $departmentId, "name" => $deptName],
-                "lecturer" => $roleName === 'LECTURER' ? [
-                    "rank" => $academicRank ?: 'LECTURER_II',
-                    "specialization" => $specialization
-                ] : null
+                "forcePasswordChange" => $forcePasswordChange
             ]
         ]);
         exit();
     }
 
     if ($method === 'DELETE') {
-        echo json_encode(["success" => true, "message" => "Staff account archived successfully."]);
+        $id = $data['id'] ?? '';
+        if ($id) {
+            $currentStore = readStaffJsonStore($storeFile);
+            $filteredStore = array_filter($currentStore, function($s) use ($id) {
+                return ($s['id'] ?? '') !== $id;
+            });
+            writeStaffJsonStore($storeFile, array_values($filteredStore));
+        }
+        echo json_encode(["success" => true, "persistenceSuccess" => true, "message" => "Staff account archived successfully."]);
         exit();
     }
 
@@ -424,7 +547,8 @@ try {
     http_response_code(200);
     echo json_encode([
         "success" => false,
-        "message" => "Database error: " . $e->getMessage()
+        "persistenceSuccess" => false,
+        "error" => "Database error: " . $e->getMessage()
     ]);
     exit();
 }
