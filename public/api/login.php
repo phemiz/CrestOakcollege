@@ -29,6 +29,10 @@ function readJsonStore($filePath) {
     return [];
 }
 
+function cleanId($id) {
+    return strtolower(str_replace('\\', '', trim($id ?? '')));
+}
+
 function verifyPassword($inputPassword, $storedHashOrPlain) {
     if (empty($storedHashOrPlain) || empty($inputPassword)) {
         return false;
@@ -49,10 +53,12 @@ try {
     $input = json_decode($rawInput, true) ?? $_POST ?? [];
     $data = $input;
 
-    $identifier = strtolower(trim($data['username'] ?? $data['matricNo'] ?? $data['staffNo'] ?? $data['email'] ?? $data['identifier'] ?? ''));
-    $password = trim($data['password'] ?? '');
+    // Clean submitted input identifier & remove backslashes
+    $rawIdentifier = trim($data['username'] ?? $data['matricNo'] ?? $data['staffNo'] ?? $data['email'] ?? $data['identifier'] ?? '');
+    $cleanIdentifier = cleanId($rawIdentifier);
+    $rawPassword = trim($data['password'] ?? '');
 
-    if (empty($identifier) || empty($password)) {
+    if (empty($cleanIdentifier) || empty($rawPassword)) {
         http_response_code(401);
         echo json_encode(['success' => false, 'message' => 'Username/Identifier and password are required.']);
         exit();
@@ -72,15 +78,15 @@ try {
     if ($conn) {
         // 1. Check `users` table
         try {
-            $stmt = @$conn->prepare("SELECT * FROM users WHERE LOWER(username) = ? OR LOWER(email) = ? LIMIT 1");
+            $stmt = @$conn->prepare("SELECT * FROM users WHERE LOWER(username) = ? OR LOWER(email) = ? OR REPLACE(LOWER(username), '\\\\', '') = ? LIMIT 1");
             if ($stmt) {
-                $stmt->bind_param("ss", $identifier, $identifier);
+                $stmt->bind_param("sss", $cleanIdentifier, $cleanIdentifier, $cleanIdentifier);
                 $stmt->execute();
                 $res = $stmt->get_result();
                 if ($res && $res->num_rows > 0) {
                     $row = $res->fetch_assoc();
                     $storedPass = $row['password_hash'] ?? $row['password'] ?? '';
-                    if (verifyPassword($password, $storedPass)) {
+                    if (verifyPassword($rawPassword, $storedPass)) {
                         $matchedUser = [
                             'id' => $row['id'],
                             'username' => $row['username'] ?? $row['email'],
@@ -97,15 +103,15 @@ try {
         // 2. Check `students` table
         if (!$matchedUser) {
             try {
-                $stmt = @$conn->prepare("SELECT * FROM students WHERE (LOWER(matric_no) = ? OR LOWER(email) = ? OR LOWER(id) = ?) AND (isDeleted = 0 OR isDeleted IS NULL) LIMIT 1");
+                $stmt = @$conn->prepare("SELECT * FROM students WHERE (REPLACE(LOWER(matric_no), '\\\\', '') = ? OR LOWER(email) = ? OR LOWER(id) = ?) AND (isDeleted = 0 OR isDeleted IS NULL) LIMIT 1");
                 if ($stmt) {
-                    $stmt->bind_param("sss", $identifier, $identifier, $identifier);
+                    $stmt->bind_param("sss", $cleanIdentifier, $cleanIdentifier, $cleanIdentifier);
                     $stmt->execute();
                     $res = $stmt->get_result();
                     if ($res && $res->num_rows > 0) {
                         $row = $res->fetch_assoc();
                         $storedPass = $row['password_hash'] ?? $row['password'] ?? '';
-                        if (verifyPassword($password, $storedPass)) {
+                        if (verifyPassword($rawPassword, $storedPass)) {
                             $fullName = trim(($row['first_name'] ?? '') . ' ' . ($row['last_name'] ?? '')) ?: 'Student';
                             $matchedUser = [
                                 'id' => $row['id'],
@@ -127,15 +133,15 @@ try {
         // 3. Check `staff` table
         if (!$matchedUser) {
             try {
-                $stmt = @$conn->prepare("SELECT * FROM staff WHERE (LOWER(staff_no) = ? OR LOWER(email) = ? OR LOWER(username) = ? OR LOWER(id) = ?) AND (isDeleted = 0 OR isDeleted IS NULL) LIMIT 1");
+                $stmt = @$conn->prepare("SELECT * FROM staff WHERE (REPLACE(LOWER(staff_no), '\\\\', '') = ? OR LOWER(email) = ? OR LOWER(username) = ? OR LOWER(id) = ?) AND (isDeleted = 0 OR isDeleted IS NULL) LIMIT 1");
                 if ($stmt) {
-                    $stmt->bind_param("ssss", $identifier, $identifier, $identifier, $identifier);
+                    $stmt->bind_param("ssss", $cleanIdentifier, $cleanIdentifier, $cleanIdentifier, $cleanIdentifier);
                     $stmt->execute();
                     $res = $stmt->get_result();
                     if ($res && $res->num_rows > 0) {
                         $row = $res->fetch_assoc();
                         $storedPass = $row['password_hash'] ?? $row['password'] ?? '';
-                        if (verifyPassword($password, $storedPass)) {
+                        if (verifyPassword($rawPassword, $storedPass)) {
                             $fullName = trim(($row['first_name'] ?? '') . ' ' . ($row['last_name'] ?? '')) ?: 'Staff Member';
                             $matchedUser = [
                                 'id' => $row['id'],
@@ -161,19 +167,23 @@ try {
         if (!file_exists($studentStorePath)) $studentStorePath = __DIR__ . '/../admin/students_store.json';
         $students = readJsonStore($studentStorePath);
         foreach ($students as $stu) {
-            $mNo = strtolower($stu['matricNo'] ?? '');
-            $em = strtolower($stu['user']['email'] ?? '');
-            $sId = strtolower($stu['id'] ?? '');
+            $storedMatric = cleanId($stu['matricNo'] ?? '');
+            $storedEmail  = strtolower(trim($stu['user']['email'] ?? $stu['email'] ?? ''));
+            $storedId     = cleanId($stu['id'] ?? '');
 
-            if ($identifier === $mNo || $identifier === $em || $identifier === $sId) {
-                $storedPass = $stu['password'] ?? $stu['password_hash'] ?? $stu['initialPassword'] ?? '';
-                if (verifyPassword($password, $storedPass)) {
+            if ($cleanIdentifier === $storedMatric || $cleanIdentifier === $storedEmail || $cleanIdentifier === $storedId) {
+                $storedPass = $stu['password']
+                            ?? $stu['password_hash']
+                            ?? $stu['initialPassword']
+                            ?? $stu['user']['password']
+                            ?? '';
+                if (verifyPassword($rawPassword, $storedPass)) {
                     $fullName = trim(($stu['user']['firstName'] ?? '') . ' ' . ($stu['user']['lastName'] ?? '')) ?: 'Student';
                     $matchedUser = [
                         'id' => $stu['id'],
                         'matricNo' => $stu['matricNo'],
                         'username' => $stu['matricNo'],
-                        'email' => $stu['user']['email'] ?? '',
+                        'email' => $stu['user']['email'] ?? $stu['email'] ?? '',
                         'name' => $fullName,
                         'role' => 'STUDENT',
                         'level' => $stu['level'] ?? 100,
@@ -190,20 +200,24 @@ try {
         if (!file_exists($staffStorePath)) $staffStorePath = __DIR__ . '/../admin/staff_store.json';
         $staffMembers = readJsonStore($staffStorePath);
         foreach ($staffMembers as $stf) {
-            $sNo = strtolower($stf['staffNo'] ?? '');
-            $uName = strtolower($stf['username'] ?? '');
-            $em = strtolower($stf['user']['email'] ?? '');
-            $sId = strtolower($stf['id'] ?? '');
+            $storedStaffNo = cleanId($stf['staffNo'] ?? '');
+            $storedUsername = cleanId($stf['username'] ?? '');
+            $storedEmail    = strtolower(trim($stf['user']['email'] ?? $stf['email'] ?? ''));
+            $storedId       = cleanId($stf['id'] ?? '');
 
-            if ($identifier === $sNo || $identifier === $uName || $identifier === $em || $identifier === $sId) {
-                $storedPass = $stf['password'] ?? $stf['password_hash'] ?? $stf['initialPassword'] ?? '';
-                if (verifyPassword($password, $storedPass)) {
+            if ($cleanIdentifier === $storedStaffNo || $cleanIdentifier === $storedUsername || $cleanIdentifier === $storedEmail || $cleanIdentifier === $storedId) {
+                $storedPass = $stf['password']
+                            ?? $stf['password_hash']
+                            ?? $stf['initialPassword']
+                            ?? $stf['user']['password']
+                            ?? '';
+                if (verifyPassword($rawPassword, $storedPass)) {
                     $fullName = trim(($stf['user']['firstName'] ?? '') . ' ' . ($stf['user']['lastName'] ?? '')) ?: 'Staff Member';
                     $matchedUser = [
                         'id' => $stf['id'],
                         'staffNo' => $stf['staffNo'],
                         'username' => $stf['username'] ?? $stf['staffNo'],
-                        'email' => $stf['user']['email'] ?? '',
+                        'email' => $stf['user']['email'] ?? $stf['email'] ?? '',
                         'name' => $fullName,
                         'role' => strtoupper($stf['user']['roleName'] ?? 'LECTURER'),
                         'department' => $stf['department']['name'] ?? ''
@@ -216,7 +230,7 @@ try {
 
     // C. Static Default Fallback Accounts for Emergency Verification
     if (!$matchedUser) {
-        if (($identifier === 'azeez.okunola@crestoakcollege.com.ng' || $identifier === 'cchms/2026/nur/0042') && verifyPassword($password, 'CrestOak#1001')) {
+        if (($cleanIdentifier === cleanId('azeez.okunola@crestoakcollege.com.ng') || $cleanIdentifier === cleanId('cchms/2026/nur/0042')) && verifyPassword($rawPassword, 'CrestOak#1001')) {
             $matchedUser = [
                 'id' => 'stu-001',
                 'matricNo' => 'CCHMS/2026/NUR/0042',
@@ -227,7 +241,7 @@ try {
                 'level' => 100,
                 'department' => 'Department of Nursing Sciences'
             ];
-        } else if (($identifier === 'emmanuel.adeyemi@crestoakcollege.com.ng' || $identifier === 'cchmt/stf/2026/nur/001' || $identifier === 'adeyemi.emmanuel') && verifyPassword($password, 'CrestOakStaff#2026')) {
+        } else if (($cleanIdentifier === cleanId('emmanuel.adeyemi@crestoakcollege.com.ng') || $cleanIdentifier === cleanId('cchmt/stf/2026/nur/001') || $cleanIdentifier === cleanId('adeyemi.emmanuel')) && verifyPassword($rawPassword, 'CrestOakStaff#2026')) {
             $matchedUser = [
                 'id' => 'stf-001',
                 'staffNo' => 'CCHMT/STF/2026/NUR/001',
@@ -255,7 +269,7 @@ try {
 
         echo json_encode([
             'success' => true,
-            'message' => 'Authentication successful.',
+            'message' => 'Login successful',
             'token' => $token,
             'redirectUrl' => $redirectUrl,
             'user' => $matchedUser
