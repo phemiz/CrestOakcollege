@@ -168,6 +168,8 @@ try {
                     gpa DECIMAL(3,2) DEFAULT 4.00,
                     status VARCHAR(50) DEFAULT 'ACTIVE',
                     hold_reason TEXT,
+                    password_hash VARCHAR(255),
+                    force_password_change TINYINT(1) DEFAULT 1,
                     isDeleted TINYINT(1) DEFAULT 0,
                     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
                 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
@@ -239,6 +241,7 @@ try {
         $matricNo = $input['matricNo'] ?? $input['matric_no'] ?? ('CCHMS/2026/REG/' . str_pad(rand(1, 999), 4, '0', STR_PAD_LEFT));
         $firstName = $input['firstName'] ?? $input['first_name'] ?? '';
         $lastName = $input['lastName'] ?? $input['last_name'] ?? '';
+        $email = $input['email'] ?? '';
 
         if ($action === 'toggle_hold') {
             $newStatus = $input['status'] ?? 'FINANCIAL_HOLD';
@@ -266,16 +269,30 @@ try {
         }
 
         if ($action === 'password_reset') {
+            $rawPassword = $input['newPassword'] ?? $input['password'] ?? ('CrestOak#' . rand(1000, 9999));
+            $hashedPassword = password_hash($rawPassword, PASSWORD_BCRYPT);
             $magicLink = "https://portal.crestoakcollege.com.ng/login?magicToken=" . md5($matricNo . time());
+            
             echo json_encode([
                 "success" => true,
-                "message" => "Magic login link generated successfully.",
-                "magicLink" => $magicLink
+                "message" => "Password reset successfully.",
+                "magicLink" => $magicLink,
+                "credentials" => [
+                    "matricNo" => $matricNo,
+                    "temporaryPassword" => $rawPassword,
+                    "email" => $email,
+                    "hashedPassword" => $hashedPassword
+                ]
             ]);
             exit();
         }
 
-        // Standard student save/update
+        // Standard student creation / edit
+        $rawPassword = $input['password'] ?? ('CrestOak#' . rand(1000, 9999));
+        $hashedPassword = password_hash($rawPassword, PASSWORD_BCRYPT);
+        $sendEmail = !empty($input['sendEmail']);
+        $forcePasswordChange = isset($input['forcePasswordChange']) ? !empty($input['forcePasswordChange']) : true;
+
         $departmentId = $input['departmentId'] ?? 'dept-health-001';
         $programmeId = $input['programmeId'] ?? 'prog-001';
         $deptName = 'Department of Nursing Sciences';
@@ -290,7 +307,7 @@ try {
 
         echo json_encode([
             "success" => true,
-            "message" => "Student record saved successfully.",
+            "message" => "Student created successfully.",
             "student" => [
                 "id" => $id,
                 "matricNo" => $matricNo,
@@ -303,7 +320,7 @@ try {
                     "firstName" => $firstName,
                     "lastName" => $lastName,
                     "middleName" => $input['middleName'] ?? "",
-                    "email" => $input['email'] ?? "",
+                    "email" => $email,
                     "phoneNumber" => $input['phoneNumber'] ?? "",
                     "dob" => $input['dob'] ?? "2004-01-01"
                 ],
@@ -312,6 +329,13 @@ try {
                 "entrySessionId" => "sess-2026",
                 "currentSessionId" => "sess-2026",
                 "currentSemesterId" => "sem-first"
+            ],
+            "credentials" => [
+                "matricNo" => $matricNo,
+                "temporaryPassword" => $rawPassword,
+                "email" => $email,
+                "sendEmail" => $sendEmail,
+                "forcePasswordChange" => $forcePasswordChange
             ]
         ]);
         exit();

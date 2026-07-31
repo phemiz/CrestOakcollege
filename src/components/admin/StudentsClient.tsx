@@ -21,7 +21,12 @@ import {
   Unlock,
   CheckCircle2,
   Copy,
-  AlertTriangle
+  Zap,
+  Eye,
+  EyeOff,
+  Mail,
+  RefreshCw,
+  Share2
 } from "lucide-react";
 import {
   DEFAULT_DEPARTMENTS,
@@ -256,6 +261,23 @@ export default function StudentsClient({
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingStudent, setEditingStudent] = useState<StudentItem | null>(null);
 
+  // Password & Password Visibility Toggle
+  const [showPassword, setShowPassword] = useState(false);
+
+  // Issued Credentials Confirmation Modal
+  const [issuedCredentials, setIssuedCredentials] = useState<{
+    matricNo: string;
+    temporaryPassword: string;
+    email: string;
+    sendEmail: boolean;
+    forcePasswordChange: boolean;
+  } | null>(null);
+
+  // Reset Password Modal State
+  const [resetPasswordStudent, setResetPasswordStudent] = useState<StudentItem | null>(null);
+  const [resetPasswordValue, setResetPasswordValue] = useState("");
+  const [showResetPassword, setShowResetPassword] = useState(false);
+
   // Academic Override Drawer
   const [overrideStudent, setOverrideStudent] = useState<StudentItem | null>(null);
   const [overrideForm, setOverrideForm] = useState({
@@ -272,12 +294,13 @@ export default function StudentsClient({
     reason: "Outstanding First Semester Tuition Balance"
   });
 
-  // Password / Magic Link Modal
+  // Magic Link Modal
   const [magicStudent, setMagicStudent] = useState<StudentItem | null>(null);
   const [generatedLink, setGeneratedLink] = useState("");
   const [copiedLink, setCopiedLink] = useState(false);
+  const [copiedCreds, setCopiedCreds] = useState(false);
 
-  // General Form State
+  // General Form State for Add / Edit
   const [formData, setFormData] = useState({
     email: "",
     firstName: "",
@@ -286,6 +309,9 @@ export default function StudentsClient({
     phoneNumber: "",
     dob: "2004-05-14",
     matricNo: "",
+    password: "",
+    sendEmail: true,
+    forcePasswordChange: true,
     level: 100,
     status: "ACTIVE" as "ACTIVE" | "FINANCIAL_HOLD" | "DISCIPLINARY_HOLD" | "SUSPENDED",
     departmentId: departments[0]?.id || "",
@@ -295,8 +321,25 @@ export default function StudentsClient({
     currentSemesterId: semesters[0]?.id || ""
   });
 
+  const generateRandomPassword = () => {
+    const chars = "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz23456789#@!";
+    let randPass = "CrestOak#";
+    for (let i = 0; i < 5; i++) {
+      randPass += chars.charAt(Math.floor(Math.random() * chars.length));
+    }
+    return randPass;
+  };
+
+  const handleAutoGeneratePassword = () => {
+    const pass = generateRandomPassword();
+    setFormData((prev) => ({ ...prev, password: pass }));
+    setShowPassword(true);
+  };
+
   const openAddModal = () => {
+    const autoPass = generateRandomPassword();
     setEditingStudent(null);
+    setShowPassword(true);
     setFormData({
       email: "",
       firstName: "",
@@ -305,6 +348,9 @@ export default function StudentsClient({
       phoneNumber: "",
       dob: "2004-05-14",
       matricNo: `CCHMS/2026/${departments[0]?.name.substring(0, 3).toUpperCase() || "SCS"}/${String(Math.floor(1 + Math.random() * 999)).padStart(4, "0")}`,
+      password: autoPass,
+      sendEmail: true,
+      forcePasswordChange: true,
       level: 100,
       status: "ACTIVE",
       departmentId: departments[0]?.id || "",
@@ -318,6 +364,7 @@ export default function StudentsClient({
 
   const openEditModal = (student: StudentItem) => {
     setEditingStudent(student);
+    setShowPassword(false);
     setFormData({
       email: student.user.email,
       firstName: student.user.firstName,
@@ -326,6 +373,9 @@ export default function StudentsClient({
       phoneNumber: student.user.phoneNumber || "",
       dob: student.user.dob || "2004-05-14",
       matricNo: student.matricNo,
+      password: "",
+      sendEmail: false,
+      forcePasswordChange: true,
       level: student.level,
       status: student.status,
       departmentId: student.department.id,
@@ -341,6 +391,11 @@ export default function StudentsClient({
     e.preventDefault();
     if (!formData.email || !formData.firstName || !formData.lastName || !formData.matricNo || !formData.phoneNumber) {
       alert("Please fill in all required fields.");
+      return;
+    }
+
+    if (!editingStudent && !formData.password) {
+      alert("Please specify or auto-generate an initial password.");
       return;
     }
 
@@ -366,12 +421,61 @@ export default function StudentsClient({
           setStudents((prev) => [data.student, ...prev]);
         }
         setIsModalOpen(false);
+
+        // Visual confirmation modal for new credentials payload
+        if (!editingStudent && (data.credentials || formData.password)) {
+          setIssuedCredentials({
+            matricNo: data.credentials?.matricNo || formData.matricNo,
+            temporaryPassword: data.credentials?.temporaryPassword || formData.password,
+            email: formData.email,
+            sendEmail: formData.sendEmail,
+            forcePasswordChange: formData.forcePasswordChange
+          });
+        }
         router.refresh();
       } else {
         alert("Error saving student profile: " + (data.message || "Failed to submit."));
       }
     } catch (err: any) {
       alert("Submission error: " + err.message);
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  // Reset Password Modal Handler
+  const handleResetPasswordSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!resetPasswordStudent || !resetPasswordValue) return;
+
+    setIsSubmitting(true);
+    try {
+      const res = await fetch("/api/admin/students.php", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action: "password_reset",
+          id: resetPasswordStudent.id,
+          matricNo: resetPasswordStudent.matricNo,
+          newPassword: resetPasswordValue,
+          email: resetPasswordStudent.user.email
+        })
+      });
+      const data = await res.json();
+      if (data.success) {
+        setIssuedCredentials({
+          matricNo: resetPasswordStudent.matricNo,
+          temporaryPassword: resetPasswordValue,
+          email: resetPasswordStudent.user.email,
+          sendEmail: true,
+          forcePasswordChange: true
+        });
+        setResetPasswordStudent(null);
+      } else {
+        alert("Password reset failed: " + data.message);
+      }
+    } catch (err: any) {
+      alert("Error resetting password: " + err.message);
     } finally {
       setIsSubmitting(false);
     }
@@ -467,7 +571,7 @@ export default function StudentsClient({
     }
   };
 
-  // Magic Link / Password Reset Handler
+  // Magic Link Generator
   const handleGenerateMagicLink = async (student: StudentItem) => {
     setMagicStudent(student);
     setGeneratedLink("");
@@ -547,7 +651,7 @@ export default function StudentsClient({
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
           <h2 className="text-2xl font-display font-black text-slate-900">Students Management</h2>
-          <p className="text-xs text-slate-500 mt-1">Enterprise RBAC student portal administration, academic grade overrides, and hold controls.</p>
+          <p className="text-xs text-slate-500 mt-1">Enterprise student registration, credential issuance, grade overrides, and portal access controls.</p>
         </div>
         <div className="flex items-center gap-3">
           <div className="bg-slate-100 p-1 rounded-xl flex items-center border border-slate-200">
@@ -574,7 +678,7 @@ export default function StudentsClient({
             className="bg-red-600 hover:bg-red-700 text-white font-display font-bold py-2.5 px-5 rounded-xl text-xs transition-all flex items-center gap-2 shadow-sm cursor-pointer"
           >
             <UserPlus className="h-4.5 w-4.5" />
-            <span>Add New Student</span>
+            <span>Register New Student</span>
           </button>
         </div>
       </div>
@@ -710,13 +814,26 @@ export default function StudentsClient({
                               )}
                             </button>
 
-                            {/* Magic Link / Reset Password */}
+                            {/* Reset Password / Set Password */}
                             <button
-                              onClick={() => handleGenerateMagicLink(student)}
-                              title="Generate Magic Login Link & Reset Password"
+                              onClick={() => {
+                                setResetPasswordStudent(student);
+                                setResetPasswordValue(generateRandomPassword());
+                                setShowResetPassword(true);
+                              }}
+                              title="Reset Password / Set New Password"
                               className="p-2 bg-white border border-slate-200 hover:bg-purple-50 rounded-lg text-slate-600 transition-all cursor-pointer shadow-xs"
                             >
-                              <KeyRound className="h-3.5 w-3.5 text-purple-600" />
+                              <RefreshCw className="h-3.5 w-3.5 text-purple-600" />
+                            </button>
+
+                            {/* Magic Link / Copy Access */}
+                            <button
+                              onClick={() => handleGenerateMagicLink(student)}
+                              title="Copy Login Magic Link"
+                              className="p-2 bg-white border border-slate-200 hover:bg-indigo-50 rounded-lg text-slate-600 transition-all cursor-pointer shadow-xs"
+                            >
+                              <KeyRound className="h-3.5 w-3.5 text-indigo-600" />
                             </button>
 
                             {/* Edit Metadata */}
@@ -781,7 +898,7 @@ export default function StudentsClient({
           <div className="flex items-center justify-between border-b border-slate-150 pb-4">
             <div>
               <h3 className="font-display font-black text-slate-900 text-base">Non-Repudiable Administrative Audit Logs</h3>
-              <p className="text-xs text-slate-500 mt-0.5">Immutable record of grade overrides, hold toggles, and administrative security actions.</p>
+              <p className="text-xs text-slate-500 mt-0.5">Immutable record of grade overrides, hold toggles, and password reset operations.</p>
             </div>
             <span className="bg-slate-100 text-slate-700 border border-slate-200 text-[11px] font-mono font-bold px-3 py-1 rounded-full">
               {logs.length} Log Entries Recorded
@@ -821,7 +938,7 @@ export default function StudentsClient({
         </div>
       )}
 
-      {/* 1. Create / Edit Metadata Modal */}
+      {/* 1. Register New Student Modal */}
       {isModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 backdrop-blur-xs p-4">
           <div className="bg-white border border-slate-200 rounded-3xl w-full max-w-xl max-h-[90vh] overflow-y-auto shadow-2xl">
@@ -904,6 +1021,64 @@ export default function StudentsClient({
                 </div>
               </div>
 
+              {/* Password Section */}
+              <div className="flex flex-col gap-1 bg-slate-50 p-3.5 rounded-2xl border border-slate-200">
+                <div className="flex items-center justify-between mb-1">
+                  <label className="text-[10px] uppercase font-bold text-slate-700">
+                    Initial Portal Password {editingStudent ? "(Leave blank to keep unchanged)" : "*"}
+                  </label>
+                  <button
+                    type="button"
+                    onClick={handleAutoGeneratePassword}
+                    className="text-[10px] text-amber-600 hover:text-amber-700 font-bold flex items-center gap-1 hover:underline cursor-pointer"
+                    title="Auto-generate a random secure password"
+                  >
+                    <Zap className="h-3 w-3" />
+                    <span>Generate Random Password</span>
+                  </button>
+                </div>
+                <div className="relative flex items-center">
+                  <input
+                    type={showPassword ? "text" : "password"}
+                    required={!editingStudent}
+                    value={formData.password}
+                    onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                    placeholder="Set initial password for student portal..."
+                    className="w-full p-2.5 pr-10 bg-white border border-slate-300 rounded-xl focus:outline-none focus:border-slate-900 text-slate-900 text-xs font-mono font-bold"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute right-3 text-slate-400 hover:text-slate-600 cursor-pointer"
+                    title={showPassword ? "Hide password" : "Show password"}
+                  >
+                    {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                  </button>
+                </div>
+
+                {/* Issuance Options Checkboxes */}
+                <div className="mt-3 space-y-2">
+                  <label className="flex items-center gap-2 cursor-pointer text-slate-700 text-[11px] font-semibold">
+                    <input
+                      type="checkbox"
+                      checked={formData.sendEmail}
+                      onChange={(e) => setFormData({ ...formData, sendEmail: e.target.checked })}
+                      className="rounded border-slate-300 text-slate-900 focus:ring-slate-900 h-3.5 w-3.5"
+                    />
+                    <span>Send initial portal credentials (Matric No & Password) to student email upon creation.</span>
+                  </label>
+                  <label className="flex items-center gap-2 cursor-pointer text-slate-700 text-[11px] font-semibold">
+                    <input
+                      type="checkbox"
+                      checked={formData.forcePasswordChange}
+                      onChange={(e) => setFormData({ ...formData, forcePasswordChange: e.target.checked })}
+                      className="rounded border-slate-300 text-slate-900 focus:ring-slate-900 h-3.5 w-3.5"
+                    />
+                    <span>Force student to change password on first portal login.</span>
+                  </label>
+                </div>
+              </div>
+
               <div className="grid grid-cols-2 gap-4">
                 <div className="flex flex-col gap-1">
                   <label className="text-[10px] uppercase font-bold text-slate-700">Department *</label>
@@ -952,7 +1127,7 @@ export default function StudentsClient({
                   ) : (
                     <Plus className="h-4 w-4" />
                   )}
-                  <span>{isSubmitting ? "Saving..." : editingStudent ? "Update Metadata" : "Register Student"}</span>
+                  <span>{isSubmitting ? "Saving..." : editingStudent ? "Update Metadata" : "Register Student & Issue Credentials"}</span>
                 </button>
               </div>
             </form>
@@ -960,7 +1135,131 @@ export default function StudentsClient({
         </div>
       )}
 
-      {/* 2. Academic Override Drawer / Modal */}
+      {/* 2. Issued Credentials Confirmation Modal */}
+      {issuedCredentials && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-xs p-4">
+          <div className="bg-white border border-slate-200 rounded-3xl w-full max-w-md shadow-2xl p-6 space-y-4">
+            <div className="flex items-center justify-between border-b border-slate-200 pb-3">
+              <div className="flex items-center gap-2 text-emerald-700 font-extrabold text-sm uppercase">
+                <CheckCircle2 className="h-5 w-5" />
+                <span>Issued Student Credentials</span>
+              </div>
+              <button onClick={() => setIssuedCredentials(null)} className="text-slate-400 hover:text-slate-900 cursor-pointer">
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+
+            <div className="bg-emerald-50 border border-emerald-200 rounded-2xl p-4 space-y-3">
+              <div>
+                <span className="text-[10px] font-bold uppercase text-emerald-800 block">Matriculation / User ID</span>
+                <span className="font-mono font-black text-sm text-slate-900">{issuedCredentials.matricNo}</span>
+              </div>
+
+              <div>
+                <span className="text-[10px] font-bold uppercase text-emerald-800 block">Temporary Password</span>
+                <span className="font-mono font-black text-sm text-slate-900">{issuedCredentials.temporaryPassword}</span>
+              </div>
+
+              <div>
+                <span className="text-[10px] font-bold uppercase text-emerald-800 block">Student Email</span>
+                <span className="font-sans font-semibold text-xs text-slate-700">{issuedCredentials.email}</span>
+              </div>
+
+              <div className="pt-2 border-t border-emerald-200/60 flex items-center gap-2 text-[11px] font-bold text-emerald-900">
+                <Mail className="h-3.5 w-3.5" />
+                <span>Email Notice: {issuedCredentials.sendEmail ? "Dispatched" : "Manual Share"}</span>
+              </div>
+            </div>
+
+            <div className="flex gap-2 pt-2">
+              <button
+                type="button"
+                onClick={() => {
+                  const text = `CrestOak Student Portal Credentials:\nMatric No: ${issuedCredentials.matricNo}\nPassword: ${issuedCredentials.temporaryPassword}\nLogin: https://portal.crestoakcollege.com.ng/login`;
+                  navigator.clipboard.writeText(text);
+                  setCopiedCreds(true);
+                  setTimeout(() => setCopiedCreds(false), 2000);
+                }}
+                className="w-full bg-slate-900 hover:bg-slate-800 text-white font-bold py-2.5 px-4 rounded-xl text-xs flex items-center justify-center gap-2 cursor-pointer shadow-xs"
+              >
+                {copiedCreds ? <CheckCircle2 className="h-4 w-4 text-emerald-400" /> : <Copy className="h-4 w-4" />}
+                <span>{copiedCreds ? "Credentials Copied!" : "Copy Full Credentials Payload"}</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 3. Reset Password / Set Password Modal */}
+      {resetPasswordStudent && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 backdrop-blur-xs p-4">
+          <div className="bg-white border border-slate-200 rounded-3xl w-full max-w-md shadow-2xl p-6 space-y-4">
+            <div className="flex items-center justify-between border-b border-slate-200 pb-3">
+              <div className="flex items-center gap-2 text-purple-700 font-extrabold text-sm uppercase">
+                <RefreshCw className="h-5 w-5" />
+                <span>Reset Student Password</span>
+              </div>
+              <button onClick={() => setResetPasswordStudent(null)} className="text-slate-400 hover:text-slate-900 cursor-pointer">
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+
+            <div className="text-xs text-slate-700 font-medium">
+              Set new password for student <strong className="font-mono">{resetPasswordStudent.matricNo}</strong> ({resetPasswordStudent.user.email}).
+            </div>
+
+            <form onSubmit={handleResetPasswordSubmit} className="space-y-3 text-xs font-semibold">
+              <div className="flex items-center justify-between">
+                <label className="text-[10px] uppercase font-bold text-slate-700">New Password</label>
+                <button
+                  type="button"
+                  onClick={() => setResetPasswordValue(generateRandomPassword())}
+                  className="text-[10px] text-amber-600 hover:text-amber-700 font-bold flex items-center gap-1 hover:underline cursor-pointer"
+                >
+                  <Zap className="h-3 w-3" />
+                  <span>Auto-Generate</span>
+                </button>
+              </div>
+
+              <div className="relative flex items-center">
+                <input
+                  type={showResetPassword ? "text" : "password"}
+                  required
+                  value={resetPasswordValue}
+                  onChange={(e) => setResetPasswordValue(e.target.value)}
+                  className="w-full p-2.5 pr-10 bg-white border border-slate-300 rounded-xl focus:outline-none focus:border-slate-900 text-slate-900 text-xs font-mono font-bold"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowResetPassword(!showResetPassword)}
+                  className="absolute right-3 text-slate-400 hover:text-slate-600 cursor-pointer"
+                >
+                  {showResetPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                </button>
+              </div>
+
+              <div className="pt-2 flex justify-end gap-2">
+                <button
+                  type="button"
+                  onClick={() => setResetPasswordStudent(null)}
+                  className="bg-white border border-slate-300 px-4 py-2 rounded-xl text-slate-700 font-bold cursor-pointer"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={isSubmitting}
+                  className="bg-purple-700 hover:bg-purple-800 text-white font-bold px-5 py-2 rounded-xl cursor-pointer"
+                >
+                  {isSubmitting ? "Updating..." : "Issue New Password"}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* 4. Academic Override Drawer */}
       {overrideStudent && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 backdrop-blur-xs p-4">
           <div className="bg-white border border-slate-200 rounded-3xl w-full max-w-lg shadow-2xl p-6 space-y-4">
@@ -1055,7 +1354,7 @@ export default function StudentsClient({
         </div>
       )}
 
-      {/* 3. Administrative Hold Toggle Modal */}
+      {/* 5. Administrative Hold Toggle Modal */}
       {holdStudent && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 backdrop-blur-xs p-4">
           <div className="bg-white border border-slate-200 rounded-3xl w-full max-w-md shadow-2xl p-6 space-y-4">
@@ -1119,14 +1418,14 @@ export default function StudentsClient({
         </div>
       )}
 
-      {/* 4. Magic Login Link & Password Reset Modal */}
+      {/* 6. Magic Login Link Modal */}
       {magicStudent && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 backdrop-blur-xs p-4">
           <div className="bg-white border border-slate-200 rounded-3xl w-full max-w-md shadow-2xl p-6 space-y-4">
             <div className="flex items-center justify-between border-b border-slate-200 pb-3">
-              <div className="flex items-center gap-2 text-purple-700 font-extrabold text-sm uppercase">
+              <div className="flex items-center gap-2 text-indigo-700 font-extrabold text-sm uppercase">
                 <KeyRound className="h-5 w-5" />
-                <span>Portal Password & Magic Link</span>
+                <span>Portal Magic Access Link</span>
               </div>
               <button onClick={() => setMagicStudent(null)} className="text-slate-400 hover:text-slate-900 cursor-pointer">
                 <X className="h-5 w-5" />
@@ -1162,7 +1461,7 @@ export default function StudentsClient({
               </div>
             ) : (
               <div className="py-4 text-center">
-                <Loader2 className="h-6 w-6 animate-spin text-purple-600 mx-auto" />
+                <Loader2 className="h-6 w-6 animate-spin text-indigo-600 mx-auto" />
                 <span className="text-xs font-bold text-slate-500 mt-2 block">Generating cryptographic access token...</span>
               </div>
             )}
