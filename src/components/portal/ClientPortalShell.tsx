@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { signOut } from "next-auth/react";
@@ -44,12 +44,44 @@ export default function ClientPortalShell({ children, user, announcements }: Cli
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [notificationsOpen, setNotificationsOpen] = useState(false);
   const [readNotifIds, setReadNotifIds] = useState<string[]>([]);
+  const [currentUser, setCurrentUser] = useState<any>(null);
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const sessionData =
+        localStorage.getItem("user") ||
+        localStorage.getItem("crestoak_session") ||
+        localStorage.getItem("cchsmt_user_session");
+
+      if (sessionData) {
+        try {
+          setCurrentUser(JSON.parse(sessionData));
+        } catch (e) {
+          console.error("Failed to parse session", e);
+        }
+      }
+    }
+  }, []);
+
+  const studentName =
+    currentUser?.name ||
+    `${currentUser?.user?.firstName || currentUser?.firstName || ""} ${currentUser?.user?.lastName || currentUser?.lastName || ""}`.trim() ||
+    user?.fullName ||
+    "Student User";
+  const matricNo = currentUser?.matricNo || currentUser?.user?.matricNo || currentUser?.username || user?.matricNo || "N/A";
+  const department = currentUser?.department?.name || currentUser?.department || currentUser?.user?.department || user?.department || "Department Student";
 
   const handleSignOut = () => {
     if (typeof window !== "undefined") {
+      localStorage.removeItem("user");
+      localStorage.removeItem("crestoak_session");
       localStorage.removeItem("cchsmt_user_session");
-      localStorage.removeItem("cchsmt_demo_role");
-      window.location.href = "/login";
+      localStorage.removeItem("cchsmt_student_profile");
+      localStorage.removeItem("isAuthenticated");
+      localStorage.removeItem("userRole");
+      sessionStorage.clear();
+
+      window.location.href = "/login/?gateway=portal";
     }
   };
 
@@ -82,16 +114,16 @@ export default function ClientPortalShell({ children, user, announcements }: Cli
           <div className="flex items-center gap-3 border-b border-slate-100 pb-5">
             <div className="w-12 h-12 rounded-full bg-slate-100 border border-slate-200 flex items-center justify-center text-brand-blue-light font-display font-black overflow-hidden relative shrink-0">
               {user.avatarUrl ? (
-                <img src={user.avatarUrl} alt={user.fullName} className="w-full h-full object-cover" />
+                <img src={user.avatarUrl} alt={studentName} className="w-full h-full object-cover" />
               ) : (
-                user.fullName.split(" ").map(n => n[0]).join("").substring(0, 2).toUpperCase()
+                studentName.split(" ").map((n: string) => n[0]).join("").substring(0, 2).toUpperCase()
               )}
             </div>
             <div className="min-w-0">
               <h4 className="font-display font-black text-brand-blue-dark text-sm truncate leading-snug">
-                {user.fullName}
+                {studentName}
               </h4>
-              <p className="text-slate-400 text-[10px] font-black uppercase tracking-wider truncate mt-0.5">{user.matricNo}</p>
+              <p className="text-slate-400 text-[10px] font-black uppercase tracking-wider truncate mt-0.5">{matricNo}</p>
             </div>
           </div>
 
@@ -137,8 +169,8 @@ export default function ClientPortalShell({ children, user, announcements }: Cli
               <Menu size={18} />
             </button>
             <div>
-              <h4 className="font-display font-black text-brand-blue-dark text-xs sm:text-sm">{user.fullName}</h4>
-              <p className="text-slate-400 text-[8px] sm:text-[9px] font-black tracking-wider uppercase">{user.matricNo}</p>
+              <h4 className="font-display font-black text-brand-blue-dark text-xs sm:text-sm">{studentName}</h4>
+              <p className="text-slate-400 text-[8px] sm:text-[9px] font-black tracking-wider uppercase">{matricNo}</p>
             </div>
           </div>
 

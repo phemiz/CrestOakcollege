@@ -675,9 +675,9 @@ try {
                 </html>
                 ";
 
-                $mailSent = sendViaSMTP($toEmail, $subject, $message, "CrestOak College Student Portal");
-            } catch (Throwable $e) {
-                error_log("MAIL_ERR: " . $e->getMessage());
+                $mailSent = @sendViaSMTP($toEmail, $subject, $message, "CrestOak College Student Portal");
+            } catch (Throwable $t) {
+                error_log("MAIL_NOTICE_FAIL: " . $t->getMessage());
             }
         }
 

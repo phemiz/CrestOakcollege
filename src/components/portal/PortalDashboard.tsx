@@ -200,11 +200,25 @@ export default function PortalDashboard({ initialUser }: { initialUser?: any }) 
     }
 
     // Check local storage logins
+    const sessionData =
+      localStorage.getItem("user") ||
+      localStorage.getItem("crestoak_session") ||
+      localStorage.getItem("cchsmt_user_session");
+
+    let parsedSessionUser: any = null;
+    if (sessionData) {
+      try {
+        parsedSessionUser = JSON.parse(sessionData);
+      } catch (e) {}
+    }
+
     const profile = localStorage.getItem("cchsmt_student_profile");
     // Default Invoices (Updated for 2026/2027 Approved Fee Structure)
     let tuitionRate = 400000; // default for health
     let loadedFaculty = "health";
-    if (profile) {
+    if (parsedSessionUser) {
+      loadedFaculty = parsedSessionUser.department?.name || parsedSessionUser.department || "health";
+    } else if (profile) {
       try {
         const prof = JSON.parse(profile);
         loadedFaculty = prof.faculty;
@@ -230,8 +244,32 @@ export default function PortalDashboard({ initialUser }: { initialUser?: any }) 
     const savedRequests = localStorage.getItem("cchsmt_student_requests");
 
     const timer = setTimeout(() => {
-      if (profile) {
+      if (parsedSessionUser) {
+        const studentName =
+          parsedSessionUser.name ||
+          `${parsedSessionUser.user?.firstName || parsedSessionUser.firstName || ''} ${parsedSessionUser.user?.lastName || parsedSessionUser.lastName || ''}`.trim() ||
+          "Student User";
+        const matricNo = parsedSessionUser.matricNo || parsedSessionUser.user?.matricNo || parsedSessionUser.username || "CCHMS/2026/SCS/0001";
+        const dept = parsedSessionUser.department?.name || parsedSessionUser.department || parsedSessionUser.user?.department || "Department of Nursing Sciences";
+        const level = parsedSessionUser.level ? `${parsedSessionUser.level} Level` : "100 Level";
+        const gpa = parsedSessionUser.cgpa ? String(parsedSessionUser.cgpa) : "4.25";
+        const email = parsedSessionUser.email || parsedSessionUser.user?.email || "student@crestoakcollege.com.ng";
+
+        setStudentProfile({
+          fullName: studentName,
+          regNumber: matricNo,
+          email: email,
+          phone: parsedSessionUser.phoneNumber || "+234 815 588 4804",
+          faculty: dept,
+          semester: "1st Semester, 2026/2027",
+          level: level,
+          gpa: gpa
+        });
+        setIsLoggedIn(true);
+      } else if (profile) {
         setStudentProfile(JSON.parse(profile));
+        setIsLoggedIn(true);
+      } else if (localStorage.getItem("isAuthenticated") === "true") {
         setIsLoggedIn(true);
       }
 
@@ -326,13 +364,17 @@ export default function PortalDashboard({ initialUser }: { initialUser?: any }) 
 
   // Logout Handler
   const handleLogout = () => {
-    if (initialUser) {
-      signOut({ callbackUrl: "/login" });
-      return;
+    if (typeof window !== "undefined") {
+      localStorage.removeItem("user");
+      localStorage.removeItem("crestoak_session");
+      localStorage.removeItem("cchsmt_user_session");
+      localStorage.removeItem("cchsmt_student_profile");
+      localStorage.removeItem("isAuthenticated");
+      localStorage.removeItem("userRole");
+      sessionStorage.clear();
+
+      window.location.href = "/login/?gateway=portal";
     }
-    localStorage.removeItem("cchsmt_student_profile");
-    setIsLoggedIn(false);
-    setStudentProfile(null);
   };
 
   // Course Pick Toggles
