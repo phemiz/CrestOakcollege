@@ -4,66 +4,81 @@ import { NextResponse } from "next/server";
 export default withAuth(
   function proxy(req) {
     const token = req.nextauth.token;
-    const path = req.nextUrl.pathname;
-    const hostname = req.headers.get("host") || "";
+    const url = req.nextUrl.clone();
+    const path = url.pathname;
+    const host = req.headers.get("host") || "";
+    const role = (token?.role as string) || "";
 
-    // Subdomain host mapping checks
-    if (hostname.startsWith("admin.")) {
-      if (token?.role !== "Admin" && token?.role !== "Super Admin") {
-        return NextResponse.redirect(new URL("/login?error=AccessDenied", req.url));
+    // Subdomain Host Rewrites Logic
+    if (host.startsWith("admin.")) {
+      if (!path.startsWith("/admin")) {
+        url.pathname = `/admin${path}`;
+        return NextResponse.rewrite(url);
       }
-    } else if (hostname.startsWith("pay.")) {
-      if (
-        token?.role !== "Bursary" &&
-        token?.role !== "Admin" &&
-        token?.role !== "Super Admin"
-      ) {
-        return NextResponse.redirect(new URL("/login?error=AccessDenied", req.url));
+    } else if (host.startsWith("staff.")) {
+      if (!path.startsWith("/staff")) {
+        url.pathname = `/staff${path}`;
+        return NextResponse.rewrite(url);
       }
-    } else if (hostname.startsWith("staff.")) {
-      if (
-        token?.role !== "Lecturer" &&
-        token?.role !== "Staff" &&
-        token?.role !== "Admin" &&
-        token?.role !== "Super Admin"
-      ) {
-        return NextResponse.redirect(new URL("/login?error=AccessDenied", req.url));
+    } else if (host.startsWith("admissions.")) {
+      if (!path.startsWith("/admissions")) {
+        url.pathname = `/admissions${path}`;
+        return NextResponse.rewrite(url);
+      }
+    } else if (host.startsWith("portal.")) {
+      if (!path.startsWith("/portal") && !path.startsWith("/student")) {
+        url.pathname = `/portal${path}`;
+        return NextResponse.rewrite(url);
+      }
+    } else if (host.startsWith("pay.")) {
+      if (!path.startsWith("/bursary") && !path.startsWith("/pay")) {
+        url.pathname = `/bursary${path}`;
+        return NextResponse.rewrite(url);
+      }
+    } else if (host.startsWith("register.")) {
+      if (!path.startsWith("/admissions/register") && !path.startsWith("/register")) {
+        url.pathname = `/admissions/register${path}`;
+        return NextResponse.rewrite(url);
       }
     }
 
-    // Explicit Route RBAC Authorization Rules:
-    // 1. Admin & Super Admin can access /admin
+    // Role-Based Access Control Checks
     if (path.startsWith("/admin")) {
-      if (token?.role !== "Admin" && token?.role !== "Super Admin") {
+      if (role !== "Admin" && role !== "Super Admin" && role !== "ADMIN") {
         return NextResponse.redirect(new URL("/login?error=AccessDenied", req.url));
       }
     }
 
-    // 2. Student can access /portal
     if (path.startsWith("/portal")) {
-      if (token?.role !== "Student") {
+      if (role !== "Student" && role !== "STUDENT") {
         return NextResponse.redirect(new URL("/login?error=AccessDenied", req.url));
       }
     }
 
-    // 3. Bursary, Admin, Super Admin can access /bursary
     if (path.startsWith("/bursary")) {
       if (
-        token?.role !== "Bursary" &&
-        token?.role !== "Admin" &&
-        token?.role !== "Super Admin"
+        role !== "Bursary" &&
+        role !== "BURSAR" &&
+        role !== "Admin" &&
+        role !== "Super Admin" &&
+        role !== "ADMIN"
       ) {
         return NextResponse.redirect(new URL("/login?error=AccessDenied", req.url));
       }
     }
 
-    // 4. Lecturer, Staff, Admin, Super Admin can access /staff
     if (path.startsWith("/staff")) {
       if (
-        token?.role !== "Lecturer" &&
-        token?.role !== "Staff" &&
-        token?.role !== "Admin" &&
-        token?.role !== "Super Admin"
+        role !== "Lecturer" &&
+        role !== "LECTURER" &&
+        role !== "Staff" &&
+        role !== "STAFF" &&
+        role !== "HOD" &&
+        role !== "DEAN" &&
+        role !== "REGISTRAR" &&
+        role !== "Admin" &&
+        role !== "Super Admin" &&
+        role !== "ADMIN"
       ) {
         return NextResponse.redirect(new URL("/login?error=AccessDenied", req.url));
       }
@@ -86,4 +101,3 @@ export const config = {
     "/staff/:path*",
   ],
 };
-

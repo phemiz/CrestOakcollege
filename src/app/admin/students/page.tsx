@@ -11,6 +11,7 @@ export default function StudentsPage() {
   const [programmes, setProgrammes] = useState<any[]>([]);
   const [sessions, setSessions] = useState<any[]>([]);
   const [semesters, setSemesters] = useState<any[]>([]);
+  const [auditLogs, setAuditLogs] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
@@ -41,6 +42,7 @@ export default function StudentsPage() {
           if (Array.isArray(data.programmes)) setProgrammes(data.programmes);
           if (Array.isArray(data.sessions)) setSessions(data.sessions);
           if (Array.isArray(data.semesters)) setSemesters(data.semesters);
+          if (Array.isArray(data.auditLogs)) setAuditLogs(data.auditLogs);
         }
       })
       .catch(() => {})
@@ -65,6 +67,7 @@ export default function StudentsPage() {
       programmes={programmes}
       sessions={sessions}
       semesters={semesters}
+      auditLogs={auditLogs}
     />
   );
 }

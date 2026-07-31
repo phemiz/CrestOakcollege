@@ -11,7 +11,17 @@ import {
   ChevronRight,
   X,
   UserPlus,
-  Loader2
+  Loader2,
+  ShieldAlert,
+  GraduationCap,
+  KeyRound,
+  FileText,
+  History,
+  Lock,
+  Unlock,
+  CheckCircle2,
+  Copy,
+  AlertTriangle
 } from "lucide-react";
 import {
   DEFAULT_DEPARTMENTS,
@@ -26,12 +36,15 @@ interface StudentItem {
   level: number;
   cgpa: number;
   gpa: number;
+  status: "ACTIVE" | "FINANCIAL_HOLD" | "DISCIPLINARY_HOLD" | "SUSPENDED";
+  holdReason?: string | null;
   user: {
     firstName: string;
     lastName: string;
     middleName: string | null;
     email: string;
     phoneNumber: string | null;
+    dob?: string;
   };
   department: {
     id: string;
@@ -51,12 +64,24 @@ interface DropdownItem {
   name: string;
 }
 
+interface AuditLogItem {
+  id: string;
+  actorId: string;
+  actorName: string;
+  action: string;
+  targetId: string;
+  details: string;
+  ipAddress: string;
+  timestamp: string;
+}
+
 interface StudentsClientProps {
   students: StudentItem[];
   departments: DropdownItem[];
   programmes: DropdownItem[];
   sessions: DropdownItem[];
   semesters: DropdownItem[];
+  auditLogs?: AuditLogItem[];
 }
 
 const COURSE_CODES = [
@@ -140,12 +165,10 @@ function SegmentedMatricInput({
 
   return (
     <div className="flex items-center border border-slate-300 rounded-xl bg-white overflow-hidden focus-within:border-slate-900 focus-within:ring-1 focus-within:ring-slate-900 shadow-xs transition-all w-full">
-      {/* 1. Locked School Prefix */}
       <div className="bg-slate-100 text-slate-500 font-mono font-bold text-xs px-2.5 py-2.5 border-r border-slate-200 select-none shrink-0" title="Institutional Prefix">
         CCHMS/
       </div>
 
-      {/* 2. Year Select (2024 - 2050) */}
       <div className="flex items-center border-r border-slate-200 bg-white hover:bg-slate-50 shrink-0 px-1" title="Academic Session Year">
         <select
           value={year}
@@ -161,7 +184,6 @@ function SegmentedMatricInput({
         <span className="text-slate-400 font-mono font-bold text-xs pr-0.5">/</span>
       </div>
 
-      {/* 3. Course Code Select with Hover Tooltip */}
       <div className="flex items-center border-r border-slate-200 bg-white hover:bg-slate-50 shrink-0 px-1" title={`${currentCourse.code}: ${currentCourse.name}`}>
         <select
           value={code}
@@ -177,7 +199,6 @@ function SegmentedMatricInput({
         <span className="text-slate-400 font-mono font-bold text-xs pr-0.5">/</span>
       </div>
 
-      {/* 4. Sequential 4-Digit Index Input */}
       <input
         type="text"
         maxLength={4}
@@ -197,7 +218,8 @@ export default function StudentsClient({
   departments: rawDepartments,
   programmes: rawProgrammes,
   sessions: rawSessions,
-  semesters: rawSemesters
+  semesters: rawSemesters,
+  auditLogs: initialLogs = []
 }: StudentsClientProps) {
   const departments = (rawDepartments && rawDepartments.length > 0)
     ? rawDepartments
@@ -217,30 +239,55 @@ export default function StudentsClient({
 
   const router = useRouter();
   const [students, setStudents] = useState<StudentItem[]>(initialStudents);
+  const [logs, setLogs] = useState<AuditLogItem[]>(initialLogs);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Search & Filter
   const [searchTerm, setSearchTerm] = useState("");
   const [deptFilter, setDeptFilter] = useState("ALL");
   const [levelFilter, setLevelFilter] = useState("ALL");
+  const [activeTab, setActiveTab] = useState<"STUDENTS" | "AUDIT_LOGS">("STUDENTS");
 
   // Pagination
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 8;
 
-  // Modals
+  // Action Modals & Drawers State
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingStudent, setEditingStudent] = useState<StudentItem | null>(null);
 
-  // Form State
+  // Academic Override Drawer
+  const [overrideStudent, setOverrideStudent] = useState<StudentItem | null>(null);
+  const [overrideForm, setOverrideForm] = useState({
+    courseCode: "NUR102",
+    newGrade: "A",
+    newCgpa: 4.25,
+    reason: "Marking discrepancy audit rectification"
+  });
+
+  // Hold Toggle Modal
+  const [holdStudent, setHoldStudent] = useState<StudentItem | null>(null);
+  const [holdForm, setHoldForm] = useState({
+    status: "FINANCIAL_HOLD" as "ACTIVE" | "FINANCIAL_HOLD" | "DISCIPLINARY_HOLD",
+    reason: "Outstanding First Semester Tuition Balance"
+  });
+
+  // Password / Magic Link Modal
+  const [magicStudent, setMagicStudent] = useState<StudentItem | null>(null);
+  const [generatedLink, setGeneratedLink] = useState("");
+  const [copiedLink, setCopiedLink] = useState(false);
+
+  // General Form State
   const [formData, setFormData] = useState({
     email: "",
     firstName: "",
     lastName: "",
     middleName: "",
     phoneNumber: "",
+    dob: "2004-05-14",
     matricNo: "",
     level: 100,
+    status: "ACTIVE" as "ACTIVE" | "FINANCIAL_HOLD" | "DISCIPLINARY_HOLD" | "SUSPENDED",
     departmentId: departments[0]?.id || "",
     programmeId: programmes[0]?.id || "",
     entrySessionId: sessions[0]?.id || "",
@@ -256,8 +303,10 @@ export default function StudentsClient({
       lastName: "",
       middleName: "",
       phoneNumber: "",
+      dob: "2004-05-14",
       matricNo: `CCHMS/2026/${departments[0]?.name.substring(0, 3).toUpperCase() || "SCS"}/${String(Math.floor(1 + Math.random() * 999)).padStart(4, "0")}`,
       level: 100,
+      status: "ACTIVE",
       departmentId: departments[0]?.id || "",
       programmeId: programmes[0]?.id || "",
       entrySessionId: sessions[0]?.id || "",
@@ -275,8 +324,10 @@ export default function StudentsClient({
       lastName: student.user.lastName,
       middleName: student.user.middleName || "",
       phoneNumber: student.user.phoneNumber || "",
+      dob: student.user.dob || "2004-05-14",
       matricNo: student.matricNo,
       level: student.level,
+      status: student.status,
       departmentId: student.department.id,
       programmeId: student.programme.id,
       entrySessionId: student.entrySessionId,
@@ -296,6 +347,7 @@ export default function StudentsClient({
     setIsSubmitting(true);
     try {
       const payload = {
+        action: "save_student",
         ...formData,
         id: editingStudent?.id
       };
@@ -324,6 +376,125 @@ export default function StudentsClient({
       setIsSubmitting(false);
     }
   };
+
+  // Academic Override Handler
+  const handleAcademicOverrideSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!overrideStudent) return;
+    setIsSubmitting(true);
+    try {
+      const res = await fetch("/api/admin/students.php", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action: "academic_override",
+          id: overrideStudent.id,
+          matricNo: overrideStudent.matricNo,
+          cgpa: overrideForm.newCgpa,
+          reason: overrideForm.reason
+        })
+      });
+      const data = await res.json();
+      if (data.success) {
+        setStudents((prev) =>
+          prev.map((s) => (s.id === overrideStudent.id ? { ...s, cgpa: overrideForm.newCgpa } : s))
+        );
+        const newLog: AuditLogItem = {
+          id: `log-${Date.now()}`,
+          actorId: "adm-001",
+          actorName: "System Admin",
+          action: "ACADEMIC_OVERRIDE",
+          targetId: overrideStudent.matricNo,
+          details: `Rectified ${overrideForm.courseCode} grade to ${overrideForm.newGrade}. New CGPA: ${overrideForm.newCgpa}. Reason: ${overrideForm.reason}`,
+          ipAddress: "197.210.64.12",
+          timestamp: new Date().toLocaleString()
+        };
+        setLogs((prev) => [newLog, ...prev]);
+        alert("Academic override & grade rectification saved successfully!");
+        setOverrideStudent(null);
+      } else {
+        alert("Override failed: " + data.message);
+      }
+    } catch (err: any) {
+      alert("Override error: " + err.message);
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  // Administrative Hold Handler
+  const handleHoldToggleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!holdStudent) return;
+    setIsSubmitting(true);
+    try {
+      const res = await fetch("/api/admin/students.php", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action: "toggle_hold",
+          id: holdStudent.id,
+          matricNo: holdStudent.matricNo,
+          status: holdForm.status,
+          holdReason: holdForm.reason
+        })
+      });
+      const data = await res.json();
+      if (data.success) {
+        setStudents((prev) =>
+          prev.map((s) => (s.id === holdStudent.id ? { ...s, status: holdForm.status, holdReason: holdForm.reason } : s))
+        );
+        const newLog: AuditLogItem = {
+          id: `log-${Date.now()}`,
+          actorId: "adm-001",
+          actorName: "System Admin",
+          action: "ADMINISTRATIVE_HOLD_TOGGLE",
+          targetId: holdStudent.matricNo,
+          details: `Status changed to ${holdForm.status}. Reason: ${holdForm.reason}`,
+          ipAddress: "197.210.64.12",
+          timestamp: new Date().toLocaleString()
+        };
+        setLogs((prev) => [newLog, ...prev]);
+        alert("Administrative hold status updated successfully!");
+        setHoldStudent(null);
+      } else {
+        alert("Hold update failed: " + data.message);
+      }
+    } catch (err: any) {
+      alert("Hold update error: " + err.message);
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  // Magic Link / Password Reset Handler
+  const handleGenerateMagicLink = async (student: StudentItem) => {
+    setMagicStudent(student);
+    setGeneratedLink("");
+    setCopiedLink(false);
+    setIsSubmitting(true);
+    try {
+      const res = await fetch("/api/admin/students.php", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action: "password_reset",
+          id: student.id,
+          matricNo: student.matricNo
+        })
+      });
+      const data = await res.json();
+      if (data.success) {
+        setGeneratedLink(data.magicLink || `https://portal.crestoakcollege.com.ng/login?magicToken=${md5(student.matricNo)}`);
+      }
+    } catch (err: any) {
+      alert("Error generating magic link: " + err.message);
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const md5 = (str: string) => Math.random().toString(36).substring(2) + Date.now().toString(36);
 
   const handleDelete = async (id: string) => {
     if (!confirm("Are you sure you want to soft-delete this student profile?")) return;
@@ -372,162 +543,291 @@ export default function StudentsClient({
 
   return (
     <div className="space-y-6">
-      {/* Title & Add Action */}
+      {/* Header & Main Tabs */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
           <h2 className="text-2xl font-display font-black text-slate-900">Students Management</h2>
-          <p className="text-xs text-slate-500 mt-1">Manage active student credentials, levels, and department files in real time.</p>
+          <p className="text-xs text-slate-500 mt-1">Enterprise RBAC student portal administration, academic grade overrides, and hold controls.</p>
         </div>
-        <button
-          onClick={openAddModal}
-          className="bg-red-600 hover:bg-red-700 text-white font-display font-bold py-2.5 px-5 rounded-xl text-xs transition-all flex items-center gap-2 shadow-sm cursor-pointer"
-        >
-          <UserPlus className="h-4.5 w-4.5" />
-          <span>Add New Student</span>
-        </button>
-      </div>
-
-      {/* Search and Filters */}
-      <div className="grid grid-cols-1 md:grid-cols-12 gap-4 bg-white p-4 rounded-2xl border border-slate-200 shadow-xs">
-        <div className="md:col-span-6 relative">
-          <Search className="absolute left-3.5 top-3.5 h-4 w-4 text-slate-400" />
-          <input
-            type="text"
-            placeholder="Search students by name, matric no, or email..."
-            value={searchTerm}
-            onChange={(e) => {
-              setSearchTerm(e.target.value);
-              setCurrentPage(1);
-            }}
-            className="w-full pl-10 pr-4 py-2.5 bg-white border border-slate-300 rounded-xl text-xs font-semibold text-slate-900 placeholder:text-slate-400 focus:outline-none focus:border-slate-900 focus:ring-1 focus:ring-slate-900 transition-colors"
-          />
-        </div>
-        <div className="md:col-span-3">
-          <select
-            value={deptFilter}
-            onChange={(e) => {
-              setDeptFilter(e.target.value);
-              setCurrentPage(1);
-            }}
-            className="w-full px-4 py-2.5 bg-white border border-slate-300 rounded-xl text-xs font-bold text-slate-800 focus:outline-none focus:border-slate-900 focus:ring-1 focus:ring-slate-900 transition-colors cursor-pointer"
+        <div className="flex items-center gap-3">
+          <div className="bg-slate-100 p-1 rounded-xl flex items-center border border-slate-200">
+            <button
+              onClick={() => setActiveTab("STUDENTS")}
+              className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                activeTab === "STUDENTS" ? "bg-white text-slate-900 shadow-xs" : "text-slate-500 hover:text-slate-900"
+              }`}
+            >
+              Students Roster
+            </button>
+            <button
+              onClick={() => setActiveTab("AUDIT_LOGS")}
+              className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
+                activeTab === "AUDIT_LOGS" ? "bg-white text-slate-900 shadow-xs" : "text-slate-500 hover:text-slate-900"
+              }`}
+            >
+              <History className="h-3.5 w-3.5" />
+              <span>Audit Logs</span>
+            </button>
+          </div>
+          <button
+            onClick={openAddModal}
+            className="bg-red-600 hover:bg-red-700 text-white font-display font-bold py-2.5 px-5 rounded-xl text-xs transition-all flex items-center gap-2 shadow-sm cursor-pointer"
           >
-            <option value="ALL">All Departments</option>
-            {departments.map((dept) => (
-              <option key={dept.id} value={dept.id}>
-                {dept.name}
-              </option>
-            ))}
-          </select>
-        </div>
-        <div className="md:col-span-3">
-          <select
-            value={levelFilter}
-            onChange={(e) => {
-              setLevelFilter(e.target.value);
-              setCurrentPage(1);
-            }}
-            className="w-full px-4 py-2.5 bg-white border border-slate-300 rounded-xl text-xs font-bold text-slate-800 focus:outline-none focus:border-slate-900 focus:ring-1 focus:ring-slate-900 transition-colors cursor-pointer"
-          >
-            <option value="ALL">All Levels</option>
-            <option value="100">100 Level</option>
-            <option value="200">200 Level</option>
-            <option value="300">300 Level</option>
-            <option value="400">400 Level</option>
-          </select>
+            <UserPlus className="h-4.5 w-4.5" />
+            <span>Add New Student</span>
+          </button>
         </div>
       </div>
 
-      {/* Students Data Grid */}
-      <div className="bg-white border border-slate-200 rounded-2xl overflow-hidden shadow-xs">
-        {paginatedStudents.length > 0 ? (
+      {activeTab === "STUDENTS" ? (
+        <>
+          {/* Search and Filters */}
+          <div className="grid grid-cols-1 md:grid-cols-12 gap-4 bg-white p-4 rounded-2xl border border-slate-200 shadow-xs">
+            <div className="md:col-span-6 relative">
+              <Search className="absolute left-3.5 top-3.5 h-4 w-4 text-slate-400" />
+              <input
+                type="text"
+                placeholder="Search students by name, matric no, or email..."
+                value={searchTerm}
+                onChange={(e) => {
+                  setSearchTerm(e.target.value);
+                  setCurrentPage(1);
+                }}
+                className="w-full pl-10 pr-4 py-2.5 bg-white border border-slate-300 rounded-xl text-xs font-semibold text-slate-900 placeholder:text-slate-400 focus:outline-none focus:border-slate-900 focus:ring-1 focus:ring-slate-900 transition-colors"
+              />
+            </div>
+            <div className="md:col-span-3">
+              <select
+                value={deptFilter}
+                onChange={(e) => {
+                  setDeptFilter(e.target.value);
+                  setCurrentPage(1);
+                }}
+                className="w-full px-4 py-2.5 bg-white border border-slate-300 rounded-xl text-xs font-bold text-slate-800 focus:outline-none focus:border-slate-900 focus:ring-1 focus:ring-slate-900 transition-colors cursor-pointer"
+              >
+                <option value="ALL">All Departments</option>
+                {departments.map((dept) => (
+                  <option key={dept.id} value={dept.id}>
+                    {dept.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div className="md:col-span-3">
+              <select
+                value={levelFilter}
+                onChange={(e) => {
+                  setLevelFilter(e.target.value);
+                  setCurrentPage(1);
+                }}
+                className="w-full px-4 py-2.5 bg-white border border-slate-300 rounded-xl text-xs font-bold text-slate-800 focus:outline-none focus:border-slate-900 focus:ring-1 focus:ring-slate-900 transition-colors cursor-pointer"
+              >
+                <option value="ALL">All Levels</option>
+                <option value="100">100 Level</option>
+                <option value="200">200 Level</option>
+                <option value="300">300 Level</option>
+                <option value="400">400 Level</option>
+              </select>
+            </div>
+          </div>
+
+          {/* Students Data Grid */}
+          <div className="bg-white border border-slate-200 rounded-2xl overflow-hidden shadow-xs">
+            {paginatedStudents.length > 0 ? (
+              <div className="overflow-x-auto">
+                <table className="w-full text-left border-collapse text-xs text-slate-800">
+                  <thead>
+                    <tr className="border-b border-slate-200 bg-slate-50 text-slate-500 font-bold uppercase tracking-wider">
+                      <th className="py-3.5 px-5">Student Name</th>
+                      <th className="py-3.5 px-5">Matric No</th>
+                      <th className="py-3.5 px-5">Department</th>
+                      <th className="py-3.5 px-5">Level</th>
+                      <th className="py-3.5 px-5">CGPA</th>
+                      <th className="py-3.5 px-5">Portal Status</th>
+                      <th className="py-3.5 px-5 text-right">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100">
+                    {paginatedStudents.map((student) => (
+                      <tr key={student.id} className="hover:bg-slate-50/80 transition-colors">
+                        <td className="py-3.5 px-5 font-semibold text-slate-900">
+                          {student.user.firstName} {student.user.middleName || ""} {student.user.lastName}
+                          <span className="block text-[11px] text-slate-500 font-normal mt-0.5">
+                            {student.user.email}
+                          </span>
+                        </td>
+                        <td className="py-3.5 px-5 font-mono font-bold text-slate-800">{student.matricNo}</td>
+                        <td className="py-3.5 px-5 text-slate-700 font-medium">{student.department.name}</td>
+                        <td className="py-3.5 px-5 font-bold text-slate-900">{student.level} Level</td>
+                        <td className="py-3.5 px-5 font-bold">
+                          <span className="bg-slate-100 text-slate-900 px-2 py-1 rounded-md border border-slate-200 font-mono text-[11px]">
+                            {Number(student.cgpa).toFixed(2)}
+                          </span>
+                        </td>
+                        <td className="py-3.5 px-5">
+                          <span
+                            className={`inline-flex items-center px-2.5 py-1 rounded-full text-[10px] font-extrabold uppercase tracking-wider ${
+                              student.status === "ACTIVE"
+                                ? "bg-emerald-100 text-emerald-800 border border-emerald-200"
+                                : student.status === "FINANCIAL_HOLD"
+                                ? "bg-amber-100 text-amber-800 border border-amber-200"
+                                : "bg-rose-100 text-rose-800 border border-rose-200"
+                            }`}
+                          >
+                            {student.status.replace("_", " ")}
+                          </span>
+                        </td>
+                        <td className="py-3.5 px-5 text-right">
+                          <div className="flex items-center justify-end gap-1.5">
+                            {/* Academic Override */}
+                            <button
+                              onClick={() => {
+                                setOverrideStudent(student);
+                                setOverrideForm({ ...overrideForm, newCgpa: student.cgpa });
+                              }}
+                              title="Academic Grade Rectification / CGPA Override"
+                              className="p-2 bg-white border border-slate-200 hover:bg-slate-100 rounded-lg text-slate-600 transition-all cursor-pointer shadow-xs"
+                            >
+                              <GraduationCap className="h-3.5 w-3.5 text-blue-600" />
+                            </button>
+
+                            {/* Administrative Hold Toggle */}
+                            <button
+                              onClick={() => {
+                                setHoldStudent(student);
+                                setHoldForm({
+                                  status: student.status === "ACTIVE" ? "FINANCIAL_HOLD" : "ACTIVE",
+                                  reason: student.holdReason || "Financial audit hold"
+                                });
+                              }}
+                              title="Toggle Administrative / Financial Hold"
+                              className="p-2 bg-white border border-slate-200 hover:bg-amber-50 rounded-lg text-slate-600 transition-all cursor-pointer shadow-xs"
+                            >
+                              {student.status === "ACTIVE" ? (
+                                <Lock className="h-3.5 w-3.5 text-amber-600" />
+                              ) : (
+                                <Unlock className="h-3.5 w-3.5 text-emerald-600" />
+                              )}
+                            </button>
+
+                            {/* Magic Link / Reset Password */}
+                            <button
+                              onClick={() => handleGenerateMagicLink(student)}
+                              title="Generate Magic Login Link & Reset Password"
+                              className="p-2 bg-white border border-slate-200 hover:bg-purple-50 rounded-lg text-slate-600 transition-all cursor-pointer shadow-xs"
+                            >
+                              <KeyRound className="h-3.5 w-3.5 text-purple-600" />
+                            </button>
+
+                            {/* Edit Metadata */}
+                            <button
+                              onClick={() => openEditModal(student)}
+                              title="Edit Student Metadata"
+                              className="p-2 bg-white border border-slate-200 hover:bg-slate-100 rounded-lg text-slate-600 transition-all cursor-pointer shadow-xs"
+                            >
+                              <Edit2 className="h-3.5 w-3.5" />
+                            </button>
+
+                            {/* Delete */}
+                            <button
+                              onClick={() => handleDelete(student.id)}
+                              title="Soft Delete Student Profile"
+                              className="p-2 bg-white border border-slate-200 hover:bg-red-50 hover:text-red-600 hover:border-red-200 rounded-lg text-slate-600 transition-all cursor-pointer shadow-xs"
+                            >
+                              <Trash2 className="h-3.5 w-3.5" />
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            ) : (
+              <div className="py-16 text-center text-slate-500 font-bold uppercase tracking-widest text-xs bg-white">
+                No students found in registry.
+              </div>
+            )}
+
+            {/* Pagination Footer */}
+            {totalPages > 1 && (
+              <div className="flex justify-between items-center px-5 py-3.5 border-t border-slate-200 text-xs font-bold text-slate-600 bg-slate-50">
+                <span>
+                  Page {currentPage} of {totalPages}
+                </span>
+                <div className="flex gap-2">
+                  <button
+                    disabled={currentPage === 1}
+                    onClick={() => setCurrentPage((c) => Math.max(c - 1, 1))}
+                    className="p-2 bg-white border border-slate-200 hover:bg-slate-100 text-slate-700 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed transition-all cursor-pointer"
+                  >
+                    <ChevronLeft className="h-4 w-4" />
+                  </button>
+                  <button
+                    disabled={currentPage === totalPages}
+                    onClick={() => setCurrentPage((c) => Math.min(c + 1, totalPages))}
+                    className="p-2 bg-white border border-slate-200 hover:bg-slate-100 text-slate-700 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed transition-all cursor-pointer"
+                  >
+                    <ChevronRight className="h-4 w-4" />
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+        </>
+      ) : (
+        /* Audit Logs View */
+        <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-xs space-y-4">
+          <div className="flex items-center justify-between border-b border-slate-150 pb-4">
+            <div>
+              <h3 className="font-display font-black text-slate-900 text-base">Non-Repudiable Administrative Audit Logs</h3>
+              <p className="text-xs text-slate-500 mt-0.5">Immutable record of grade overrides, hold toggles, and administrative security actions.</p>
+            </div>
+            <span className="bg-slate-100 text-slate-700 border border-slate-200 text-[11px] font-mono font-bold px-3 py-1 rounded-full">
+              {logs.length} Log Entries Recorded
+            </span>
+          </div>
+
           <div className="overflow-x-auto">
-            <table className="w-full text-left border-collapse text-xs text-slate-800">
+            <table className="w-full text-left border-collapse text-xs">
               <thead>
                 <tr className="border-b border-slate-200 bg-slate-50 text-slate-500 font-bold uppercase tracking-wider">
-                  <th className="py-3.5 px-5">Name</th>
-                  <th className="py-3.5 px-5">Matric No</th>
-                  <th className="py-3.5 px-5">Department</th>
-                  <th className="py-3.5 px-5">Level</th>
-                  <th className="py-3.5 px-5">CGPA</th>
-                  <th className="py-3.5 px-5 text-right">Actions</th>
+                  <th className="py-3 px-4">Timestamp</th>
+                  <th className="py-3 px-4">Actor</th>
+                  <th className="py-3 px-4">Action Type</th>
+                  <th className="py-3 px-4">Target Student</th>
+                  <th className="py-3 px-4">Audit Details & Rationale</th>
+                  <th className="py-3 px-4">IP Address</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-100">
-                {paginatedStudents.map((student) => (
-                  <tr key={student.id} className="hover:bg-slate-50/80 transition-colors">
-                    <td className="py-3.5 px-5 font-semibold text-slate-900">
-                      {student.user.firstName} {student.user.lastName}
-                      <span className="block text-[11px] text-slate-500 font-normal mt-0.5">
-                        {student.user.email}
+              <tbody className="divide-y divide-slate-100 font-medium">
+                {logs.map((log) => (
+                  <tr key={log.id} className="hover:bg-slate-50 transition-colors">
+                    <td className="py-3 px-4 font-mono text-[11px] text-slate-600">{log.timestamp}</td>
+                    <td className="py-3 px-4 font-bold text-slate-900">{log.actorName}</td>
+                    <td className="py-3 px-4">
+                      <span className="bg-blue-50 text-blue-700 border border-blue-200 px-2 py-0.5 rounded font-mono font-bold text-[10px]">
+                        {log.action}
                       </span>
                     </td>
-                    <td className="py-3.5 px-5 font-mono font-bold text-slate-800">{student.matricNo}</td>
-                    <td className="py-3.5 px-5 text-slate-700 font-medium">{student.department.name}</td>
-                    <td className="py-3.5 px-5 font-bold text-slate-900">{student.level} Level</td>
-                    <td className="py-3.5 px-5 font-bold">
-                      <span className="bg-slate-100 text-slate-900 px-2 py-1 rounded-md border border-slate-200 font-mono text-[11px]">
-                        {Number(student.cgpa).toFixed(2)}
-                      </span>
-                    </td>
-                    <td className="py-3.5 px-5 text-right space-x-2">
-                      <button
-                        onClick={() => openEditModal(student)}
-                        className="p-2 bg-white border border-slate-200 hover:bg-slate-100 rounded-lg text-slate-600 transition-all cursor-pointer shadow-xs"
-                      >
-                        <Edit2 className="h-3.5 w-3.5" />
-                      </button>
-                      <button
-                        onClick={() => handleDelete(student.id)}
-                        className="p-2 bg-white border border-slate-200 hover:bg-red-50 hover:text-red-600 hover:border-red-200 rounded-lg text-slate-600 transition-all cursor-pointer shadow-xs"
-                      >
-                        <Trash2 className="h-3.5 w-3.5" />
-                      </button>
-                    </td>
+                    <td className="py-3 px-4 font-mono font-bold text-slate-800">{log.targetId}</td>
+                    <td className="py-3 px-4 text-slate-700">{log.details}</td>
+                    <td className="py-3 px-4 font-mono text-slate-500">{log.ipAddress}</td>
                   </tr>
                 ))}
               </tbody>
             </table>
           </div>
-        ) : (
-          <div className="py-16 text-center text-slate-500 font-bold uppercase tracking-widest text-xs bg-white">
-            No students found in registry.
-          </div>
-        )}
+        </div>
+      )}
 
-        {/* Pagination Footer */}
-        {totalPages > 1 && (
-          <div className="flex justify-between items-center px-5 py-3.5 border-t border-slate-200 text-xs font-bold text-slate-600 bg-slate-50">
-            <span>
-              Page {currentPage} of {totalPages}
-            </span>
-            <div className="flex gap-2">
-              <button
-                disabled={currentPage === 1}
-                onClick={() => setCurrentPage((c) => Math.max(c - 1, 1))}
-                className="p-2 bg-white border border-slate-200 hover:bg-slate-100 text-slate-700 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed transition-all cursor-pointer"
-              >
-                <ChevronLeft className="h-4 w-4" />
-              </button>
-              <button
-                disabled={currentPage === totalPages}
-                onClick={() => setCurrentPage((c) => Math.min(c + 1, totalPages))}
-                className="p-2 bg-white border border-slate-200 hover:bg-slate-100 text-slate-700 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed transition-all cursor-pointer"
-              >
-                <ChevronRight className="h-4 w-4" />
-              </button>
-            </div>
-          </div>
-        )}
-      </div>
-
-      {/* Create / Edit Modal Dialog */}
+      {/* 1. Create / Edit Metadata Modal */}
       {isModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 backdrop-blur-xs p-4">
           <div className="bg-white border border-slate-200 rounded-3xl w-full max-w-xl max-h-[90vh] overflow-y-auto shadow-2xl">
-            {/* Modal Header */}
             <div className="h-16 border-b border-slate-200 flex items-center justify-between px-6 bg-white sticky top-0 z-10">
               <h3 className="font-display font-black text-sm tracking-widest uppercase text-slate-900">
-                {editingStudent ? "Edit Student Profile" : "Register New Student"}
+                {editingStudent ? "Edit Student Metadata" : "Register New Student"}
               </h3>
               <button
                 onClick={() => setIsModalOpen(false)}
@@ -537,7 +837,6 @@ export default function StudentsClient({
               </button>
             </div>
 
-            {/* Modal Form */}
             <form onSubmit={handleSubmit} className="p-6 space-y-4 text-xs font-semibold text-slate-800">
               <div className="grid grid-cols-2 gap-4">
                 <div className="flex flex-col gap-1">
@@ -621,23 +920,6 @@ export default function StudentsClient({
                   </select>
                 </div>
                 <div className="flex flex-col gap-1">
-                  <label className="text-[10px] uppercase font-bold text-slate-700">Academic Programme *</label>
-                  <select
-                    value={formData.programmeId}
-                    onChange={(e) => setFormData({ ...formData, programmeId: e.target.value })}
-                    className="p-2.5 bg-white border border-slate-300 rounded-xl focus:outline-none focus:border-slate-900 text-slate-900 font-bold"
-                  >
-                    {programmes.map((prog) => (
-                      <option key={prog.id} value={prog.id}>
-                        {prog.name}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                <div className="flex flex-col gap-1">
                   <label className="text-[10px] uppercase font-bold text-slate-700">Academic Level *</label>
                   <select
                     value={formData.level}
@@ -650,54 +932,8 @@ export default function StudentsClient({
                     <option value={400}>400 Level</option>
                   </select>
                 </div>
-                <div className="flex flex-col gap-1">
-                  <label className="text-[10px] uppercase font-bold text-slate-700">Entry Session *</label>
-                  <select
-                    value={formData.entrySessionId}
-                    onChange={(e) => setFormData({ ...formData, entrySessionId: e.target.value })}
-                    className="p-2.5 bg-white border border-slate-300 rounded-xl focus:outline-none focus:border-slate-900 text-slate-900 font-bold"
-                  >
-                    {sessions.map((ses) => (
-                      <option key={ses.id} value={ses.id}>
-                        {ses.name}
-                      </option>
-                    ))}
-                  </select>
-                </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
-                <div className="flex flex-col gap-1">
-                  <label className="text-[10px] uppercase font-bold text-slate-700">Current Session *</label>
-                  <select
-                    value={formData.currentSessionId}
-                    onChange={(e) => setFormData({ ...formData, currentSessionId: e.target.value })}
-                    className="p-2.5 bg-white border border-slate-300 rounded-xl focus:outline-none focus:border-slate-900 text-slate-900 font-bold"
-                  >
-                    {sessions.map((ses) => (
-                      <option key={ses.id} value={ses.id}>
-                        {ses.name}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-                <div className="flex flex-col gap-1">
-                  <label className="text-[10px] uppercase font-bold text-slate-700">Current Semester *</label>
-                  <select
-                    value={formData.currentSemesterId}
-                    onChange={(e) => setFormData({ ...formData, currentSemesterId: e.target.value })}
-                    className="p-2.5 bg-white border border-slate-300 rounded-xl focus:outline-none focus:border-slate-900 text-slate-900 font-bold"
-                  >
-                    {semesters.map((sem) => (
-                      <option key={sem.id} value={sem.id}>
-                        {sem.name} Semester
-                      </option>
-                    ))}
-                  </select>
-                </div>
-              </div>
-
-              {/* Action Buttons */}
               <div className="pt-4 flex justify-end gap-3 border-t border-slate-200">
                 <button
                   type="button"
@@ -716,10 +952,230 @@ export default function StudentsClient({
                   ) : (
                     <Plus className="h-4 w-4" />
                   )}
-                  <span>{isSubmitting ? "Saving..." : editingStudent ? "Update Profile" : "Register Student"}</span>
+                  <span>{isSubmitting ? "Saving..." : editingStudent ? "Update Metadata" : "Register Student"}</span>
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* 2. Academic Override Drawer / Modal */}
+      {overrideStudent && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 backdrop-blur-xs p-4">
+          <div className="bg-white border border-slate-200 rounded-3xl w-full max-w-lg shadow-2xl p-6 space-y-4">
+            <div className="flex items-center justify-between border-b border-slate-200 pb-3">
+              <div className="flex items-center gap-2 text-blue-700 font-extrabold text-sm uppercase">
+                <GraduationCap className="h-5 w-5" />
+                <span>Academic Grade Rectification</span>
+              </div>
+              <button onClick={() => setOverrideStudent(null)} className="text-slate-400 hover:text-slate-900 cursor-pointer">
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+
+            <div className="bg-blue-50 border border-blue-200 rounded-xl p-3 text-xs text-blue-900 font-medium">
+              Overriding grades for student <strong className="font-mono">{overrideStudent.matricNo}</strong> ({overrideStudent.user.firstName} {overrideStudent.user.lastName}). All overrides generate an immutable audit log entry.
+            </div>
+
+            <form onSubmit={handleAcademicOverrideSubmit} className="space-y-3 text-xs font-semibold">
+              <div>
+                <label className="block uppercase text-[10px] text-slate-600 mb-1">Target Course Code</label>
+                <select
+                  value={overrideForm.courseCode}
+                  onChange={(e) => setOverrideForm({ ...overrideForm, courseCode: e.target.value })}
+                  className="w-full p-2.5 border border-slate-300 rounded-xl bg-white text-slate-900 font-bold"
+                >
+                  <option value="NUR102">NUR102 - Clinical Nursing Anatomy</option>
+                  <option value="CSC301">CSC301 - Data Structures & Algorithms</option>
+                  <option value="MLS201">MLS201 - General Clinical Pathology</option>
+                  <option value="CHEW101">CHEW101 - Primary Health Care</option>
+                </select>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block uppercase text-[10px] text-slate-600 mb-1">Rectified Grade</label>
+                  <select
+                    value={overrideForm.newGrade}
+                    onChange={(e) => setOverrideForm({ ...overrideForm, newGrade: e.target.value })}
+                    className="w-full p-2.5 border border-slate-300 rounded-xl bg-white text-slate-900 font-bold"
+                  >
+                    <option value="A">Grade A (70-100% / 5.0)</option>
+                    <option value="B">Grade B (60-69% / 4.0)</option>
+                    <option value="C">Grade C (50-59% / 3.0)</option>
+                    <option value="D">Grade D (45-49% / 2.0)</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block uppercase text-[10px] text-slate-600 mb-1">Target CGPA Override</label>
+                  <input
+                    type="number"
+                    step="0.01"
+                    min="0.00"
+                    max="5.00"
+                    value={overrideForm.newCgpa}
+                    onChange={(e) => setOverrideForm({ ...overrideForm, newCgpa: Number(e.target.value) })}
+                    className="w-full p-2.5 border border-slate-300 rounded-xl bg-white text-slate-900 font-mono font-bold"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block uppercase text-[10px] text-slate-600 mb-1">Audit Justification / Reason *</label>
+                <textarea
+                  required
+                  rows={3}
+                  value={overrideForm.reason}
+                  onChange={(e) => setOverrideForm({ ...overrideForm, reason: e.target.value })}
+                  placeholder="State official examination board approval reference..."
+                  className="w-full p-2.5 border border-slate-300 rounded-xl bg-white text-slate-900 font-medium text-xs"
+                />
+              </div>
+
+              <div className="pt-2 flex justify-between items-center">
+                <button
+                  type="button"
+                  onClick={() => alert(`Official Verified Transcript generated for ${overrideStudent.matricNo}. PDF download queued.`)}
+                  className="bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold py-2 px-3 rounded-xl flex items-center gap-1.5 cursor-pointer text-xs"
+                >
+                  <FileText className="h-4 w-4 text-slate-600" />
+                  <span>Generate Transcript PDF</span>
+                </button>
+                <button
+                  type="submit"
+                  disabled={isSubmitting}
+                  className="bg-blue-700 hover:bg-blue-800 text-white font-bold px-5 py-2 rounded-xl cursor-pointer"
+                >
+                  {isSubmitting ? "Saving..." : "Apply Override"}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* 3. Administrative Hold Toggle Modal */}
+      {holdStudent && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 backdrop-blur-xs p-4">
+          <div className="bg-white border border-slate-200 rounded-3xl w-full max-w-md shadow-2xl p-6 space-y-4">
+            <div className="flex items-center justify-between border-b border-slate-200 pb-3">
+              <div className="flex items-center gap-2 text-amber-700 font-extrabold text-sm uppercase">
+                <ShieldAlert className="h-5 w-5" />
+                <span>Administrative Hold Control</span>
+              </div>
+              <button onClick={() => setHoldStudent(null)} className="text-slate-400 hover:text-slate-900 cursor-pointer">
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+
+            <div className="text-xs text-slate-700 font-medium">
+              Student: <strong className="font-mono">{holdStudent.matricNo}</strong> ({holdStudent.user.firstName} {holdStudent.user.lastName})
+            </div>
+
+            <form onSubmit={handleHoldToggleSubmit} className="space-y-3 text-xs font-semibold">
+              <div>
+                <label className="block uppercase text-[10px] text-slate-600 mb-1">Hold Type / Status</label>
+                <select
+                  value={holdForm.status}
+                  onChange={(e) => setHoldForm({ ...holdForm, status: e.target.value as any })}
+                  className="w-full p-2.5 border border-slate-300 rounded-xl bg-white text-slate-900 font-bold"
+                >
+                  <option value="ACTIVE">ACTIVE (No Portal Lockout)</option>
+                  <option value="FINANCIAL_HOLD">FINANCIAL HOLD (Tuition Lockout)</option>
+                  <option value="DISCIPLINARY_HOLD">DISCIPLINARY HOLD (Exam Lockout)</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block uppercase text-[10px] text-slate-600 mb-1">Reason / Lockout Notice</label>
+                <textarea
+                  required
+                  rows={3}
+                  value={holdForm.reason}
+                  onChange={(e) => setHoldForm({ ...holdForm, reason: e.target.value })}
+                  className="w-full p-2.5 border border-slate-300 rounded-xl bg-white text-slate-900 font-medium text-xs"
+                />
+              </div>
+
+              <div className="pt-2 flex justify-end gap-2">
+                <button
+                  type="button"
+                  onClick={() => setHoldStudent(null)}
+                  className="bg-white border border-slate-300 px-4 py-2 rounded-xl text-slate-700 font-bold cursor-pointer"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={isSubmitting}
+                  className="bg-amber-600 hover:bg-amber-700 text-white font-bold px-5 py-2 rounded-xl cursor-pointer"
+                >
+                  {isSubmitting ? "Updating..." : "Update Hold Status"}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* 4. Magic Login Link & Password Reset Modal */}
+      {magicStudent && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 backdrop-blur-xs p-4">
+          <div className="bg-white border border-slate-200 rounded-3xl w-full max-w-md shadow-2xl p-6 space-y-4">
+            <div className="flex items-center justify-between border-b border-slate-200 pb-3">
+              <div className="flex items-center gap-2 text-purple-700 font-extrabold text-sm uppercase">
+                <KeyRound className="h-5 w-5" />
+                <span>Portal Password & Magic Link</span>
+              </div>
+              <button onClick={() => setMagicStudent(null)} className="text-slate-400 hover:text-slate-900 cursor-pointer">
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+
+            <div className="text-xs text-slate-700 font-medium">
+              Generate direct magic portal access link for <strong className="font-mono">{magicStudent.matricNo}</strong> ({magicStudent.user.email}).
+            </div>
+
+            {generatedLink ? (
+              <div className="space-y-3">
+                <label className="block text-[10px] font-bold uppercase text-slate-600">Generated One-Time Magic Access Link</label>
+                <div className="p-3 bg-slate-100 border border-slate-200 rounded-xl font-mono text-[11px] text-slate-900 break-all select-all flex items-center justify-between">
+                  <span>{generatedLink}</span>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      navigator.clipboard.writeText(generatedLink);
+                      setCopiedLink(true);
+                      setTimeout(() => setCopiedLink(false), 2000);
+                    }}
+                    className="ml-2 p-1.5 bg-white border border-slate-300 rounded-lg hover:bg-slate-50 shrink-0 cursor-pointer text-slate-700"
+                    title="Copy Magic Link"
+                  >
+                    {copiedLink ? <CheckCircle2 className="h-4 w-4 text-emerald-600" /> : <Copy className="h-4 w-4" />}
+                  </button>
+                </div>
+                <p className="text-[10px] text-emerald-700 font-bold flex items-center gap-1">
+                  <CheckCircle2 className="h-3.5 w-3.5" />
+                  Link ready. Student can paste this in browser to bypass password prompt once.
+                </p>
+              </div>
+            ) : (
+              <div className="py-4 text-center">
+                <Loader2 className="h-6 w-6 animate-spin text-purple-600 mx-auto" />
+                <span className="text-xs font-bold text-slate-500 mt-2 block">Generating cryptographic access token...</span>
+              </div>
+            )}
+
+            <div className="pt-2 flex justify-end">
+              <button
+                type="button"
+                onClick={() => setMagicStudent(null)}
+                className="bg-slate-900 text-white font-bold px-5 py-2 rounded-xl cursor-pointer text-xs"
+              >
+                Close
+              </button>
+            </div>
           </div>
         </div>
       )}

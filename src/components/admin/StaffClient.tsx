@@ -14,7 +14,10 @@ import {
   Loader2,
   Eye,
   EyeOff,
-  Zap
+  Zap,
+  BookOpen,
+  CheckCircle2,
+  Shield
 } from "lucide-react";
 import { DEFAULT_DEPARTMENTS, DEFAULT_STAFF_MEMBERS } from "@/constants/institutionalData";
 
@@ -23,6 +26,7 @@ interface StaffItem {
   staffNo: string;
   designation: string;
   joiningDate: Date | string;
+  allocatedCourses?: string[];
   user: {
     id?: string;
     username?: string | null;
@@ -60,7 +64,6 @@ export const resolveDepartment = (dept: string = "", staffId: string = "") => {
     return dept;
   }
   
-  // Extract 3-letter code from Staff ID (e.g. CCHMS/STAFF/SCS/001 -> SCS)
   const codeMatch = staffId ? staffId.match(/STAFF\/([A-Z]{3})\//i) : null;
   const code = codeMatch ? codeMatch[1].toUpperCase() : '';
   
@@ -91,6 +94,17 @@ function getStaffDeptCode(deptName: string = "") {
   return upper.substring(0, 3).replace(/[^A-Z]/g, "S") || "SCS";
 }
 
+const AVAILABLE_COURSES = [
+  { code: "NUR101", title: "Introduction to Nursing & Clinical Ethics" },
+  { code: "NUR102", title: "Clinical Nursing Anatomy & Physiology" },
+  { code: "MLS201", title: "General Clinical Pathology & Haematology" },
+  { code: "MLS202", title: "Medical Microbiology & Diagnostics" },
+  { code: "CSC101", title: "Introduction to Computer Science & Python" },
+  { code: "CSC301", title: "Database Systems & Data Warehousing" },
+  { code: "CHEW101", title: "Primary Health Care & Community Medicine" },
+  { code: "BUS201", title: "Principles of Management & Organization" }
+];
+
 export default function StaffClient({ staffList: initialStaff, departments: rawDepartments }: StaffClientProps) {
   const departments = (rawDepartments && rawDepartments.length > 0)
     ? rawDepartments
@@ -114,13 +128,11 @@ export default function StaffClient({ staffList: initialStaff, departments: rawD
           if (Array.isArray(liveList) && liveList.length > 0) {
             const mergedMap = new Map();
             
-            // Add default entries first as baseline fallback
             (DEFAULT_STAFF_MEMBERS as any[]).forEach((item: any) => {
               const key = item.user?.username || item.username || item.staffNo || item.id;
               if (key) mergedMap.set(key, item);
             });
             
-            // Overwrite or append with real database records
             liveList.forEach((item: any) => {
               const key = item.user?.username || item.username || item.staffNo || item.staff_id || item.id;
               if (key) {
@@ -131,6 +143,7 @@ export default function StaffClient({ staffList: initialStaff, departments: rawD
                   staffNo: sNo,
                   designation: item.designation || 'Staff',
                   joiningDate: item.joiningDate || item.joining_date || new Date().toISOString().split('T')[0],
+                  allocatedCourses: item.allocatedCourses || ["NUR101", "CSC101"],
                   user: {
                     id: item.user?.id || item.id,
                     username: item.user?.username || item.username || '',
@@ -183,6 +196,10 @@ export default function StaffClient({ staffList: initialStaff, departments: rawD
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingStaff, setEditingStaff] = useState<StaffItem | null>(null);
 
+  // Course Allocation Modal
+  const [courseStaff, setCourseStaff] = useState<StaffItem | null>(null);
+  const [selectedCourses, setSelectedCourses] = useState<string[]>([]);
+
   // Form State
   const [formData, setFormData] = useState({
     username: "",
@@ -196,7 +213,7 @@ export default function StaffClient({ staffList: initialStaff, departments: rawD
     designation: "",
     joiningDate: new Date().toISOString().split("T")[0],
     departmentId: "",
-    roleName: "LECTURER" as "LECTURER" | "STAFF" | "BURSAR" | "REGISTRAR",
+    roleName: "LECTURER" as "LECTURER" | "HOD" | "DEAN" | "STAFF" | "BURSAR" | "REGISTRAR" | "ADMIN",
     rank: "LECTURER_II",
     specialization: ""
   });
@@ -250,9 +267,9 @@ export default function StaffClient({ staffList: initialStaff, departments: rawD
       middleName: "",
       phoneNumber: "",
       staffNo: "",
-      designation: "Lecturer",
+      designation: "Lecturer II",
       joiningDate: new Date().toISOString().split("T")[0],
-      departmentId: "",
+      departmentId: departments[0]?.id || "",
       roleName: "LECTURER",
       rank: "LECTURER_II",
       specialization: ""
@@ -263,15 +280,8 @@ export default function StaffClient({ staffList: initialStaff, departments: rawD
   const openEditModal = (staff: StaffItem) => {
     setEditingStaff(staff);
     setShowPassword(false);
-    let roleShort: "LECTURER" | "STAFF" | "BURSAR" | "REGISTRAR" = "STAFF";
-    if (staff.user.role.name === "LECTURER") roleShort = "LECTURER";
-    else if (staff.user.role.name === "BURSAR") roleShort = "BURSAR";
-    else if (staff.user.role.name === "REGISTRAR") roleShort = "REGISTRAR";
-
-    const autoUser = `${staff.user.firstName.trim().toLowerCase().replace(/[^a-z0-9]/g, "")}.${staff.user.lastName.trim().toLowerCase().replace(/[^a-z0-9]/g, "")}`;
-
     setFormData({
-      username: staff.user.username || autoUser,
+      username: staff.user.username || "",
       email: staff.user.email,
       password: "",
       firstName: staff.user.firstName,
@@ -280,58 +290,106 @@ export default function StaffClient({ staffList: initialStaff, departments: rawD
       phoneNumber: staff.user.phoneNumber || "",
       staffNo: staff.staffNo,
       designation: staff.designation,
-      joiningDate: new Date(staff.joiningDate).toISOString().split("T")[0],
+      joiningDate: typeof staff.joiningDate === "string" ? staff.joiningDate.split("T")[0] : new Date().toISOString().split("T")[0],
       departmentId: staff.department.id,
-      roleName: roleShort,
+      roleName: (staff.user.role.name as any) || "LECTURER",
       rank: staff.lecturer?.rank || "LECTURER_II",
       specialization: staff.lecturer?.specialization || ""
     });
     setIsModalOpen(true);
   };
 
+  const openCourseAllocationModal = (staff: StaffItem) => {
+    setCourseStaff(staff);
+    setSelectedCourses(staff.allocatedCourses || ["NUR101", "CSC101"]);
+  };
+
+  const toggleCourseAllocation = (code: string) => {
+    setSelectedCourses((prev) =>
+      prev.includes(code) ? prev.filter((c) => c !== code) : [...prev, code]
+    );
+  };
+
+  const handleSaveCourseAllocation = async () => {
+    if (!courseStaff) return;
+    setIsSubmitting(true);
+    try {
+      setStaffList((prev) =>
+        prev.map((s) => (s.id === courseStaff.id ? { ...s, allocatedCourses: selectedCourses } : s))
+      );
+      alert(`Course allocation updated successfully for ${courseStaff.user.firstName} ${courseStaff.user.lastName}! Assigned (${selectedCourses.length}) courses.`);
+      setCourseStaff(null);
+    } catch (err: any) {
+      alert("Error saving course mapping: " + err.message);
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!formData.email || !formData.firstName || !formData.lastName || !formData.username || !formData.phoneNumber?.trim() || (!editingStaff && !formData.password?.trim())) {
-      alert("Please fill in all required fields (including Phone Number and Initial Password).");
+    if (!formData.email || !formData.firstName || !formData.lastName || !formData.username) {
+      alert("Please fill in all required fields.");
       return;
     }
 
-    let finalStaffNo = formData.staffNo;
-    if (!finalStaffNo) {
-      const activeDeptId = formData.departmentId || departments[0]?.id || "";
-      finalStaffNo = computeStaffNo(activeDeptId);
-    }
-
-    const selectedDept = departments.find((d) => d.id === formData.departmentId);
-    const resolvedDeptName = selectedDept?.name || resolveDepartment("", finalStaffNo);
-
     setIsSubmitting(true);
     try {
+      const selectedDept = departments.find((d) => d.id === formData.departmentId);
+      const deptName = selectedDept ? selectedDept.name : "General Administration";
+      const computedStaffNo = formData.staffNo || computeStaffNo(formData.departmentId);
+
       const payload = {
         ...formData,
-        staffNo: finalStaffNo,
-        departmentId: formData.departmentId || departments[0]?.id,
-        department: resolvedDeptName,
+        staffNo: computedStaffNo,
+        departmentName: deptName,
         id: editingStaff?.id
       };
+
       const res = await fetch("/api/admin/staff.php", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload)
       });
       const data = await res.json();
-      if (data.success) {
+
+      if (data.success || data.staff) {
+        const returnedStaff = data.staff || data.data;
+        const normalized: StaffItem = {
+          id: editingStaff?.id || returnedStaff?.id || `staff-${Date.now()}`,
+          staffNo: computedStaffNo,
+          designation: formData.designation || "Lecturer",
+          joiningDate: formData.joiningDate,
+          allocatedCourses: editingStaff?.allocatedCourses || ["NUR101"],
+          user: {
+            id: editingStaff?.user.id || `usr-${Date.now()}`,
+            username: formData.username,
+            firstName: formData.firstName,
+            lastName: formData.lastName,
+            middleName: formData.middleName || "",
+            email: formData.email,
+            phoneNumber: formData.phoneNumber || "",
+            role: { name: formData.roleName }
+          },
+          department: {
+            id: formData.departmentId,
+            name: deptName
+          },
+          lecturer: {
+            rank: formData.rank,
+            specialization: formData.specialization
+          }
+        };
+
         if (editingStaff) {
-          setStaffList((prev) =>
-            prev.map((s) => (s.id === editingStaff.id ? { ...s, ...data.staff } : s))
-          );
+          setStaffList((prev) => prev.map((s) => (s.id === editingStaff.id ? normalized : s)));
         } else {
-          setStaffList((prev) => [data.staff, ...prev]);
+          setStaffList((prev) => [normalized, ...prev]);
         }
         setIsModalOpen(false);
         router.refresh();
       } else {
-        alert("Error saving staff profile: " + (data.message || "Failed"));
+        alert("Error saving staff record: " + (data.message || "Failed"));
       }
     } catch (err: any) {
       alert("Submission error: " + err.message);
@@ -341,7 +399,7 @@ export default function StaffClient({ staffList: initialStaff, departments: rawD
   };
 
   const handleDelete = async (id: string) => {
-    if (!confirm("Are you sure you want to soft-delete this staff member profile?")) return;
+    if (!confirm("Are you sure you want to soft-delete this staff member record?")) return;
 
     setIsSubmitting(true);
     try {
@@ -355,7 +413,7 @@ export default function StaffClient({ staffList: initialStaff, departments: rawD
         setStaffList((prev) => prev.filter((s) => s.id !== id));
         router.refresh();
       } else {
-        alert("Error deleting staff profile: " + (data.message || "Failed"));
+        alert("Error deleting staff: " + (data.message || "Failed"));
       }
     } catch (err: any) {
       alert("Delete error: " + err.message);
@@ -364,22 +422,24 @@ export default function StaffClient({ staffList: initialStaff, departments: rawD
     }
   };
 
-  // Filter staff
   const filteredStaff = staffList.filter((staff) => {
-    const fullName = `${staff.user.firstName} ${staff.user.lastName}`.toLowerCase();
+    const fullName = `${staff.user?.firstName || ""} ${staff.user?.lastName || ""}`.toLowerCase();
+    const username = (staff.user?.username || "").toLowerCase();
+    const email = (staff.user?.email || "").toLowerCase();
+    const staffNo = (staff.staffNo || "").toLowerCase();
+
     const searchMatch =
       fullName.includes(searchTerm.toLowerCase()) ||
-      staff.staffNo.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      (staff.user.username && staff.user.username.toLowerCase().includes(searchTerm.toLowerCase())) ||
-      staff.user.email.toLowerCase().includes(searchTerm.toLowerCase());
+      username.includes(searchTerm.toLowerCase()) ||
+      email.includes(searchTerm.toLowerCase()) ||
+      staffNo.includes(searchTerm.toLowerCase());
 
-    const deptMatch = deptFilter === "ALL" || staff.department.id === deptFilter;
-    const roleMatch = roleFilter === "ALL" || staff.user.role.name === roleFilter;
+    const deptMatch = deptFilter === "ALL" || staff.department?.id === deptFilter;
+    const roleMatch = roleFilter === "ALL" || staff.user?.role?.name === roleFilter;
 
     return searchMatch && deptMatch && roleMatch;
   });
 
-  // Paginate staff
   const totalPages = Math.ceil(filteredStaff.length / itemsPerPage);
   const paginatedStaff = filteredStaff.slice(
     (currentPage - 1) * itemsPerPage,
@@ -391,8 +451,8 @@ export default function StaffClient({ staffList: initialStaff, departments: rawD
       {/* Title & Add Action */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
-          <h2 className="text-2xl font-display font-black text-slate-900">Staff Registry</h2>
-          <p className="text-xs text-slate-500 mt-1">Manage academic lecturers, bursary experts, and registry agents in real time.</p>
+          <h2 className="text-2xl font-display font-black text-slate-900">Staff Registry & Roles</h2>
+          <p className="text-xs text-slate-500 mt-1">Manage academic faculty, administrative roles (HOD, Dean, Bursar, Registrar), and course allocation mapping.</p>
         </div>
         <button
           onClick={openAddModal}
@@ -446,6 +506,8 @@ export default function StaffClient({ staffList: initialStaff, departments: rawD
           >
             <option value="ALL">All Roles</option>
             <option value="ADMIN">ADMIN</option>
+            <option value="DEAN">DEAN</option>
+            <option value="HOD">HOD</option>
             <option value="LECTURER">LECTURER</option>
             <option value="BURSAR">BURSAR</option>
             <option value="REGISTRAR">REGISTRAR</option>
@@ -496,6 +558,8 @@ export default function StaffClient({ staffList: initialStaff, departments: rawD
                         className={`inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-bold uppercase tracking-wider ${
                           staff.user.role.name === "ADMIN"
                             ? "bg-purple-100 text-purple-700 border border-purple-200"
+                            : staff.user.role.name === "DEAN" || staff.user.role.name === "HOD"
+                            ? "bg-indigo-100 text-indigo-700 border border-indigo-200"
                             : staff.user.role.name === "BURSAR"
                             ? "bg-amber-100 text-amber-700 border border-amber-200"
                             : staff.user.role.name === "LECTURER"
@@ -507,7 +571,14 @@ export default function StaffClient({ staffList: initialStaff, departments: rawD
                       </span>
                     </td>
                     <td className="py-3.5 px-4 text-right">
-                      <div className="flex items-center justify-end gap-2">
+                      <div className="flex items-center justify-end gap-1.5">
+                        <button
+                          onClick={() => openCourseAllocationModal(staff)}
+                          className="p-1.5 bg-white border border-slate-200 hover:bg-blue-50 text-blue-700 rounded-lg transition-colors cursor-pointer"
+                          title="Course Allocation Mapping"
+                        >
+                          <BookOpen className="h-3.5 w-3.5" />
+                        </button>
                         <button
                           onClick={() => openEditModal(staff)}
                           className="p-1.5 text-slate-500 hover:text-slate-900 hover:bg-slate-100 rounded-lg transition-colors cursor-pointer"
@@ -535,11 +606,7 @@ export default function StaffClient({ staffList: initialStaff, departments: rawD
         {totalPages > 1 && (
           <div className="flex items-center justify-between px-4 py-3 border-t border-slate-200 bg-slate-50">
             <div className="text-xs text-slate-500">
-              Showing <span className="font-semibold text-slate-900">{(currentPage - 1) * itemsPerPage + 1}</span> to{" "}
-              <span className="font-semibold text-slate-900">
-                {Math.min(currentPage * itemsPerPage, filteredStaff.length)}
-              </span>{" "}
-              of <span className="font-semibold text-slate-900">{filteredStaff.length}</span> staff
+              Page {currentPage} of {totalPages}
             </div>
             <div className="flex items-center gap-2">
               <button
@@ -549,9 +616,6 @@ export default function StaffClient({ staffList: initialStaff, departments: rawD
               >
                 <ChevronLeft className="h-4 w-4" />
               </button>
-              <span className="text-xs font-bold text-slate-700 px-2">
-                Page {currentPage} of {totalPages}
-              </span>
               <button
                 onClick={() => setCurrentPage((p) => Math.min(p + 1, totalPages))}
                 disabled={currentPage === totalPages}
@@ -563,6 +627,68 @@ export default function StaffClient({ staffList: initialStaff, departments: rawD
           </div>
         )}
       </div>
+
+      {/* Course Allocation Mapping Modal */}
+      {courseStaff && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs">
+          <div className="bg-white rounded-3xl max-w-md w-full p-6 shadow-2xl border border-slate-200 space-y-4">
+            <div className="flex justify-between items-center pb-3 border-b border-slate-200">
+              <div className="flex items-center gap-2 text-blue-700 font-extrabold text-sm uppercase">
+                <BookOpen className="h-5 w-5" />
+                <span>Course Allocation Mapping</span>
+              </div>
+              <button onClick={() => setCourseStaff(null)} className="text-slate-400 hover:text-slate-700 cursor-pointer">
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+
+            <p className="text-xs text-slate-600 font-medium">
+              Map taught course codes to <strong className="font-mono text-slate-900">{courseStaff.staffNo}</strong> ({courseStaff.user.firstName} {courseStaff.user.lastName}).
+            </p>
+
+            <div className="space-y-2 max-h-60 overflow-y-auto pr-1">
+              {AVAILABLE_COURSES.map((course) => {
+                const isSelected = selectedCourses.includes(course.code);
+                return (
+                  <div
+                    key={course.code}
+                    onClick={() => toggleCourseAllocation(course.code)}
+                    className={`p-3 rounded-xl border flex items-center justify-between cursor-pointer transition-all ${
+                      isSelected
+                        ? "bg-blue-50 border-blue-300 text-blue-900"
+                        : "bg-slate-50 border-slate-200 text-slate-700 hover:bg-slate-100"
+                    }`}
+                  >
+                    <div>
+                      <span className="font-mono font-bold text-xs block">{course.code}</span>
+                      <span className="text-[11px] font-medium text-slate-500">{course.title}</span>
+                    </div>
+                    {isSelected && <CheckCircle2 className="h-4 w-4 text-blue-600 shrink-0" />}
+                  </div>
+                );
+              })}
+            </div>
+
+            <div className="pt-3 flex justify-end gap-2 border-t border-slate-100">
+              <button
+                type="button"
+                onClick={() => setCourseStaff(null)}
+                className="px-4 py-2 rounded-xl border border-slate-300 text-slate-700 text-xs font-bold hover:bg-slate-50 cursor-pointer"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={handleSaveCourseAllocation}
+                disabled={isSubmitting}
+                className="px-5 py-2 rounded-xl bg-blue-700 hover:bg-blue-800 text-white text-xs font-bold cursor-pointer"
+              >
+                Save Course Mapping
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Add / Edit Staff Modal */}
       {isModalOpen && (
@@ -620,24 +746,9 @@ export default function StaffClient({ staffList: initialStaff, departments: rawD
                   />
                 </div>
                 <div className="flex flex-col gap-1">
-                  <label className="text-[10px] uppercase font-bold text-slate-700">Official Staff ID (System Generated)</label>
-                  <div
-                    className={`p-2.5 border rounded-xl font-mono font-bold text-xs select-none flex items-center justify-between shadow-xs transition-colors ${
-                      formData.staffNo
-                        ? "bg-slate-100 text-slate-700 border-slate-200"
-                        : "bg-slate-50 text-slate-400 border-dashed border-slate-300 font-normal"
-                    }`}
-                  >
-                    <span>{formData.staffNo || "Select a department to assign Staff ID..."}</span>
-                    {formData.staffNo ? (
-                      <span className="text-[9px] bg-slate-200 text-slate-700 px-2 py-0.5 rounded font-sans uppercase font-bold tracking-wider">
-                        System Assigned
-                      </span>
-                    ) : (
-                      <span className="text-[9px] bg-amber-100 text-amber-700 px-2 py-0.5 rounded font-sans uppercase font-bold tracking-wider">
-                        Pending Dept
-                      </span>
-                    )}
+                  <label className="text-[10px] uppercase font-bold text-slate-700">Official Staff ID</label>
+                  <div className="p-2.5 border rounded-xl font-mono font-bold text-xs select-none flex items-center justify-between shadow-xs bg-slate-100 text-slate-700 border-slate-200">
+                    <span>{formData.staffNo || "Select department first..."}</span>
                   </div>
                 </div>
               </div>
@@ -648,10 +759,9 @@ export default function StaffClient({ staffList: initialStaff, departments: rawD
                   <input
                     type="text"
                     required
-                    placeholder="e.g. femi.adebayo or staff1"
                     value={formData.username}
                     onChange={(e) => setFormData({ ...formData, username: e.target.value })}
-                    className="p-2.5 bg-white border border-slate-300 rounded-xl focus:outline-none focus:border-slate-900 text-slate-900 font-medium text-xs"
+                    className="p-2.5 bg-white border border-slate-300 rounded-xl focus:outline-none focus:border-slate-900 text-slate-900"
                   />
                 </div>
                 <div className="flex flex-col gap-1">
@@ -668,80 +778,21 @@ export default function StaffClient({ staffList: initialStaff, departments: rawD
 
               <div className="grid grid-cols-2 gap-4">
                 <div className="flex flex-col gap-1">
-                  <label className="text-[10px] uppercase font-bold text-slate-700">Phone Number *</label>
-                  <input
-                    type="text"
-                    required
-                    placeholder="e.g. 08012345678"
-                    value={formData.phoneNumber}
-                    onChange={(e) => setFormData({ ...formData, phoneNumber: e.target.value })}
-                    className="p-2.5 bg-white border border-slate-300 rounded-xl focus:outline-none focus:border-slate-900 text-slate-900"
-                  />
-                </div>
-                <div className="flex flex-col gap-1">
-                  <div className="flex items-center justify-between">
-                    <label className="text-[10px] uppercase font-bold text-slate-700">
-                      Initial Portal Password {editingStaff ? "" : "*"}
-                    </label>
-                    <button
-                      type="button"
-                      onClick={handleAutoGeneratePassword}
-                      className="text-[10px] text-amber-600 hover:text-amber-700 font-bold flex items-center gap-1 hover:underline cursor-pointer"
-                      title="Auto-generate a secure random password"
-                    >
-                      <Zap className="h-3 w-3" />
-                      <span>Auto-Generate</span>
-                    </button>
-                  </div>
-                  <div className="relative flex items-center">
-                    <input
-                      type={showPassword ? "text" : "password"}
-                      required={!editingStaff}
-                      value={formData.password}
-                      onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                      placeholder="e.g. CrestOak@2026 or minimum 8 characters"
-                      className="w-full p-2.5 pr-10 bg-white border border-slate-300 rounded-xl focus:outline-none focus:border-slate-900 text-slate-900 text-xs font-mono font-medium"
-                    />
-                    <button
-                      type="button"
-                      onClick={() => setShowPassword(!showPassword)}
-                      className="absolute right-3 text-slate-400 hover:text-slate-600 cursor-pointer"
-                      title={showPassword ? "Hide password" : "Show password"}
-                    >
-                      {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                    </button>
-                  </div>
-                </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                <div className="flex flex-col gap-1">
-                  <label className="text-[10px] uppercase font-bold text-slate-700">Designation *</label>
-                  <input
-                    type="text"
-                    required
-                    value={formData.designation}
-                    onChange={(e) => setFormData({ ...formData, designation: e.target.value })}
-                    placeholder="e.g. Senior Lecturer"
-                    className="p-2.5 bg-white border border-slate-300 rounded-xl focus:outline-none focus:border-slate-900 text-slate-900"
-                  />
-                </div>
-                <div className="flex flex-col gap-1">
-                  <label className="text-[10px] uppercase font-bold text-slate-700">Role / Permission Group *</label>
+                  <label className="text-[10px] uppercase font-bold text-slate-700">Role / Access Group *</label>
                   <select
                     value={formData.roleName}
                     onChange={(e) => setFormData({ ...formData, roleName: e.target.value as any })}
                     className="p-2.5 bg-white border border-slate-300 rounded-xl focus:outline-none focus:border-slate-900 text-slate-900 font-bold"
                   >
                     <option value="LECTURER">LECTURER</option>
+                    <option value="HOD">HOD (Head of Department)</option>
+                    <option value="DEAN">DEAN (Faculty Dean)</option>
                     <option value="STAFF">STAFF (Registry Agent)</option>
                     <option value="BURSAR">BURSAR (Financial Officer)</option>
+                    <option value="REGISTRAR">REGISTRAR</option>
                     <option value="ADMIN">ADMIN (System Admin)</option>
                   </select>
                 </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
                 <div className="flex flex-col gap-1">
                   <label className="text-[10px] uppercase font-bold text-slate-700">Department *</label>
                   <select
@@ -758,48 +809,7 @@ export default function StaffClient({ staffList: initialStaff, departments: rawD
                     ))}
                   </select>
                 </div>
-                <div className="flex flex-col gap-1">
-                  <label className="text-[10px] uppercase font-bold text-slate-700">Joining Date *</label>
-                  <input
-                    type="date"
-                    required
-                    value={formData.joiningDate}
-                    onChange={(e) => setFormData({ ...formData, joiningDate: e.target.value })}
-                    className="p-2.5 bg-white border border-slate-300 rounded-xl focus:outline-none focus:border-slate-900 text-slate-900"
-                  />
-                </div>
               </div>
-
-              {formData.roleName === "LECTURER" && (
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="flex flex-col gap-1">
-                    <label className="text-[10px] uppercase font-bold text-slate-700">Academic Rank *</label>
-                    <select
-                      value={formData.rank}
-                      onChange={(e) => setFormData({ ...formData, rank: e.target.value })}
-                      className="p-2.5 bg-white border border-slate-300 rounded-xl focus:outline-none focus:border-slate-900 text-slate-900 font-bold"
-                    >
-                      <option value="GRADUATE_ASSISTANT">Graduate Assistant</option>
-                      <option value="ASSISTANT_LECTURER">Assistant Lecturer</option>
-                      <option value="LECTURER_II">Lecturer II</option>
-                      <option value="LECTURER_I">Lecturer I</option>
-                      <option value="SENIOR_LECTURER">Senior Lecturer</option>
-                      <option value="ASSOCIATE_PROFESSOR">Associate Professor</option>
-                      <option value="PROFESSOR">Professor</option>
-                    </select>
-                  </div>
-                  <div className="flex flex-col gap-1">
-                    <label className="text-[10px] uppercase font-bold text-slate-700">Academic Specialization / Research Area</label>
-                    <input
-                      type="text"
-                      value={formData.specialization}
-                      onChange={(e) => setFormData({ ...formData, specialization: e.target.value })}
-                      placeholder="e.g. Clinical Nursing & Maternal Health"
-                      className="p-2.5 bg-white border border-slate-300 rounded-xl focus:outline-none focus:border-slate-900 text-slate-900"
-                    />
-                  </div>
-                </div>
-              )}
 
               <div className="pt-4 flex justify-end gap-3 border-t border-slate-100 mt-6">
                 <button
