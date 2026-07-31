@@ -1,3 +1,3 @@
 1:"$Sreact.fragment"
-0:{"rsc":["$","$1","c",{"children":[[["$","script","script-0",{"src":"/_next/static/chunks/15p7ri6j186dk.js","async":true}]],"$L2"]}],"isPartial":false,"staleTime":300,"varyParams":null,"buildId":"0f2BHCurmciLcDXGNFPy3"}
+0:{"rsc":["$","$1","c",{"children":[[["$","script","script-0",{"src":"/_next/static/chunks/15p7ri6j186dk.js","async":true}]],"$L2"]}],"isPartial":false,"staleTime":300,"varyParams":null,"buildId":"397ab8f2WcsBGQc1ytR6J"}
 2:E{"digest":"NEXT_REDIRECT;replace;/login;307;"}
