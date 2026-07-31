@@ -19,53 +19,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
     exit();
 }
 
-function sendStaffCredentialEmail($toEmail, $fullName, $staffId, $rawPassword, $role) {
-    if (empty($toEmail)) {
-        return false;
-    }
-    
-    $subject = "Welcome to CrestOak College - Your Staff Portal Credentials";
-    $portalUrl = "https://staff.crestoakcollege.com.ng";
-
-    $message = "
-    <html>
-    <head>
-      <title>CrestOak College Staff Portal Access</title>
-    </head>
-    <body style='font-family: Arial, sans-serif; color: #333; line-height: 1.6; background-color: #f8fafc; padding: 20px;'>
-      <div style='max-width: 600px; margin: 0 auto; padding: 24px; border: 1px solid #e0e0e0; border-radius: 12px; background-color: #ffffff; box-shadow: 0 4px 12px rgba(0,0,0,0.05);'>
-        <h2 style='color: #0d2e58; margin-top: 0;'>CrestOak College - Staff Portal Credentials</h2>
-        <p>Hello <strong>" . htmlspecialchars($fullName) . "</strong>,</p>
-        <p>Your institutional staff portal account has been provisioned successfully under role <strong>" . htmlspecialchars($role) . "</strong>. Below are your login credentials:</p>
-        <div style='background-color: #f4f6f9; padding: 18px; border-left: 4px solid #0d2e58; margin: 20px 0; border-radius: 6px;'>
-          <p style='margin: 5px 0;'><strong>Staff Identification (SIN):</strong> <span style='font-family: monospace; font-weight: bold; color: #0d2e58;'>" . htmlspecialchars($staffId) . "</span></p>
-          <p style='margin: 5px 0;'><strong>Assigned Role:</strong> <span style='font-weight: bold; color: #0f172a;'>" . htmlspecialchars($role) . "</span></p>
-          <p style='margin: 5px 0;'><strong>Temporary Password:</strong> <span style='font-family: monospace; font-weight: bold; color: #991b1b;'>" . htmlspecialchars($rawPassword) . "</span></p>
-          <p style='margin: 5px 0;'><strong>Staff Portal Login URL:</strong> <a href='" . $portalUrl . "' style='color: #2563eb; font-weight: bold; text-decoration: underline;'>" . $portalUrl . "</a></p>
-        </div>
-        <p>Please log in immediately and update your temporary password for administrative security compliance.</p>
-        <hr style='border: none; border-top: 1px solid #eee; margin: 20px 0;' />
-        <p style='font-size: 12px; color: #777;'>This is an automated system email from CrestOak College of Health Sciences & Medical Technology. Please do not reply directly to this email.</p>
-      </div>
-    </body>
-    </html>
-    ";
-
-    $headers = "MIME-Version: 1.0\r\n";
-    $headers .= "Content-type:text/html;charset=UTF-8\r\n";
-    $headers .= "From: CrestOak College Staff Portal <noreply@crestoakcollege.com.ng>\r\n";
-    $headers .= "Reply-To: info@crestoakcollege.com.ng\r\n";
-    $headers .= "X-Mailer: PHP/" . phpversion();
-
-    return @mail($toEmail, $subject, $message, $headers);
-}
-
 try {
     require_once __DIR__ . '/db.php';
 
     $method = $_SERVER['REQUEST_METHOD'];
     $rawInput = file_get_contents('php://input');
     $input = json_decode($rawInput, true) ?? $_POST ?? [];
+    $data = $input;
 
     $conn = function_exists('getDbConnection') ? getDbConnection() : null;
 
@@ -273,19 +233,52 @@ try {
     }
 
     if ($method === 'POST' || $method === 'PUT') {
-        $action = $input['action'] ?? 'save_staff';
+        $action = $data['action'] ?? 'save_staff';
 
         if ($action === 'password_reset') {
-            $rawPassword = $input['newPassword'] ?? $input['password'] ?? ('CrestOak#' . rand(1000, 9999));
+            $rawPassword = $data['newPassword'] ?? $data['password'] ?? ('CrestOak#' . rand(1000, 9999));
             $hashedPassword = password_hash($rawPassword, PASSWORD_BCRYPT);
-            $staffId = $input['staffNo'] ?? $input['staffId'] ?? 'CCHMT/STF/2026/REG/001';
-            $email = $input['email'] ?? '';
-            $roleName = strtoupper($input['roleName'] ?? $input['role'] ?? 'LECTURER');
+            $staffId = $data['staffNo'] ?? $data['staffId'] ?? 'CCHMT/STF/2026/REG/001';
+            $email = $data['email'] ?? '';
+            $roleName = strtoupper($data['roleName'] ?? $data['role'] ?? 'LECTURER');
 
             $mailSent = false;
             if (!empty($email)) {
+                $toEmail = $email;
                 $fullName = "Staff Member";
-                $mailSent = sendStaffCredentialEmail($email, $fullName, $staffId, $rawPassword, $roleName);
+                $identifier = $staffId;
+
+                $subject = "Welcome to CrestOak College - Your Portal Credentials";
+                $message = "
+                <html>
+                <head>
+                  <title>CrestOak College Portal Access</title>
+                </head>
+                <body style='font-family: Arial, sans-serif; color: #333; line-height: 1.6;'>
+                  <div style='max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e0e0e0; border-radius: 8px;'>
+                    <h2 style='color: #0d2e58;'>CrestOak College - Portal Credentials</h2>
+                    <p>Hello <strong>" . htmlspecialchars($fullName) . "</strong>,</p>
+                    <p>Your institutional portal account has been provisioned successfully. Below are your login credentials:</p>
+                    <div style='background-color: #f4f6f9; padding: 15px; border-left: 4px solid #0d2e58; margin: 20px 0;'>
+                      <p style='margin: 5px 0;'><strong>Portal Identifier / ID:</strong> " . htmlspecialchars($identifier) . "</p>
+                      <p style='margin: 5px 0;'><strong>Temporary Password:</strong> " . htmlspecialchars($rawPassword) . "</p>
+                      <p style='margin: 5px 0;'><strong>Portal Login URL:</strong> <a href='https://staff.crestoakcollege.com.ng' style='color: #0d2e58; text-decoration: underline;'>https://staff.crestoakcollege.com.ng</a></p>
+                    </div>
+                    <p>Please log in immediately and update your temporary password.</p>
+                    <hr style='border: none; border-top: 1px solid #eee; margin: 20px 0;' />
+                    <p style='font-size: 12px; color: #777;'>This is an automated system email from CrestOak College of Health Sciences & Medical Technology. Please do not reply directly to this email.</p>
+                  </div>
+                </body>
+                </html>
+                ";
+
+                $headers = "MIME-Version: 1.0\r\n";
+                $headers .= "Content-type:text/html;charset=UTF-8\r\n";
+                $headers .= "From: CrestOak College Staff Portal <noreply@crestoakcollege.com.ng>\r\n";
+                $headers .= "Reply-To: info@crestoakcollege.com.ng\r\n";
+                $headers .= "X-Mailer: PHP/" . phpversion();
+
+                $mailSent = @mail($toEmail, $subject, $message, $headers);
             }
 
             echo json_encode([
@@ -303,8 +296,8 @@ try {
             exit();
         }
 
-        $firstName = $input['firstName'] ?? $input['first_name'] ?? '';
-        $lastName = $input['lastName'] ?? $input['last_name'] ?? '';
+        $firstName = $data['firstName'] ?? $data['first_name'] ?? '';
+        $lastName = $data['lastName'] ?? $data['last_name'] ?? '';
 
         if (empty($firstName) || empty($lastName)) {
             http_response_code(200);
@@ -312,36 +305,75 @@ try {
             exit();
         }
 
-        $id = $input['id'] ?? ('staff-' . rand(1000, 9999));
-        $staffNo = $input['staffNo'] ?? $input['staff_id'] ?? ('CCHMT/STF/2026/REG/' . str_pad(rand(1, 99), 3, '0', STR_PAD_LEFT));
-        $middleName = $input['middleName'] ?? $input['middle_name'] ?? '';
-        $username = $input['username'] ?? (strtolower($firstName) . '.' . strtolower($lastName));
-        $email = $input['email'] ?? '';
-        $phone = $input['phoneNumber'] ?? $input['phone'] ?? '';
-        $roleName = strtoupper($input['roleName'] ?? $input['role'] ?? 'LECTURER');
-        $departmentId = $input['departmentId'] ?? $input['department'] ?? 'dept-health-001';
-        $designation = $input['designation'] ?? 'Staff';
-        $joiningDate = $input['joiningDate'] ?? $input['joining_date'] ?? date('Y-m-d');
-        $status = $input['status'] ?? 'ACTIVE';
-        $academicRank = $input['rank'] ?? $input['academicRank'] ?? $input['academic_rank'] ?? '';
-        $specialization = $input['specialization'] ?? '';
-        $rawPassword = $input['password'] ?? ('CrestOak#' . rand(1000, 9999));
+        $id = $data['id'] ?? ('staff-' . rand(1000, 9999));
+        $staffNo = $data['staffNo'] ?? $data['staff_id'] ?? ('CCHMT/STF/2026/REG/' . str_pad(rand(1, 99), 3, '0', STR_PAD_LEFT));
+        $middleName = $data['middleName'] ?? $data['middle_name'] ?? '';
+        $username = $data['username'] ?? (strtolower($firstName) . '.' . strtolower($lastName));
+        $email = $data['email'] ?? '';
+        $phone = $data['phoneNumber'] ?? $data['phone'] ?? '';
+        $roleName = strtoupper($data['roleName'] ?? $data['role'] ?? 'LECTURER');
+        $departmentId = $data['departmentId'] ?? $data['department'] ?? 'dept-health-001';
+        $designation = $data['designation'] ?? 'Staff';
+        $joiningDate = $data['joiningDate'] ?? $data['joining_date'] ?? date('Y-m-d');
+        $status = $data['status'] ?? 'ACTIVE';
+        $academicRank = $data['rank'] ?? $data['academicRank'] ?? $data['academic_rank'] ?? '';
+        $specialization = $data['specialization'] ?? '';
+        $rawPassword = $data['password'] ?? $data['initialPassword'] ?? ('CrestOak#' . rand(1000, 9999));
         $passwordHash = password_hash($rawPassword, PASSWORD_BCRYPT);
-        $sendEmail = !empty($input['sendEmail']);
-        $forcePasswordChange = isset($input['forcePasswordChange']) ? !empty($input['forcePasswordChange']) : true;
+        $sendEmail = !empty($data['sendEmail']);
+        $forcePasswordChange = isset($data['forcePasswordChange']) ? !empty($data['forcePasswordChange']) : true;
 
         $deptName = 'Department of Nursing Sciences';
         foreach ($defaultDepartments as $d) {
-            if ($d['id'] === $departmentId || $d['id'] === $input['department']) {
+            if ($d['id'] === $departmentId || $d['id'] === $data['department']) {
                 $deptName = $d['name'];
                 break;
             }
         }
 
+        // Native HTML Email Dispatch Snippet
         $mailSent = false;
-        if (($sendEmail || !empty($input['sendEmail'])) && !empty($email)) {
-            $fullName = trim("$firstName $lastName") ?: "Staff Member";
-            $mailSent = sendStaffCredentialEmail($email, $fullName, $staffNo, $rawPassword, $roleName);
+        if (!empty($data['sendEmail']) && !empty($data['email'])) {
+            $toEmail = $data['email'];
+            $fullName = trim(($data['firstName'] ?? '') . ' ' . ($data['lastName'] ?? '')) ?: 'Staff Member';
+            $identifier = $data['staffNo'] ?? $data['staffId'] ?? $data['email'];
+            $rawPassword = $data['password'] ?? $data['initialPassword'] ?? $rawPassword;
+
+            $subject = "Welcome to CrestOak College - Your Portal Credentials";
+            
+            // HTML Email Template
+            $message = "
+            <html>
+            <head>
+              <title>CrestOak College Portal Access</title>
+            </head>
+            <body style='font-family: Arial, sans-serif; color: #333; line-height: 1.6;'>
+              <div style='max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e0e0e0; border-radius: 8px;'>
+                <h2 style='color: #0d2e58;'>CrestOak College - Portal Credentials</h2>
+                <p>Hello <strong>" . htmlspecialchars($fullName) . "</strong>,</p>
+                <p>Your institutional portal account has been provisioned successfully. Below are your login credentials:</p>
+                <div style='background-color: #f4f6f9; padding: 15px; border-left: 4px solid #0d2e58; margin: 20px 0;'>
+                  <p style='margin: 5px 0;'><strong>Portal Identifier / ID:</strong> " . htmlspecialchars($identifier) . "</p>
+                  <p style='margin: 5px 0;'><strong>Temporary Password:</strong> " . htmlspecialchars($rawPassword) . "</p>
+                  <p style='margin: 5px 0;'><strong>Portal Login URL:</strong> <a href='https://staff.crestoakcollege.com.ng' style='color: #0d2e58; text-decoration: underline;'>https://staff.crestoakcollege.com.ng</a></p>
+                </div>
+                <p>Please log in immediately and update your temporary password.</p>
+                <hr style='border: none; border-top: 1px solid #eee; margin: 20px 0;' />
+                <p style='font-size: 12px; color: #777;'>This is an automated system email from CrestOak College of Health Sciences & Medical Technology. Please do not reply directly to this email.</p>
+              </div>
+            </body>
+            </html>
+            ";
+
+            // Standard MIME Headers for HTML Delivery
+            $headers = "MIME-Version: 1.0\r\n";
+            $headers .= "Content-type:text/html;charset=UTF-8\r\n";
+            $headers .= "From: CrestOak College Staff Portal <noreply@crestoakcollege.com.ng>\r\n";
+            $headers .= "Reply-To: info@crestoakcollege.com.ng\r\n";
+            $headers .= "X-Mailer: PHP/" . phpversion();
+
+            // Send Mail
+            $mailSent = @mail($toEmail, $subject, $message, $headers);
         }
 
         echo json_encode([
@@ -356,7 +388,7 @@ try {
                 "joiningDate" => $joiningDate,
                 "status" => $status,
                 "lastLogin" => date('Y-m-d H:i:s'),
-                "allocatedCourses" => $input['allocatedCourses'] ?? ["NUR101"],
+                "allocatedCourses" => $data['allocatedCourses'] ?? ["NUR101"],
                 "temporaryPassword" => $rawPassword,
                 "email" => $email,
                 "role" => $roleName,

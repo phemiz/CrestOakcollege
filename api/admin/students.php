@@ -18,52 +18,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
     exit();
 }
 
-function sendStudentCredentialEmail($toEmail, $fullName, $matricNo, $rawPassword) {
-    if (empty($toEmail)) {
-        return false;
-    }
-    
-    $subject = "Welcome to CrestOak College - Your Portal Credentials";
-    $portalUrl = "https://portal.crestoakcollege.com.ng";
-
-    $message = "
-    <html>
-    <head>
-      <title>CrestOak College Portal Access</title>
-    </head>
-    <body style='font-family: Arial, sans-serif; color: #333; line-height: 1.6; background-color: #f8fafc; padding: 20px;'>
-      <div style='max-width: 600px; margin: 0 auto; padding: 24px; border: 1px solid #e0e0e0; border-radius: 12px; background-color: #ffffff; box-shadow: 0 4px 12px rgba(0,0,0,0.05);'>
-        <h2 style='color: #0d2e58; margin-top: 0;'>CrestOak College - Portal Credentials</h2>
-        <p>Hello <strong>" . htmlspecialchars($fullName) . "</strong>,</p>
-        <p>Your institutional portal account has been provisioned successfully. Below are your login credentials:</p>
-        <div style='background-color: #f4f6f9; padding: 18px; border-left: 4px solid #0d2e58; margin: 20px 0; border-radius: 6px;'>
-          <p style='margin: 5px 0;'><strong>Portal Identifier / Matric No:</strong> <span style='font-family: monospace; font-weight: bold; color: #0d2e58;'>" . htmlspecialchars($matricNo) . "</span></p>
-          <p style='margin: 5px 0;'><strong>Temporary Password:</strong> <span style='font-family: monospace; font-weight: bold; color: #991b1b;'>" . htmlspecialchars($rawPassword) . "</span></p>
-          <p style='margin: 5px 0;'><strong>Portal Login URL:</strong> <a href='" . $portalUrl . "' style='color: #2563eb; font-weight: bold; text-decoration: underline;'>" . $portalUrl . "</a></p>
-        </div>
-        <p>Please log in immediately and update your temporary password for account security.</p>
-        <hr style='border: none; border-top: 1px solid #eee; margin: 20px 0;' />
-        <p style='font-size: 12px; color: #777;'>This is an automated system email from CrestOak College of Health Sciences & Medical Technology. Please do not reply directly to this email.</p>
-      </div>
-    </body>
-    </html>
-    ";
-
-    $headers = "MIME-Version: 1.0\r\n";
-    $headers .= "Content-type:text/html;charset=UTF-8\r\n";
-    $headers .= "From: CrestOak College Portal <noreply@crestoakcollege.com.ng>\r\n";
-    $headers .= "Reply-To: info@crestoakcollege.com.ng\r\n";
-    $headers .= "X-Mailer: PHP/" . phpversion();
-
-    return @mail($toEmail, $subject, $message, $headers);
-}
-
 try {
     require_once __DIR__ . '/db.php';
 
     $method = $_SERVER['REQUEST_METHOD'];
     $rawInput = file_get_contents('php://input');
     $input = json_decode($rawInput, true) ?? $_POST ?? [];
+    $data = $input;
 
     $conn = function_exists('getDbConnection') ? getDbConnection() : null;
 
@@ -276,16 +237,16 @@ try {
     }
 
     if ($method === 'POST' || $method === 'PUT') {
-        $action = $input['action'] ?? 'save_student';
-        $id = $input['id'] ?? ('stu-' . rand(1000, 9999));
-        $matricNo = $input['matricNo'] ?? $input['matric_no'] ?? ('CCHMS/2026/REG/' . str_pad(rand(1, 999), 4, '0', STR_PAD_LEFT));
-        $firstName = $input['firstName'] ?? $input['first_name'] ?? '';
-        $lastName = $input['lastName'] ?? $input['last_name'] ?? '';
-        $email = $input['email'] ?? '';
+        $action = $data['action'] ?? 'save_student';
+        $id = $data['id'] ?? ('stu-' . rand(1000, 9999));
+        $matricNo = $data['matricNo'] ?? $data['matric_no'] ?? ('CCHMS/2026/REG/' . str_pad(rand(1, 999), 4, '0', STR_PAD_LEFT));
+        $firstName = $data['firstName'] ?? $data['first_name'] ?? '';
+        $lastName = $data['lastName'] ?? $data['last_name'] ?? '';
+        $email = $data['email'] ?? '';
 
         if ($action === 'toggle_hold') {
-            $newStatus = $input['status'] ?? 'FINANCIAL_HOLD';
-            $holdReason = $input['holdReason'] ?? 'Administrative Hold Placed';
+            $newStatus = $data['status'] ?? 'FINANCIAL_HOLD';
+            $holdReason = $data['holdReason'] ?? 'Administrative Hold Placed';
             
             echo json_encode([
                 "success" => true,
@@ -297,8 +258,8 @@ try {
         }
 
         if ($action === 'academic_override') {
-            $newCgpa = floatval($input['cgpa'] ?? 4.0);
-            $reason = $input['reason'] ?? 'Grade Rectification';
+            $newCgpa = floatval($data['cgpa'] ?? 4.0);
+            $reason = $data['reason'] ?? 'Grade Rectification';
             echo json_encode([
                 "success" => true,
                 "message" => "Academic override applied successfully.",
@@ -309,14 +270,47 @@ try {
         }
 
         if ($action === 'password_reset') {
-            $rawPassword = $input['newPassword'] ?? $input['password'] ?? ('CrestOak#' . rand(1000, 9999));
+            $rawPassword = $data['newPassword'] ?? $data['password'] ?? ('CrestOak#' . rand(1000, 9999));
             $hashedPassword = password_hash($rawPassword, PASSWORD_BCRYPT);
             $magicLink = "https://portal.crestoakcollege.com.ng/login?magicToken=" . md5($matricNo . time());
             
             $mailSent = false;
             if (!empty($email)) {
+                $toEmail = $email;
                 $fullName = trim("$firstName $lastName") ?: "Student";
-                $mailSent = sendStudentCredentialEmail($email, $fullName, $matricNo, $rawPassword);
+                $identifier = $matricNo;
+
+                $subject = "Welcome to CrestOak College - Your Portal Credentials";
+                $message = "
+                <html>
+                <head>
+                  <title>CrestOak College Portal Access</title>
+                </head>
+                <body style='font-family: Arial, sans-serif; color: #333; line-height: 1.6;'>
+                  <div style='max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e0e0e0; border-radius: 8px;'>
+                    <h2 style='color: #0d2e58;'>CrestOak College - Portal Credentials</h2>
+                    <p>Hello <strong>" . htmlspecialchars($fullName) . "</strong>,</p>
+                    <p>Your institutional portal account has been provisioned successfully. Below are your login credentials:</p>
+                    <div style='background-color: #f4f6f9; padding: 15px; border-left: 4px solid #0d2e58; margin: 20px 0;'>
+                      <p style='margin: 5px 0;'><strong>Portal Identifier / ID:</strong> " . htmlspecialchars($identifier) . "</p>
+                      <p style='margin: 5px 0;'><strong>Temporary Password:</strong> " . htmlspecialchars($rawPassword) . "</p>
+                      <p style='margin: 5px 0;'><strong>Portal Login URL:</strong> <a href='https://portal.crestoakcollege.com.ng' style='color: #0d2e58; text-decoration: underline;'>https://portal.crestoakcollege.com.ng</a></p>
+                    </div>
+                    <p>Please log in immediately and update your temporary password.</p>
+                    <hr style='border: none; border-top: 1px solid #eee; margin: 20px 0;' />
+                    <p style='font-size: 12px; color: #777;'>This is an automated system email from CrestOak College of Health Sciences & Medical Technology. Please do not reply directly to this email.</p>
+                  </div>
+                </body>
+                </html>
+                ";
+
+                $headers = "MIME-Version: 1.0\r\n";
+                $headers .= "Content-type:text/html;charset=UTF-8\r\n";
+                $headers .= "From: CrestOak College Portal <noreply@crestoakcollege.com.ng>\r\n";
+                $headers .= "Reply-To: info@crestoakcollege.com.ng\r\n";
+                $headers .= "X-Mailer: PHP/" . phpversion();
+
+                $mailSent = @mail($toEmail, $subject, $message, $headers);
             }
 
             echo json_encode([
@@ -335,13 +329,13 @@ try {
         }
 
         // Standard student creation / edit
-        $rawPassword = $input['password'] ?? ('CrestOak#' . rand(1000, 9999));
+        $rawPassword = $data['password'] ?? $data['initialPassword'] ?? ('CrestOak#' . rand(1000, 9999));
         $hashedPassword = password_hash($rawPassword, PASSWORD_BCRYPT);
-        $sendEmail = !empty($input['sendEmail']);
-        $forcePasswordChange = isset($input['forcePasswordChange']) ? !empty($input['forcePasswordChange']) : true;
+        $sendEmail = !empty($data['sendEmail']);
+        $forcePasswordChange = isset($data['forcePasswordChange']) ? !empty($data['forcePasswordChange']) : true;
 
-        $departmentId = $input['departmentId'] ?? 'dept-health-001';
-        $programmeId = $input['programmeId'] ?? 'prog-001';
+        $departmentId = $data['departmentId'] ?? 'dept-health-001';
+        $programmeId = $data['programmeId'] ?? 'prog-001';
         $deptName = 'Department of Nursing Sciences';
         $progName = 'Nursing Sciences (B.N.Sc)';
 
@@ -352,11 +346,49 @@ try {
             if ($p['id'] === $programmeId) $progName = $p['name'];
         }
 
-        // Mail Dispatch Check
+        // Native HTML Mail Delivery Snippet
         $mailSent = false;
-        if (($sendEmail || !empty($input['sendEmail'])) && !empty($email)) {
-            $fullName = trim("$firstName $lastName") ?: "Student";
-            $mailSent = sendStudentCredentialEmail($email, $fullName, $matricNo, $rawPassword);
+        if (!empty($data['sendEmail']) && !empty($data['email'])) {
+            $toEmail = $data['email'];
+            $fullName = trim(($data['firstName'] ?? '') . ' ' . ($data['lastName'] ?? '')) ?: 'Student';
+            $identifier = $data['matricNo'] ?? $data['staffId'] ?? $data['email'];
+            $rawPassword = $data['password'] ?? $data['initialPassword'] ?? $rawPassword;
+
+            $subject = "Welcome to CrestOak College - Your Portal Credentials";
+            
+            // HTML Email Template
+            $message = "
+            <html>
+            <head>
+              <title>CrestOak College Portal Access</title>
+            </head>
+            <body style='font-family: Arial, sans-serif; color: #333; line-height: 1.6;'>
+              <div style='max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e0e0e0; border-radius: 8px;'>
+                <h2 style='color: #0d2e58;'>CrestOak College - Portal Credentials</h2>
+                <p>Hello <strong>" . htmlspecialchars($fullName) . "</strong>,</p>
+                <p>Your institutional portal account has been provisioned successfully. Below are your login credentials:</p>
+                <div style='background-color: #f4f6f9; padding: 15px; border-left: 4px solid #0d2e58; margin: 20px 0;'>
+                  <p style='margin: 5px 0;'><strong>Portal Identifier / ID:</strong> " . htmlspecialchars($identifier) . "</p>
+                  <p style='margin: 5px 0;'><strong>Temporary Password:</strong> " . htmlspecialchars($rawPassword) . "</p>
+                  <p style='margin: 5px 0;'><strong>Portal Login URL:</strong> <a href='https://portal.crestoakcollege.com.ng' style='color: #0d2e58; text-decoration: underline;'>https://portal.crestoakcollege.com.ng</a></p>
+                </div>
+                <p>Please log in immediately and update your temporary password.</p>
+                <hr style='border: none; border-top: 1px solid #eee; margin: 20px 0;' />
+                <p style='font-size: 12px; color: #777;'>This is an automated system email from CrestOak College of Health Sciences & Medical Technology. Please do not reply directly to this email.</p>
+              </div>
+            </body>
+            </html>
+            ";
+
+            // Standard MIME Headers for HTML Delivery
+            $headers = "MIME-Version: 1.0\r\n";
+            $headers .= "Content-type:text/html;charset=UTF-8\r\n";
+            $headers .= "From: CrestOak College Portal <noreply@crestoakcollege.com.ng>\r\n";
+            $headers .= "Reply-To: info@crestoakcollege.com.ng\r\n";
+            $headers .= "X-Mailer: PHP/" . phpversion();
+
+            // Send Mail
+            $mailSent = @mail($toEmail, $subject, $message, $headers);
         }
 
         echo json_encode([
@@ -366,18 +398,18 @@ try {
             "student" => [
                 "id" => $id,
                 "matricNo" => $matricNo,
-                "level" => intval($input['level'] ?? 100),
-                "cgpa" => floatval($input['cgpa'] ?? 4.0),
-                "gpa" => floatval($input['gpa'] ?? 4.0),
-                "status" => $input['status'] ?? 'ACTIVE',
-                "holdReason" => $input['holdReason'] ?? null,
+                "level" => intval($data['level'] ?? 100),
+                "cgpa" => floatval($data['cgpa'] ?? 4.0),
+                "gpa" => floatval($data['gpa'] ?? 4.0),
+                "status" => $data['status'] ?? 'ACTIVE',
+                "holdReason" => $data['holdReason'] ?? null,
                 "user" => [
                     "firstName" => $firstName,
                     "lastName" => $lastName,
-                    "middleName" => $input['middleName'] ?? "",
+                    "middleName" => $data['middleName'] ?? "",
                     "email" => $email,
-                    "phoneNumber" => $input['phoneNumber'] ?? "",
-                    "dob" => $input['dob'] ?? "2004-01-01"
+                    "phoneNumber" => $data['phoneNumber'] ?? "",
+                    "dob" => $data['dob'] ?? "2004-01-01"
                 ],
                 "department" => ["id" => $departmentId, "name" => $deptName],
                 "programme" => ["id" => $programmeId, "name" => $progName],
