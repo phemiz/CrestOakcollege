@@ -20,7 +20,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
 
 $storeFile = __DIR__ . '/students_store.json';
 
+if (!file_exists($storeFile)) {
+    @file_put_contents($storeFile, json_encode([], JSON_PRETTY_PRINT));
+    @chmod($storeFile, 0666);
+}
+
 function readJsonStore($filePath) {
+    if (!file_exists($filePath)) {
+        @file_put_contents($filePath, json_encode([], JSON_PRETTY_PRINT));
+        @chmod($filePath, 0666);
+    }
     if (file_exists($filePath)) {
         $content = @file_get_contents($filePath);
         $data = @json_decode($content, true);
@@ -33,7 +42,11 @@ function readJsonStore($filePath) {
 
 function writeJsonStore($filePath, array $items) {
     $json = json_encode($items, JSON_PRETTY_PRINT);
-    return @file_put_contents($filePath, $json) !== false;
+    $written = @file_put_contents($filePath, $json) !== false;
+    if ($written) {
+        @chmod($filePath, 0666);
+    }
+    return $written;
 }
 
 try {
