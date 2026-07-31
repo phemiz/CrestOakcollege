@@ -49,6 +49,83 @@ function writeJsonStore($filePath, array $items) {
     return $written;
 }
 
+function sendViaSMTP($toEmail, $subject, $htmlMessage, $portalName = 'CrestOak College Portal') {
+    $from = 'noreply@crestoakcollege.com.ng';
+    $replyTo = 'info@crestoakcollege.com.ng';
+
+    // DirectAdmin Local SMTP Settings
+    $smtpHost = 'ssl://mail.crestoakcollege.com.ng';
+    $smtpPort = 465;
+    $username = 'noreply@crestoakcollege.com.ng';
+    $password = 'CrestOakMailer2026!';
+
+    $mailSent = false;
+
+    if (function_exists('fsockopen')) {
+        try {
+            $socket = @fsockopen($smtpHost, $smtpPort, $errno, $errstr, 5);
+            if ($socket) {
+                fgets($socket, 512);
+                fputs($socket, "EHLO crestoakcollege.com.ng\r\n");
+                fgets($socket, 512);
+                
+                fputs($socket, "AUTH LOGIN\r\n");
+                fgets($socket, 512);
+                fputs($socket, base64_encode($username) . "\r\n");
+                fgets($socket, 512);
+                fputs($socket, base64_encode($password) . "\r\n");
+                $authResp = fgets($socket, 512);
+
+                if (strpos($authResp, '235') !== false || strpos($authResp, '250') !== false) {
+                    fputs($socket, "MAIL FROM: <$from>\r\n");
+                    fgets($socket, 512);
+                    fputs($socket, "RCPT TO: <$toEmail>\r\n");
+                    fgets($socket, 512);
+                    fputs($socket, "DATA\r\n");
+                    fgets($socket, 512);
+
+                    $headers = "MIME-Version: 1.0\r\n";
+                    $headers .= "Content-Type: text/html; charset=UTF-8\r\n";
+                    $headers .= "From: $portalName <$from>\r\n";
+                    $headers .= "To: <$toEmail>\r\n";
+                    $headers .= "Reply-To: $replyTo\r\n";
+                    $headers .= "Subject: $subject\r\n\r\n";
+
+                    fputs($socket, $headers . $htmlMessage . "\r\n.\r\n");
+                    $dataResp = fgets($socket, 512);
+                    if (strpos($dataResp, '250') !== false) {
+                        $mailSent = true;
+                    }
+                    fputs($socket, "QUIT\r\n");
+                    fclose($socket);
+                } else {
+                    fclose($socket);
+                }
+            }
+        } catch (Throwable $e) {}
+    }
+
+    if (!$mailSent) {
+        $headers  = "MIME-Version: 1.0\r\n";
+        $headers .= "Content-Type: text/html; charset=UTF-8\r\n";
+        $headers .= "From: $portalName <" . $from . ">\r\n";
+        $headers .= "Reply-To: " . $replyTo . "\r\n";
+        $headers .= "X-Mailer: PHP/" . phpversion();
+
+        $additionalParams = "-f" . $from;
+        $mailSent = @mail($toEmail, $subject, $htmlMessage, $headers, $additionalParams);
+        if (!$mailSent) {
+            $mailSent = @mail($toEmail, $subject, $htmlMessage, $headers);
+        }
+    }
+
+    if (!$mailSent) {
+        error_log("SMTP_FAIL: Could not deliver email to " . $toEmail);
+    }
+
+    return $mailSent;
+}
+
 try {
     require_once __DIR__ . '/db.php';
 
@@ -347,16 +424,7 @@ try {
                 </html>
                 ";
 
-                $headers = "MIME-Version: 1.0\r\n";
-                $headers .= "Content-type:text/html;charset=UTF-8\r\n";
-                $headers .= "From: CrestOak College Portal <noreply@crestoakcollege.com.ng>\r\n";
-                $headers .= "Reply-To: info@crestoakcollege.com.ng\r\n";
-                $headers .= "X-Mailer: PHP/" . phpversion();
-
-                $mailSent = mail($toEmail, $subject, $message, $headers);
-                if (!$mailSent) {
-                    error_log("MAIL_ERROR: Failed sending email to " . $toEmail);
-                }
+                $mailSent = sendViaSMTP($toEmail, $subject, $message, "CrestOak College Student Portal");
             }
 
             echo json_encode([
@@ -506,7 +574,7 @@ try {
             exit();
         }
 
-        // Native HTML Mail Delivery Snippet
+        // Native HTML Mail Delivery Snippet via sendViaSMTP helper
         $mailSent = false;
         if (!empty($data['sendEmail']) && !empty($data['email'])) {
             $toEmail = $data['email'];
@@ -540,18 +608,7 @@ try {
             </html>
             ";
 
-            // Standard MIME Headers for HTML Delivery
-            $headers = "MIME-Version: 1.0\r\n";
-            $headers .= "Content-type:text/html;charset=UTF-8\r\n";
-            $headers .= "From: CrestOak College Portal <noreply@crestoakcollege.com.ng>\r\n";
-            $headers .= "Reply-To: info@crestoakcollege.com.ng\r\n";
-            $headers .= "X-Mailer: PHP/" . phpversion();
-
-            // Send Mail
-            $mailSent = mail($toEmail, $subject, $message, $headers);
-            if (!$mailSent) {
-                error_log("MAIL_ERROR: Failed sending email to " . $toEmail);
-            }
+            $mailSent = sendViaSMTP($toEmail, $subject, $message, "CrestOak College Student Portal");
         }
 
         echo json_encode([

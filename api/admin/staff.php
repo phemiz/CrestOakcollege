@@ -1,5 +1,4 @@
 <?php
-// Bulletproof JSON API Header & Error Handler
 ini_set('display_errors', 0);
 error_reporting(E_ALL);
 
@@ -26,7 +25,7 @@ if (!file_exists($storeFile)) {
     @chmod($storeFile, 0666);
 }
 
-function readStaffJsonStore($filePath) {
+function readJsonStore($filePath) {
     if (!file_exists($filePath)) {
         @file_put_contents($filePath, json_encode([], JSON_PRETTY_PRINT));
         @chmod($filePath, 0666);
@@ -41,13 +40,90 @@ function readStaffJsonStore($filePath) {
     return [];
 }
 
-function writeStaffJsonStore($filePath, array $items) {
+function writeJsonStore($filePath, array $items) {
     $json = json_encode($items, JSON_PRETTY_PRINT);
     $written = @file_put_contents($filePath, $json) !== false;
     if ($written) {
         @chmod($filePath, 0666);
     }
     return $written;
+}
+
+function sendViaSMTP($toEmail, $subject, $htmlMessage, $portalName = 'CrestOak College Staff Portal') {
+    $from = 'noreply@crestoakcollege.com.ng';
+    $replyTo = 'info@crestoakcollege.com.ng';
+
+    // DirectAdmin Local SMTP Settings
+    $smtpHost = 'ssl://mail.crestoakcollege.com.ng';
+    $smtpPort = 465;
+    $username = 'noreply@crestoakcollege.com.ng';
+    $password = 'CrestOakMailer2026!';
+
+    $mailSent = false;
+
+    if (function_exists('fsockopen')) {
+        try {
+            $socket = @fsockopen($smtpHost, $smtpPort, $errno, $errstr, 5);
+            if ($socket) {
+                fgets($socket, 512);
+                fputs($socket, "EHLO crestoakcollege.com.ng\r\n");
+                fgets($socket, 512);
+                
+                fputs($socket, "AUTH LOGIN\r\n");
+                fgets($socket, 512);
+                fputs($socket, base64_encode($username) . "\r\n");
+                fgets($socket, 512);
+                fputs($socket, base64_encode($password) . "\r\n");
+                $authResp = fgets($socket, 512);
+
+                if (strpos($authResp, '235') !== false || strpos($authResp, '250') !== false) {
+                    fputs($socket, "MAIL FROM: <$from>\r\n");
+                    fgets($socket, 512);
+                    fputs($socket, "RCPT TO: <$toEmail>\r\n");
+                    fgets($socket, 512);
+                    fputs($socket, "DATA\r\n");
+                    fgets($socket, 512);
+
+                    $headers = "MIME-Version: 1.0\r\n";
+                    $headers .= "Content-Type: text/html; charset=UTF-8\r\n";
+                    $headers .= "From: $portalName <$from>\r\n";
+                    $headers .= "To: <$toEmail>\r\n";
+                    $headers .= "Reply-To: $replyTo\r\n";
+                    $headers .= "Subject: $subject\r\n\r\n";
+
+                    fputs($socket, $headers . $htmlMessage . "\r\n.\r\n");
+                    $dataResp = fgets($socket, 512);
+                    if (strpos($dataResp, '250') !== false) {
+                        $mailSent = true;
+                    }
+                    fputs($socket, "QUIT\r\n");
+                    fclose($socket);
+                } else {
+                    fclose($socket);
+                }
+            }
+        } catch (Throwable $e) {}
+    }
+
+    if (!$mailSent) {
+        $headers  = "MIME-Version: 1.0\r\n";
+        $headers .= "Content-Type: text/html; charset=UTF-8\r\n";
+        $headers .= "From: $portalName <" . $from . ">\r\n";
+        $headers .= "Reply-To: " . $replyTo . "\r\n";
+        $headers .= "X-Mailer: PHP/" . phpversion();
+
+        $additionalParams = "-f" . $from;
+        $mailSent = @mail($toEmail, $subject, $htmlMessage, $headers, $additionalParams);
+        if (!$mailSent) {
+            $mailSent = @mail($toEmail, $subject, $htmlMessage, $headers);
+        }
+    }
+
+    if (!$mailSent) {
+        error_log("SMTP_FAIL: Could not deliver email to " . $toEmail);
+    }
+
+    return $mailSent;
 }
 
 try {
@@ -65,112 +141,78 @@ try {
         ["id" => "dept-health-002", "name" => "Department of Medical Laboratory Science"],
         ["id" => "dept-health-003", "name" => "Department of Community Health Sciences"],
         ["id" => "dept-mgmt-001", "name" => "Department of Business Administration"],
-        ["id" => "dept-tech-001", "name" => "Department of Computer Science & IT"],
-        ["id" => "dept-reg-001", "name" => "Registry & Academic Affairs"],
-        ["id" => "dept-bur-001", "name" => "Bursary & Financial Services"]
+        ["id" => "dept-tech-001", "name" => "Department of Computer Science & IT"]
     ];
 
-    $defaultRoles = [
-        ["id" => "role-admin", "name" => "ADMIN"],
-        ["id" => "role-super-admin", "name" => "SUPER_ADMIN"],
-        ["id" => "role-registrar", "name" => "REGISTRAR"],
-        ["id" => "role-bursar", "name" => "BURSAR"],
-        ["id" => "role-dean", "name" => "DEAN"],
-        ["id" => "role-hod", "name" => "HOD"],
-        ["id" => "role-lecturer", "name" => "LECTURER"],
-        ["id" => "role-staff", "name" => "STAFF"]
+    $defaultCourses = [
+        ["id" => "crs-n101", "code" => "NUR 101", "title" => "Foundations of Nursing Practice"],
+        ["id" => "crs-n102", "code" => "NUR 102", "title" => "Human Anatomy & Physiology I"],
+        ["id" => "crs-m201", "code" => "MLS 201", "title" => "Clinical Biochemistry"],
+        ["id" => "crs-m202", "code" => "MLS 202", "title" => "Haematology & Blood Transfusion"],
+        ["id" => "crs-c101", "code" => "CHEW 101", "title" => "Primary Healthcare & Epidemiology"],
+        ["id" => "crs-cs101", "code" => "CSC 101", "title" => "Introduction to Artificial Intelligence in Healthcare"]
     ];
 
     $defaultStaff = [
         [
-            "id" => "staff-001",
-            "staffNo" => "CCHMT/STF/2026/NUR/012",
-            "designation" => "Senior Lecturer & Clinical Supervisor",
-            "joiningDate" => "2024-09-01",
+            "id" => "stf-001",
+            "username" => "adeyemi.emmanuel",
+            "staffNo" => "CCHMT/STF/2026/NUR/001",
+            "designation" => "Senior Lecturer & Head of Department",
             "status" => "ACTIVE",
-            "lastLogin" => date('Y-m-d H:i:s', strtotime('-1 hour')),
-            "allocatedCourses" => ["NUR101", "NUR102"],
+            "joiningDate" => "2023-09-01",
+            "rank" => "SENIOR_LECTURER",
+            "specialization" => "Clinical Nursing & Patient Care",
+            "allocatedCourses" => ["NUR 101", "NUR 102"],
             "user" => [
-                "id" => "u-staff-001",
-                "username" => "emmanuel.adeyemi",
-                "firstName" => "Dr. Emmanuel",
+                "firstName" => "Emmanuel",
                 "lastName" => "Adeyemi",
                 "middleName" => "Oluwaseun",
                 "email" => "emmanuel.adeyemi@crestoakcollege.com.ng",
-                "phoneNumber" => "08023456789",
-                "role" => ["name" => "LECTURER"]
+                "phoneNumber" => "08033445566",
+                "roleName" => "HOD"
             ],
-            "department" => ["id" => "dept-health-001", "name" => "Department of Nursing Sciences"],
-            "lecturer" => [
-                "rank" => "SENIOR_LECTURER",
-                "specialization" => "Clinical Nursing & Maternal Health"
-            ]
+            "department" => ["id" => "dept-health-001", "name" => "Department of Nursing Sciences"]
         ],
         [
-            "id" => "staff-002",
-            "staffNo" => "CCHMT/STF/2026/SCS/001",
-            "designation" => "Head of Department & Senior Lecturer",
-            "joiningDate" => "2024-10-15",
+            "id" => "stf-002",
+            "username" => "okoro.grace",
+            "staffNo" => "CCHMT/ADM/2026/REG/002",
+            "designation" => "Deputy Registrar (Academic Affairs)",
             "status" => "ACTIVE",
-            "lastLogin" => date('Y-m-d H:i:s', strtotime('-3 hours')),
-            "allocatedCourses" => ["CSC101", "CSC301"],
-            "user" => [
-                "id" => "u-staff-002",
-                "username" => "femi.adebayo",
-                "firstName" => "Femi",
-                "lastName" => "Adebayo",
-                "middleName" => "Olayinka",
-                "email" => "femi.adebayo@crestoakcollege.com.ng",
-                "phoneNumber" => "08034567890",
-                "role" => ["name" => "HOD"]
-            ],
-            "department" => ["id" => "dept-tech-001", "name" => "Department of Computer Science & IT"],
-            "lecturer" => [
-                "rank" => "SENIOR_LECTURER",
-                "specialization" => "Software Engineering & Systems Architecture"
-            ]
-        ],
-        [
-            "id" => "staff-003",
-            "staffNo" => "CCHMT/ADM/2026/BUR/002",
-            "designation" => "Bursary Financial Officer",
-            "joiningDate" => "2025-01-15",
-            "status" => "ACTIVE",
-            "lastLogin" => date('Y-m-d H:i:s', strtotime('-1 day')),
+            "joiningDate" => "2024-01-15",
+            "rank" => "REGISTRAR_OFFICER",
+            "specialization" => "Institutional Governance & Admissions",
             "allocatedCourses" => [],
             "user" => [
-                "id" => "u-staff-003",
-                "username" => "grace.okoro",
                 "firstName" => "Grace",
                 "lastName" => "Okoro",
-                "middleName" => "Chidimma",
+                "middleName" => "Nneka",
                 "email" => "grace.okoro@crestoakcollege.com.ng",
-                "phoneNumber" => "08129876543",
-                "role" => ["name" => "BURSAR"]
+                "phoneNumber" => "08144556677",
+                "roleName" => "REGISTRAR"
             ],
-            "department" => ["id" => "dept-bur-001", "name" => "Bursary & Financial Services"],
-            "lecturer" => null
+            "department" => ["id" => "dept-mgmt-001", "name" => "Department of Business Administration"]
         ],
         [
-            "id" => "staff-004",
-            "staffNo" => "CCHMT/ADM/2026/REG/003",
-            "designation" => "Registrar & Chief Academic Officer",
-            "joiningDate" => "2024-08-01",
+            "id" => "stf-003",
+            "username" => "bello.ibrahim",
+            "staffNo" => "CCHMT/STF/2026/MLS/003",
+            "designation" => "Lecturer I",
             "status" => "ACTIVE",
-            "lastLogin" => date('Y-m-d H:i:s', strtotime('-20 mins')),
-            "allocatedCourses" => [],
+            "joiningDate" => "2024-03-01",
+            "rank" => "LECTURER_I",
+            "specialization" => "Molecular Diagnostics",
+            "allocatedCourses" => ["MLS 201", "MLS 202"],
             "user" => [
-                "id" => "u-staff-004",
-                "username" => "babatunde.lawal",
-                "firstName" => "Dr. Babatunde",
-                "lastName" => "Lawal",
-                "middleName" => "Adekunle",
-                "email" => "babatunde.lawal@crestoakcollege.com.ng",
-                "phoneNumber" => "08055667788",
-                "role" => ["name" => "REGISTRAR"]
+                "firstName" => "Ibrahim",
+                "lastName" => "Bello",
+                "middleName" => "Garba",
+                "email" => "ibrahim.bello@crestoakcollege.com.ng",
+                "phoneNumber" => "08022334455",
+                "roleName" => "LECTURER"
             ],
-            "department" => ["id" => "dept-reg-001", "name" => "Registry & Academic Affairs"],
-            "lecturer" => null
+            "department" => ["id" => "dept-health-002", "name" => "Department of Medical Laboratory Science"]
         ]
     ];
 
@@ -182,22 +224,24 @@ try {
             try {
                 @$conn->query("CREATE TABLE IF NOT EXISTS staff (
                     id VARCHAR(64) PRIMARY KEY,
-                    staff_id VARCHAR(64),
+                    staff_no VARCHAR(64),
+                    username VARCHAR(100),
                     first_name VARCHAR(100),
                     last_name VARCHAR(100),
                     middle_name VARCHAR(100),
-                    username VARCHAR(100),
                     email VARCHAR(150),
                     phone VARCHAR(50),
-                    role VARCHAR(50),
-                    department VARCHAR(150),
                     designation VARCHAR(150),
-                    academic_rank VARCHAR(100),
+                    department_id VARCHAR(64),
+                    department_name VARCHAR(150),
+                    role_name VARCHAR(50) DEFAULT 'LECTURER',
+                    rank VARCHAR(50) DEFAULT 'LECTURER_II',
                     specialization VARCHAR(255),
-                    status VARCHAR(50) DEFAULT 'ACTIVE',
-                    last_login DATETIME,
-                    password_hash VARCHAR(255),
                     joining_date DATE,
+                    status VARCHAR(50) DEFAULT 'ACTIVE',
+                    allocated_courses TEXT,
+                    password_hash VARCHAR(255),
+                    force_password_change TINYINT(1) DEFAULT 1,
                     isDeleted TINYINT(1) DEFAULT 0,
                     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
                 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
@@ -205,35 +249,29 @@ try {
                 $res = @$conn->query("SELECT * FROM staff WHERE (isDeleted = 0 OR isDeleted IS NULL) ORDER BY created_at DESC");
                 if ($res && $res->num_rows > 0) {
                     while ($row = $res->fetch_assoc()) {
-                        $rawDept = $row['department'] ?? '';
-                        $staffId = $row['staff_id'] ?? $row['staffNo'] ?? '';
-                        
+                        $courses = !empty($row['allocated_courses']) ? json_decode($row['allocated_courses'], true) : [];
                         $dbStaff[] = [
-                            "id" => $row['id'] ?? $row['staff_id'],
-                            "staffNo" => $staffId,
-                            "designation" => $row['designation'] ?? 'Staff',
-                            "joiningDate" => $row['joining_date'] ?? $row['joiningDate'] ?? date('Y-m-d'),
+                            "id" => $row['id'],
+                            "username" => $row['username'] ?? $row['email'],
+                            "staffNo" => $row['staff_no'] ?? $row['staffNo'],
+                            "designation" => $row['designation'] ?? 'Staff Member',
                             "status" => $row['status'] ?? 'ACTIVE',
-                            "lastLogin" => $row['last_login'] ?? date('Y-m-d H:i:s'),
-                            "allocatedCourses" => ["NUR101", "CSC101"],
+                            "joiningDate" => $row['joining_date'] ?? '2024-01-01',
+                            "rank" => $row['rank'] ?? 'LECTURER_II',
+                            "specialization" => $row['specialization'] ?? '',
+                            "allocatedCourses" => is_array($courses) ? $courses : [],
                             "user" => [
-                                "id" => $row['id'] ?? $row['staff_id'],
-                                "username" => $row['username'] ?? '',
-                                "firstName" => $row['first_name'] ?? $row['firstName'] ?? '',
-                                "lastName" => $row['last_name'] ?? $row['lastName'] ?? '',
-                                "middleName" => $row['middle_name'] ?? $row['middleName'] ?? '',
+                                "firstName" => $row['first_name'] ?? '',
+                                "lastName" => $row['last_name'] ?? '',
+                                "middleName" => $row['middle_name'] ?? '',
                                 "email" => $row['email'] ?? '',
-                                "phoneNumber" => $row['phone'] ?? $row['phoneNumber'] ?? '',
-                                "role" => ["name" => strtoupper($row['role'] ?? 'LECTURER')]
+                                "phoneNumber" => $row['phone'] ?? '',
+                                "roleName" => $row['role_name'] ?? 'LECTURER'
                             ],
                             "department" => [
-                                "id" => "dept-" . md5($rawDept),
-                                "name" => $rawDept ?: 'Department of Nursing Sciences'
-                            ],
-                            "lecturer" => !empty($row['academic_rank']) ? [
-                                "rank" => $row['academic_rank'],
-                                "specialization" => $row['specialization'] ?? ''
-                            ] : null
+                                "id" => $row['department_id'] ?? 'dept-health-001',
+                                "name" => $row['department_name'] ?? 'Department of Nursing Sciences'
+                            ]
                         ];
                     }
                 }
@@ -242,20 +280,20 @@ try {
         }
 
         // 2. Fetch File Storage Records
-        $fileStoreStaff = readStaffJsonStore($storeFile);
+        $fileStoreStaff = readJsonStore($storeFile);
 
-        // 3. Merge MySQL DB, File Store, & Defaults (Prioritizing Persistent Data)
+        // 3. Merge DB, Store File, and Defaults
         $mergedMap = [];
         foreach ($dbStaff as $item) {
-            $key = $item['user']['username'] ?? $item['staffNo'] ?? $item['id'];
+            $key = $item['staffNo'] ?? $item['id'];
             if (!empty($key)) $mergedMap[$key] = $item;
         }
         foreach ($fileStoreStaff as $item) {
-            $key = $item['user']['username'] ?? $item['staffNo'] ?? $item['id'];
+            $key = $item['staffNo'] ?? $item['id'];
             if (!empty($key)) $mergedMap[$key] = $item;
         }
         foreach ($defaultStaff as $item) {
-            $key = $item['user']['username'] ?? $item['staffNo'] ?? $item['id'];
+            $key = $item['staffNo'] ?? $item['id'];
             if (!empty($key) && !isset($mergedMap[$key])) {
                 $mergedMap[$key] = $item;
             }
@@ -264,140 +302,100 @@ try {
         echo json_encode([
             "success" => true,
             "persistenceSuccess" => true,
-            "staffList" => array_values($mergedMap),
+            "staff" => array_values($mergedMap),
             "departments" => $defaultDepartments,
-            "roles" => $defaultRoles
+            "courses" => $defaultCourses
         ]);
         exit();
     }
 
     if ($method === 'POST' || $method === 'PUT') {
         $action = $data['action'] ?? 'save_staff';
+        $id = $data['id'] ?? ('stf-' . rand(1000, 9999));
+        $staffNo = $data['staffNo'] ?? $data['staff_no'] ?? ('CCHMT/STF/2026/NUR/' . str_pad(rand(1, 999), 3, '0', STR_PAD_LEFT));
+        $firstName = $data['firstName'] ?? $data['first_name'] ?? '';
+        $lastName = $data['lastName'] ?? $data['last_name'] ?? '';
+        $email = $data['email'] ?? '';
 
         if ($action === 'password_reset') {
-            $rawPassword = $data['newPassword'] ?? $data['password'] ?? ('CrestOak#' . rand(1000, 9999));
+            $rawPassword = $data['newPassword'] ?? $data['password'] ?? ('CrestOakStaff#' . rand(1000, 9999));
             $hashedPassword = password_hash($rawPassword, PASSWORD_BCRYPT);
-            $staffId = $data['staffNo'] ?? $data['staffId'] ?? 'CCHMT/STF/2026/REG/001';
-            $email = $data['email'] ?? '';
-            $roleName = strtoupper($data['roleName'] ?? $data['role'] ?? 'LECTURER');
-
+            
             $mailSent = false;
             if (!empty($email)) {
                 $toEmail = $email;
-                $fullName = "Staff Member";
-                $identifier = $staffId;
+                $fullName = trim("$firstName $lastName") ?: "Staff Member";
 
-                $subject = "Welcome to CrestOak College - Your Portal Credentials";
+                $subject = "Welcome to CrestOak College - Staff Portal Credentials";
                 $message = "
                 <html>
                 <head>
-                  <title>CrestOak College Portal Access</title>
+                  <title>CrestOak College Staff Portal Access</title>
                 </head>
                 <body style='font-family: Arial, sans-serif; color: #333; line-height: 1.6;'>
                   <div style='max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e0e0e0; border-radius: 8px;'>
-                    <h2 style='color: #0d2e58;'>CrestOak College - Portal Credentials</h2>
+                    <h2 style='color: #0d2e58;'>CrestOak College - Staff Portal Access</h2>
                     <p>Hello <strong>" . htmlspecialchars($fullName) . "</strong>,</p>
-                    <p>Your institutional portal account has been provisioned successfully. Below are your login credentials:</p>
+                    <p>Your staff portal credentials have been updated. Below are your login details:</p>
                     <div style='background-color: #f4f6f9; padding: 15px; border-left: 4px solid #0d2e58; margin: 20px 0;'>
-                      <p style='margin: 5px 0;'><strong>Portal Identifier / ID:</strong> " . htmlspecialchars($identifier) . "</p>
-                      <p style='margin: 5px 0;'><strong>Temporary Password:</strong> " . htmlspecialchars($rawPassword) . "</p>
-                      <p style='margin: 5px 0;'><strong>Portal Login URL:</strong> <a href='https://staff.crestoakcollege.com.ng' style='color: #0d2e58; text-decoration: underline;'>https://staff.crestoakcollege.com.ng</a></p>
+                      <p style='margin: 5px 0;'><strong>Staff Identification (SIN):</strong> " . htmlspecialchars($staffNo) . "</p>
+                      <p style='margin: 5px 0;'><strong>Institutional Email:</strong> " . htmlspecialchars($email) . "</p>
+                      <p style='margin: 5px 0;'><strong>New Temporary Password:</strong> " . htmlspecialchars($rawPassword) . "</p>
+                      <p style='margin: 5px 0;'><strong>Staff Portal URL:</strong> <a href='https://portal.crestoakcollege.com.ng/staff' style='color: #0d2e58; text-decoration: underline;'>https://portal.crestoakcollege.com.ng/staff</a></p>
                     </div>
-                    <p>Please log in immediately and update your temporary password.</p>
-                    <hr style='border: none; border-top: 1px solid #eee; margin: 20px 0;' />
-                    <p style='font-size: 12px; color: #777;'>This is an automated system email from CrestOak College of Health Sciences & Medical Technology. Please do not reply directly to this email.</p>
+                    <p>Please update your password upon initial portal login.</p>
                   </div>
                 </body>
                 </html>
                 ";
 
-                $headers = "MIME-Version: 1.0\r\n";
-                $headers .= "Content-type:text/html;charset=UTF-8\r\n";
-                $headers .= "From: CrestOak College Staff Portal <noreply@crestoakcollege.com.ng>\r\n";
-                $headers .= "Reply-To: info@crestoakcollege.com.ng\r\n";
-                $headers .= "X-Mailer: PHP/" . phpversion();
-
-                $mailSent = mail($toEmail, $subject, $message, $headers);
-                if (!$mailSent) {
-                    error_log("MAIL_ERROR: Failed sending email to " . $toEmail);
-                }
+                $mailSent = sendViaSMTP($toEmail, $subject, $message, "CrestOak College Staff Portal");
             }
 
             echo json_encode([
                 "success" => true,
                 "persistenceSuccess" => true,
-                "message" => "Staff credentials updated successfully.",
+                "message" => "Staff password reset successfully.",
                 "emailSent" => $mailSent,
-                "staff" => [
-                    "staffId" => $staffId,
-                    "email" => $email,
-                    "role" => $roleName,
+                "credentials" => [
+                    "staffNo" => $staffNo,
                     "temporaryPassword" => $rawPassword,
-                    "hashedPassword" => $hashedPassword
+                    "email" => $email
                 ]
             ]);
             exit();
         }
 
-        $firstName = $data['firstName'] ?? $data['first_name'] ?? '';
-        $lastName = $data['lastName'] ?? $data['last_name'] ?? '';
-
-        if (empty($firstName) || empty($lastName)) {
-            http_response_code(200);
-            echo json_encode(['success' => false, 'persistenceSuccess' => false, 'message' => 'First Name and Last Name are required.']);
-            exit();
-        }
-
-        $id = $data['id'] ?? ('staff-' . rand(1000, 9999));
-        $staffNo = $data['staffNo'] ?? $data['staff_id'] ?? ('CCHMT/STF/2026/REG/' . str_pad(rand(1, 99), 3, '0', STR_PAD_LEFT));
-        $middleName = $data['middleName'] ?? $data['middle_name'] ?? '';
-        $username = $data['username'] ?? (strtolower($firstName) . '.' . strtolower($lastName));
-        $email = $data['email'] ?? '';
-        $phone = $data['phoneNumber'] ?? $data['phone'] ?? '';
-        $roleName = strtoupper($data['roleName'] ?? $data['role'] ?? 'LECTURER');
-        $departmentId = $data['departmentId'] ?? $data['department'] ?? 'dept-health-001';
-        $designation = $data['designation'] ?? 'Staff';
-        $joiningDate = $data['joiningDate'] ?? $data['joining_date'] ?? date('Y-m-d');
-        $status = $data['status'] ?? 'ACTIVE';
-        $academicRank = $data['rank'] ?? $data['academicRank'] ?? $data['academic_rank'] ?? '';
-        $specialization = $data['specialization'] ?? '';
-        $rawPassword = $data['password'] ?? $data['initialPassword'] ?? ('CrestOak#' . rand(1000, 9999));
-        $passwordHash = password_hash($rawPassword, PASSWORD_BCRYPT);
+        // Standard staff creation / edit
+        $rawPassword = $data['password'] ?? ('CrestOakStaff#' . rand(1000, 9999));
+        $hashedPassword = password_hash($rawPassword, PASSWORD_BCRYPT);
         $sendEmail = !empty($data['sendEmail']);
-        $forcePasswordChange = isset($data['forcePasswordChange']) ? !empty($data['forcePasswordChange']) : true;
+        $departmentId = $data['departmentId'] ?? 'dept-health-001';
 
         $deptName = 'Department of Nursing Sciences';
         foreach ($defaultDepartments as $d) {
-            if ($d['id'] === $departmentId || $d['id'] === $data['department']) {
-                $deptName = $d['name'];
-                break;
-            }
+            if ($d['id'] === $departmentId) $deptName = $d['name'];
         }
 
         $staffObject = [
             "id" => $id,
-            "staffId" => $staffNo,
+            "username" => $data['username'] ?? $email,
             "staffNo" => $staffNo,
-            "designation" => $designation,
-            "joiningDate" => $joiningDate,
-            "status" => $status,
-            "lastLogin" => date('Y-m-d H:i:s'),
-            "allocatedCourses" => $data['allocatedCourses'] ?? ["NUR101"],
+            "designation" => $data['designation'] ?? 'Lecturer',
+            "status" => $data['status'] ?? 'ACTIVE',
+            "joiningDate" => $data['joiningDate'] ?? date('Y-m-d'),
+            "rank" => $data['rank'] ?? 'LECTURER_II',
+            "specialization" => $data['specialization'] ?? 'Clinical Practice',
+            "allocatedCourses" => $data['allocatedCourses'] ?? [],
             "user" => [
-                "id" => $id,
-                "username" => $username,
                 "firstName" => $firstName,
                 "lastName" => $lastName,
-                "middleName" => $middleName,
+                "middleName" => $data['middleName'] ?? "",
                 "email" => $email,
-                "phoneNumber" => $phone,
-                "role" => ["name" => $roleName]
+                "phoneNumber" => $data['phoneNumber'] ?? "",
+                "roleName" => $data['roleName'] ?? 'LECTURER'
             ],
-            "department" => ["id" => $departmentId, "name" => $deptName],
-            "lecturer" => $roleName === 'LECTURER' ? [
-                "rank" => $academicRank ?: 'LECTURER_II',
-                "specialization" => $specialization
-            ] : null
+            "department" => ["id" => $departmentId, "name" => $deptName]
         ];
 
         // PERSISTENCE ENGINE: 1. MySQL Write
@@ -406,104 +404,117 @@ try {
             try {
                 @$conn->query("CREATE TABLE IF NOT EXISTS staff (
                     id VARCHAR(64) PRIMARY KEY,
-                    staff_id VARCHAR(64),
+                    staff_no VARCHAR(64),
+                    username VARCHAR(100),
                     first_name VARCHAR(100),
                     last_name VARCHAR(100),
                     middle_name VARCHAR(100),
-                    username VARCHAR(100),
                     email VARCHAR(150),
                     phone VARCHAR(50),
-                    role VARCHAR(50),
-                    department VARCHAR(150),
                     designation VARCHAR(150),
-                    academic_rank VARCHAR(100),
+                    department_id VARCHAR(64),
+                    department_name VARCHAR(150),
+                    role_name VARCHAR(50) DEFAULT 'LECTURER',
+                    rank VARCHAR(50) DEFAULT 'LECTURER_II',
                     specialization VARCHAR(255),
-                    status VARCHAR(50) DEFAULT 'ACTIVE',
-                    last_login DATETIME,
-                    password_hash VARCHAR(255),
                     joining_date DATE,
+                    status VARCHAR(50) DEFAULT 'ACTIVE',
+                    allocated_courses TEXT,
+                    password_hash VARCHAR(255),
+                    force_password_change TINYINT(1) DEFAULT 1,
                     isDeleted TINYINT(1) DEFAULT 0,
                     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
                 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
 
-                $stmt = @$conn->prepare("INSERT INTO staff (id, staff_id, first_name, last_name, middle_name, username, email, phone, role, department, designation, academic_rank, specialization, status, password_hash, joining_date)
-                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                $stmt = @$conn->prepare("INSERT INTO staff (id, staff_no, username, first_name, last_name, middle_name, email, phone, designation, department_id, department_name, role_name, rank, specialization, joining_date, status, allocated_courses, password_hash)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                     ON DUPLICATE KEY UPDATE
-                    staff_id = VALUES(staff_id),
+                    staff_no = VALUES(staff_no),
+                    username = VALUES(username),
                     first_name = VALUES(first_name),
                     last_name = VALUES(last_name),
                     middle_name = VALUES(middle_name),
-                    username = VALUES(username),
                     email = VALUES(email),
                     phone = VALUES(phone),
-                    role = VALUES(role),
-                    department = VALUES(department),
                     designation = VALUES(designation),
-                    academic_rank = VALUES(academic_rank),
+                    department_id = VALUES(department_id),
+                    department_name = VALUES(department_name),
+                    role_name = VALUES(role_name),
+                    rank = VALUES(rank),
                     specialization = VALUES(specialization),
+                    joining_date = VALUES(joining_date),
                     status = VALUES(status),
-                    password_hash = VALUES(password_hash),
-                    joining_date = VALUES(joining_date)");
+                    allocated_courses = VALUES(allocated_courses),
+                    password_hash = VALUES(password_hash)");
                 if ($stmt) {
-                    $stmt->bind_param("ssssssssssssssss", $id, $staffNo, $firstName, $lastName, $middleName, $username, $email, $phone, $roleName, $deptName, $designation, $academicRank, $specialization, $status, $passwordHash, $joiningDate);
+                    $username = $data['username'] ?? $email;
+                    $middleName = $data['middleName'] ?? '';
+                    $phone = $data['phoneNumber'] ?? '';
+                    $designation = $data['designation'] ?? 'Lecturer';
+                    $roleName = $data['roleName'] ?? 'LECTURER';
+                    $rank = $data['rank'] ?? 'LECTURER_II';
+                    $specialization = $data['specialization'] ?? '';
+                    $joiningDate = $data['joiningDate'] ?? date('Y-m-d');
+                    $status = $data['status'] ?? 'ACTIVE';
+                    $allocatedCoursesJson = json_encode($data['allocatedCourses'] ?? []);
+
+                    $stmt->bind_param("ssssssssssssssssss", $id, $staffNo, $username, $firstName, $lastName, $middleName, $email, $phone, $designation, $departmentId, $deptName, $roleName, $rank, $specialization, $joiningDate, $status, $allocatedCoursesJson, $hashedPassword);
                     if ($stmt->execute()) {
                         $dbWriteSuccess = true;
                     }
                     @$stmt->close();
                 }
             } catch (Throwable $e) {
-                error_log("STAFF_DB_PERSISTENCE_ERROR: " . $e->getMessage());
+                error_log("DB_STAFF_ERROR: " . $e->getMessage());
             }
             @$conn->close();
         }
 
         // PERSISTENCE ENGINE: 2. File Store Write
-        $currentStore = readStaffJsonStore($storeFile);
+        $currentStore = readJsonStore($storeFile);
         $filteredStore = array_filter($currentStore, function($s) use ($id, $staffNo) {
             return ($s['id'] ?? '') !== $id && ($s['staffNo'] ?? '') !== $staffNo;
         });
         array_unshift($filteredStore, $staffObject);
-        $fileWriteSuccess = writeStaffJsonStore($storeFile, array_values($filteredStore));
+        $fileWriteSuccess = writeJsonStore($storeFile, array_values($filteredStore));
 
         $persistenceSuccess = $dbWriteSuccess || $fileWriteSuccess;
 
         if (!$persistenceSuccess) {
-            http_response_code(200);
+            http_response_code(500);
             echo json_encode([
                 "success" => false,
                 "persistenceSuccess" => false,
-                "error" => "Failed to write record to persistent database."
+                "error" => "Failed to write staff member to persistent storage on host server."
             ]);
             exit();
         }
 
-        // Native HTML Email Dispatch Snippet
+        // Native HTML Mail Delivery Snippet via sendViaSMTP helper
         $mailSent = false;
         if (!empty($data['sendEmail']) && !empty($data['email'])) {
             $toEmail = $data['email'];
             $fullName = trim(($data['firstName'] ?? '') . ' ' . ($data['lastName'] ?? '')) ?: 'Staff Member';
-            $identifier = $data['staffNo'] ?? $data['staffId'] ?? $data['email'];
-            $rawPassword = $data['password'] ?? $data['initialPassword'] ?? $rawPassword;
+            $identifier = $data['staffNo'] ?? $data['email'];
 
-            $subject = "Welcome to CrestOak College - Your Portal Credentials";
+            $subject = "Welcome to CrestOak College - Staff Portal Credentials";
             
-            // HTML Email Template
             $message = "
             <html>
             <head>
-              <title>CrestOak College Portal Access</title>
+              <title>CrestOak College Staff Access</title>
             </head>
             <body style='font-family: Arial, sans-serif; color: #333; line-height: 1.6;'>
               <div style='max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e0e0e0; border-radius: 8px;'>
-                <h2 style='color: #0d2e58;'>CrestOak College - Portal Credentials</h2>
+                <h2 style='color: #0d2e58;'>CrestOak College - Staff Portal Access</h2>
                 <p>Hello <strong>" . htmlspecialchars($fullName) . "</strong>,</p>
-                <p>Your institutional portal account has been provisioned successfully. Below are your login credentials:</p>
+                <p>Your staff portal account has been provisioned successfully. Below are your login credentials:</p>
                 <div style='background-color: #f4f6f9; padding: 15px; border-left: 4px solid #0d2e58; margin: 20px 0;'>
-                  <p style='margin: 5px 0;'><strong>Portal Identifier / ID:</strong> " . htmlspecialchars($identifier) . "</p>
+                  <p style='margin: 5px 0;'><strong>Staff Identification Number (SIN):</strong> " . htmlspecialchars($identifier) . "</p>
                   <p style='margin: 5px 0;'><strong>Temporary Password:</strong> " . htmlspecialchars($rawPassword) . "</p>
-                  <p style='margin: 5px 0;'><strong>Portal Login URL:</strong> <a href='https://staff.crestoakcollege.com.ng' style='color: #0d2e58; text-decoration: underline;'>https://staff.crestoakcollege.com.ng</a></p>
+                  <p style='margin: 5px 0;'><strong>Staff Portal Login URL:</strong> <a href='https://portal.crestoakcollege.com.ng/staff' style='color: #0d2e58; text-decoration: underline;'>https://portal.crestoakcollege.com.ng/staff</a></p>
                 </div>
-                <p>Please log in immediately and update your temporary password.</p>
+                <p>Please log in immediately and update your password.</p>
                 <hr style='border: none; border-top: 1px solid #eee; margin: 20px 0;' />
                 <p style='font-size: 12px; color: #777;'>This is an automated system email from CrestOak College of Health Sciences & Medical Technology. Please do not reply directly to this email.</p>
               </div>
@@ -511,32 +522,19 @@ try {
             </html>
             ";
 
-            // Standard MIME Headers for HTML Delivery
-            $headers = "MIME-Version: 1.0\r\n";
-            $headers .= "Content-type:text/html;charset=UTF-8\r\n";
-            $headers .= "From: CrestOak College Staff Portal <noreply@crestoakcollege.com.ng>\r\n";
-            $headers .= "Reply-To: info@crestoakcollege.com.ng\r\n";
-            $headers .= "X-Mailer: PHP/" . phpversion();
-
-            // Send Mail
-            $mailSent = mail($toEmail, $subject, $message, $headers);
-            if (!$mailSent) {
-                error_log("MAIL_ERROR: Failed sending email to " . $toEmail);
-            }
+            $mailSent = sendViaSMTP($toEmail, $subject, $message, "CrestOak College Staff Portal");
         }
 
         echo json_encode([
             "success" => true,
             "persistenceSuccess" => true,
-            "message" => "Staff account created and persisted successfully.",
+            "message" => "Staff profile created and persisted successfully.",
             "emailSent" => $mailSent,
             "staff" => $staffObject,
             "credentials" => [
-                "staffId" => $staffNo,
+                "staffNo" => $staffNo,
                 "temporaryPassword" => $rawPassword,
-                "email" => $email,
-                "sendEmail" => $sendEmail,
-                "forcePasswordChange" => $forcePasswordChange
+                "email" => $email
             ]
         ]);
         exit();
@@ -545,23 +543,19 @@ try {
     if ($method === 'DELETE') {
         $id = $data['id'] ?? '';
         if ($id) {
-            $currentStore = readStaffJsonStore($storeFile);
+            $currentStore = readJsonStore($storeFile);
             $filteredStore = array_filter($currentStore, function($s) use ($id) {
                 return ($s['id'] ?? '') !== $id;
             });
-            writeStaffJsonStore($storeFile, array_values($filteredStore));
+            writeJsonStore($storeFile, array_values($filteredStore));
         }
-        echo json_encode(["success" => true, "persistenceSuccess" => true, "message" => "Staff account archived successfully."]);
+        echo json_encode(["success" => true, "persistenceSuccess" => true, "message" => "Staff profile deleted successfully."]);
         exit();
     }
 
     echo json_encode(["success" => false, "message" => "Invalid request method."]);
 } catch (Throwable $e) {
-    http_response_code(200);
-    echo json_encode([
-        "success" => false,
-        "persistenceSuccess" => false,
-        "error" => "Database error: " . $e->getMessage()
-    ]);
+    http_response_code(500);
+    echo json_encode(["success" => false, "persistenceSuccess" => false, "error" => $e->getMessage()]);
     exit();
 }
