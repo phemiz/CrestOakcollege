@@ -105,6 +105,9 @@ if ($calculatedCgpa >= 3.50) {
 echo json_encode([
     "success" => true,
     "matricNo" => $matricNo,
+    "cgpa" => number_format($calculatedCgpa, 2, '.', ''),
+    "totalQualityPoints" => $totalQualityPointsSum,
+    "totalUnits" => $totalCreditUnitsSum,
     "results" => [
         "summary" => [
             "cgpa" => $calculatedCgpa,

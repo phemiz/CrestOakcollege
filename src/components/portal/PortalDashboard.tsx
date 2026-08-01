@@ -277,8 +277,9 @@ export default function PortalDashboard({ initialUser }: { initialUser?: any }) 
       fetch(`/api/student/results.php?matricNo=${encodeURIComponent(activeMatric)}`)
         .then((res) => res.json())
         .then((data) => {
-          if (data.success && data.results?.summary) {
-            const dynamicCgpa = String(data.results.summary.cgpa);
+          const rawCgpa = data?.cgpa || data?.results?.summary?.cgpa;
+          if (rawCgpa) {
+            const dynamicCgpa = parseFloat(String(rawCgpa)).toFixed(2);
             setStudentProfile((prev: any) =>
               prev ? { ...prev, gpa: dynamicCgpa } : prev
             );
@@ -635,7 +636,9 @@ export default function PortalDashboard({ initialUser }: { initialUser?: any }) 
                     </div>
                     <div className="bg-white/10 px-4 py-2.5 rounded-2xl border border-white/10 text-right shrink-0">
                       <p className="text-slate-300 text-[10px] font-bold uppercase tracking-wider">Current CGPA</p>
-                      <p className="text-2xl font-black text-white mt-0.5 font-display">{studentProfile.gpa}</p>
+                      <p className="text-2xl font-black text-white mt-0.5 font-display">
+                        {parseFloat(studentProfile.gpa || "0.00").toFixed(2)}
+                      </p>
                     </div>
                   </div>
 
