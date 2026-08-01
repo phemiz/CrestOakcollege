@@ -252,6 +252,12 @@ export default function StudentsClient({
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
+    if (Array.isArray(initialStudents)) {
+      setStudents(initialStudents);
+    }
+  }, [initialStudents]);
+
+  useEffect(() => {
     const fetchStudentsData = async () => {
       try {
         const response = await fetch('/api/admin/students.php?t=' + Date.now());

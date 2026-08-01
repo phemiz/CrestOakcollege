@@ -210,74 +210,7 @@ try {
         ]
     ];
 
-    $defaultStudents = [
-        [
-            "id" => "stu-001",
-            "matricNo" => "CCHMS/2026/NUR/0042",
-            "level" => 100,
-            "cgpa" => 4.25,
-            "gpa" => 4.30,
-            "status" => "ACTIVE",
-            "holdReason" => null,
-            "user" => [
-                "firstName" => "Azeez",
-                "lastName" => "Okunola",
-                "middleName" => "Olanrewaju",
-                "email" => "azeez.okunola@crestoakcollege.com.ng",
-                "phoneNumber" => "08155884804",
-                "dob" => "2004-05-14"
-            ],
-            "department" => ["id" => "dept-health-001", "name" => "Department of Nursing Sciences"],
-            "programme" => ["id" => "prog-001", "name" => "Nursing Sciences (B.N.Sc)"],
-            "entrySessionId" => "sess-2026",
-            "currentSessionId" => "sess-2026",
-            "currentSemesterId" => "sem-first"
-        ],
-        [
-            "id" => "stu-002",
-            "matricNo" => "CCHMS/2026/CHEW/0081",
-            "level" => 200,
-            "cgpa" => 3.85,
-            "gpa" => 3.90,
-            "status" => "FINANCIAL_HOLD",
-            "holdReason" => "Pending First Semester Tuition Balance (₦45,000)",
-            "user" => [
-                "firstName" => "Fatima",
-                "lastName" => "Abubakar",
-                "middleName" => "Zahra",
-                "email" => "fatima.abubakar@crestoakcollege.com.ng",
-                "phoneNumber" => "08031234567",
-                "dob" => "2003-09-21"
-            ],
-            "department" => ["id" => "dept-health-003", "name" => "Department of Community Health Sciences"],
-            "programme" => ["id" => "prog-003", "name" => "Community Health Extension Worker (CHEW)"],
-            "entrySessionId" => "sess-2026",
-            "currentSessionId" => "sess-2026",
-            "currentSemesterId" => "sem-first"
-        ],
-        [
-            "id" => "stu-003",
-            "matricNo" => "CCHMS/2026/SCS/0019",
-            "level" => 300,
-            "cgpa" => 4.60,
-            "gpa" => 4.75,
-            "status" => "ACTIVE",
-            "holdReason" => null,
-            "user" => [
-                "firstName" => "Emmanuel",
-                "lastName" => "Danladi",
-                "middleName" => "Kefas",
-                "email" => "emmanuel.danladi@crestoakcollege.com.ng",
-                "phoneNumber" => "08129876543",
-                "dob" => "2002-11-03"
-            ],
-            "department" => ["id" => "dept-tech-001", "name" => "Department of Computer Science & IT"],
-            "programme" => ["id" => "prog-005", "name" => "Computer Science & Artificial Intelligence (B.Sc)"],
-            "entrySessionId" => "sess-2025",
-            "currentSessionId" => "sess-2026",
-            "currentSemesterId" => "sem-first"
-        ]
-    ];
+    $defaultStudents = [];
 
     if ($method === 'GET') {
         $dbStudents = [];

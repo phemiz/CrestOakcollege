@@ -12,9 +12,10 @@ export default function StudentsPage() {
   const [sessions, setSessions] = useState<any[]>([]);
   const [semesters, setSemesters] = useState<any[]>([]);
   const [auditLogs, setAuditLogs] = useState<any[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const [loading, setLoading] = useState<boolean>(true);
 
   useEffect(() => {
+    let isMounted = true;
     if (typeof window !== "undefined") {
       const isAuth = localStorage.getItem("isAuthenticated");
       const userStr = localStorage.getItem("user") || localStorage.getItem("cchsmt_user_session");
@@ -33,28 +34,38 @@ export default function StudentsPage() {
       setIsAuthorized(true);
     }
 
-    fetch("/api/admin/students.php")
+    fetch('/api/admin/students.php')
       .then((res) => res.json())
       .then((data) => {
-        if (data.success) {
-          if (Array.isArray(data.students)) setStudents(data.students);
-          if (Array.isArray(data.departments)) setDepartments(data.departments);
-          if (Array.isArray(data.programmes)) setProgrammes(data.programmes);
-          if (Array.isArray(data.sessions)) setSessions(data.sessions);
-          if (Array.isArray(data.semesters)) setSemesters(data.semesters);
-          if (Array.isArray(data.auditLogs)) setAuditLogs(data.auditLogs);
+        if (!isMounted) return;
+        if (Array.isArray(data)) {
+          setStudents(data);
+        } else if (data?.students && Array.isArray(data.students)) {
+          setStudents(data.students);
         }
+        if (data?.departments && Array.isArray(data.departments)) setDepartments(data.departments);
+        if (data?.programmes && Array.isArray(data.programmes)) setProgrammes(data.programmes);
+        if (data?.sessions && Array.isArray(data.sessions)) setSessions(data.sessions);
+        if (data?.semesters && Array.isArray(data.semesters)) setSemesters(data.semesters);
+        if (data?.auditLogs && Array.isArray(data.auditLogs)) setAuditLogs(data.auditLogs);
+        setLoading(false);
       })
-      .catch(() => {})
-      .finally(() => setIsLoading(false));
+      .catch((err) => {
+        console.error('Failed to load students roster from API:', err);
+        if (isMounted) setLoading(false);
+      });
+
+    return () => {
+      isMounted = false;
+    };
   }, []);
 
-  if (!isAuthorized) {
+  if (!isAuthorized || loading) {
     return (
       <div className="min-h-screen bg-slate-50 flex items-center justify-center p-4">
         <div className="flex items-center gap-3 text-slate-600 font-medium text-sm">
           <Loader2 className="h-5 w-5 animate-spin text-brand-red" />
-          <span>Verifying administrative authorization...</span>
+          <span>Verifying administrative authorization and loading student roster...</span>
         </div>
       </div>
     );
