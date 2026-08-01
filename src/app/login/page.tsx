@@ -280,15 +280,19 @@ function LoginForm() {
         roleContext = "staff";
       }
 
-      const response = await fetch("/api/login.php", {
+      const cleanInput = username.trim().replace(/\\/g, '');
+
+      const response = await fetch(`/api/login.php?gateway=${encodeURIComponent(roleContext)}`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
         credentials: "include",
         body: JSON.stringify({
-          username: username.trim(),
-          matricNo: username.trim(),
+          username: cleanInput,
+          matricNo: cleanInput,
+          staffId: cleanInput,
+          staffNo: cleanInput,
           password,
           role: roleContext,
         }),
