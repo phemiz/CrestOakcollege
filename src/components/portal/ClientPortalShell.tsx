@@ -5,7 +5,6 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { signOut } from "next-auth/react";
 import { Logo } from "@/components/ui/logo";
-import { Header } from "@/components/layout/header";
 import { 
   User, 
   BookOpen, 
@@ -103,8 +102,6 @@ export default function ClientPortalShell({ children, user, announcements }: Cli
 
   return (
     <div className="w-full min-h-screen overflow-x-hidden bg-slate-50 flex flex-col">
-      <Header />
-
       {/* Portal Container */}
       <div className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8 flex flex-col md:flex-row gap-8 overflow-x-hidden">
         
