@@ -273,6 +273,33 @@ export default function PortalDashboard({ initialUser }: { initialUser?: any }) 
         setIsLoggedIn(true);
       }
 
+      // Real-Time Results & CGPA Fetch
+      const activeMatric = parsedSessionUser?.matricNo || parsedSessionUser?.username || "CCHMS/2026/NUR/0042";
+      fetch(`/api/student/results.php?matricNo=${encodeURIComponent(activeMatric)}`)
+        .then((res) => res.json())
+        .then((data) => {
+          if (data.success && data.results?.summary) {
+            const dynamicCgpa = String(data.results.summary.cgpa);
+            setStudentProfile((prev: any) =>
+              prev ? { ...prev, gpa: dynamicCgpa } : prev
+            );
+          }
+        })
+        .catch((err) => console.warn("Dynamic CGPA fetch notice:", err));
+
+      // Real-Time Finance & 70/30 Installment Fetch
+      fetch(`/api/student/finance.php?matricNo=${encodeURIComponent(activeMatric)}`)
+        .then((res) => res.json())
+        .then((data) => {
+          if (data.success && data.invoices) {
+            setInvoices(data.invoices);
+          }
+          if (data.success && data.receipts) {
+            setReceipts(data.receipts);
+          }
+        })
+        .catch((err) => console.warn("Dynamic Finance fetch notice:", err));
+
       if (savedInvoices) {
         setInvoices(JSON.parse(savedInvoices));
       } else {

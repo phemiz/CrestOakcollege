@@ -102,11 +102,11 @@ export default function ClientPortalShell({ children, user, announcements }: Cli
   };
 
   return (
-    <div className="min-h-screen flex flex-col bg-brand-bg-light">
+    <div className="w-full min-h-screen overflow-x-hidden bg-slate-50 flex flex-col">
       <Header />
 
       {/* Portal Container */}
-      <div className="flex-grow max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8 flex flex-col md:flex-row gap-8">
+      <div className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8 flex flex-col md:flex-row gap-8 overflow-x-hidden">
         
         {/* Sidebar - Desktop */}
         <aside className="hidden md:flex flex-col w-64 bg-white border border-slate-200 rounded-3xl p-5 shadow-sm shrink-0 h-fit gap-6 sticky top-24">
@@ -221,9 +221,9 @@ export default function ClientPortalShell({ children, user, announcements }: Cli
                 </div>
                 <div className="min-w-0">
                   <h4 className="font-display font-black text-brand-blue-dark text-xs truncate leading-snug">
-                    {user.fullName}
+                    {studentName}
                   </h4>
-                  <p className="text-slate-400 text-[8px] font-black uppercase tracking-wider mt-0.5 truncate">{user.matricNo}</p>
+                  <p className="text-slate-400 text-[8px] font-black uppercase tracking-wider mt-0.5 truncate">{matricNo}</p>
                 </div>
               </div>
 
@@ -263,7 +263,7 @@ export default function ClientPortalShell({ children, user, announcements }: Cli
         )}
 
         {/* Dashboard Workspace */}
-        <main className="flex-grow flex flex-col lg:col-span-9 w-full min-h-[60vh] gap-6">
+        <main className="flex-1 w-full min-w-0 flex flex-col gap-6 overflow-y-auto smooth-scroll">
           {/* Desktop Top Header Bar */}
           <div className="hidden md:flex justify-between items-center bg-white border border-slate-200 rounded-3xl p-5 shadow-sm">
             <div>
