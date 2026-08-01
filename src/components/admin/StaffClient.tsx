@@ -143,36 +143,36 @@ export default function StaffClient({ staffList: initialStaff, departments: rawD
   const [copiedLink, setCopiedLink] = useState(false);
   const [copiedCreds, setCopiedCreds] = useState(false);
 
-  const normalizeStaffItem = (item: any): StaffItem => {
-    const sNo = item.staffNo || item.staff_id || item.staffId || item.sin || '';
-    const dName = resolveDepartment(item.department?.name || item.department || '', sNo);
+  const normalizeStaffItem = (item: any, idx?: number): StaffItem => {
+    const sNo = item?.staffNo || item?.staff_id || item?.staffId || item?.sin || 'N/A';
+    const dName = resolveDepartment(item?.department?.name || item?.department || '', sNo);
     return {
-      id: item.id || item.staff_id || item.staffNo || item.sin,
+      id: item?.id || item?.staff_id || item?.staffNo || item?.sin || `staff-fallback-${idx ?? Math.random()}`,
       staffNo: sNo,
-      designation: item.designation || 'Staff',
-      joiningDate: item.joiningDate || item.joining_date || new Date().toISOString().split('T')[0],
-      status: item.status || "ACTIVE",
-      lastLogin: item.lastLogin || new Date().toLocaleString(),
-      allocatedCourses: item.allocatedCourses || [],
+      designation: item?.designation || 'Staff',
+      joiningDate: item?.joiningDate || item?.joining_date || new Date().toISOString().split('T')[0],
+      status: item?.status || "ACTIVE",
+      lastLogin: item?.lastLogin || new Date().toLocaleString(),
+      allocatedCourses: Array.isArray(item?.allocatedCourses) ? item.allocatedCourses : [],
       user: {
-        id: item.user?.id || item.id,
-        username: item.user?.username || item.username || '',
-        firstName: item.user?.firstName || item.firstName || item.first_name || '',
-        lastName: item.user?.lastName || item.lastName || item.last_name || '',
-        middleName: item.user?.middleName || item.middleName || item.middle_name || '',
-        email: item.user?.email || item.email || '',
-        phoneNumber: item.user?.phoneNumber || item.phone || item.phoneNumber || '',
+        id: item?.user?.id || item?.id || `usr-${idx ?? Math.random()}`,
+        username: item?.user?.username || item?.username || '',
+        firstName: item?.user?.firstName || item?.firstName || item?.first_name || 'Staff',
+        lastName: item?.user?.lastName || item?.lastName || item?.last_name || 'Member',
+        middleName: item?.user?.middleName || item?.middleName || item?.middle_name || '',
+        email: item?.user?.email || item?.email || '',
+        phoneNumber: item?.user?.phoneNumber || item?.phone || item?.phoneNumber || '',
         role: {
-          name: item.user?.role?.name || item.roleName || item.role || 'LECTURER'
+          name: item?.user?.role?.name || item?.user?.roleName || item?.roleName || item?.role || 'LECTURER'
         }
       },
       department: {
-        id: item.department?.id || ('dept-' + String(dName).toLowerCase().replace(/[^a-z0-9]/g, '-')),
+        id: item?.department?.id || ('dept-' + String(dName).toLowerCase().replace(/[^a-z0-9]/g, '-')),
         name: dName
       },
-      lecturer: (item.lecturer || item.academicRank || item.academic_rank) ? {
-        rank: item.lecturer?.rank || item.academicRank || item.academic_rank || 'LECTURER_II',
-        specialization: item.lecturer?.specialization || item.specialization || ''
+      lecturer: (item?.lecturer || item?.academicRank || item?.academic_rank) ? {
+        rank: item?.lecturer?.rank || item?.academicRank || item?.academic_rank || 'LECTURER_II',
+        specialization: item?.lecturer?.specialization || item?.specialization || ''
       } : null
     };
   };
@@ -684,8 +684,8 @@ export default function StaffClient({ staffList: initialStaff, departments: rawD
                   </td>
                 </tr>
               ) : (
-                paginatedStaff.map((staff) => (
-                  <tr key={staff.id} className="hover:bg-slate-50/80 transition-colors">
+                paginatedStaff.map((staff, idx) => (
+                  <tr key={staff.id || staff.staffNo || `staff-key-${idx}`} className="hover:bg-slate-50/80 transition-colors">
                     <td className="py-3.5 px-4">
                       <div className="font-bold text-slate-900">
                         {staff.user.firstName} {staff.user.middleName || ""} {staff.user.lastName}

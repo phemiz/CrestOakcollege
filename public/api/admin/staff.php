@@ -351,6 +351,14 @@ try {
         }
 
         $finalStaffList = array_values($mergedMap);
+        foreach ($finalStaffList as &$item) {
+            $item['staffNo'] = $item['staffNo'] ?? $item['staffId'] ?? $item['sin'] ?? 'STAFF-PENDING';
+            $item['staffId'] = $item['staffId'] ?? $item['staffNo'];
+            $item['sin']     = $item['sin']     ?? $item['staffNo'];
+            $item['specialization'] = $item['specialization'] ?? '';
+            $item['allocatedCourses'] = is_array($item['allocatedCourses'] ?? null) ? $item['allocatedCourses'] : [];
+        }
+        unset($item);
 
         echo json_encode([
             "success" => true,
