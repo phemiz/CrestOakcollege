@@ -300,6 +300,12 @@ try {
         }
 
         // 4. Dynamically Compute CGPA strictly from recorded grades in grades_store.json
+        if (!function_exists('normalizeMatric')) {
+            function normalizeMatric($matric) {
+                return strtoupper(trim(str_replace('\\', '', $matric)));
+            }
+        }
+
         $gradesStoreFile = __DIR__ . '/grades_store.json';
         if (!file_exists($gradesStoreFile) && file_exists(__DIR__ . '/../admin/grades_store.json')) {
             $gradesStoreFile = __DIR__ . '/../admin/grades_store.json';
@@ -319,7 +325,7 @@ try {
             $foundGrades = false;
 
             foreach ($gradesList as $g) {
-                if (!empty($stMatric) && strtolower(trim($g['matricNo'] ?? '')) === strtolower(trim($stMatric))) {
+                if (!empty($stMatric) && normalizeMatric($g['matricNo'] ?? '') === normalizeMatric($stMatric)) {
                     $foundGrades = true;
                     $units = intval($g['units'] ?? 3);
                     $gp = floatval($g['gradePoint'] ?? 0.0);
