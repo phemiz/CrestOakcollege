@@ -174,9 +174,35 @@ try {
 
     $defaultStaff = [
         [
+            "id" => "stf-004",
+            "staffId" => "CCHMT/STF/2026/SCS/002",
+            "staffNo" => "CCHMT/STF/2026/SCS/002",
+            "sin" => "CCHMT/STF/2026/SCS/002",
+            "username" => "femi.joseph",
+            "password" => "CrestOak#gjPS3",
+            "designation" => "Lecturer II",
+            "status" => "ACTIVE",
+            "joiningDate" => "2024-01-10",
+            "rank" => "LECTURER_II",
+            "specialization" => "Software Engineering & Web Systems",
+            "allocatedCourses" => ["CSC 101"],
+            "user" => [
+                "firstName" => "Femi",
+                "lastName" => "Adebayo",
+                "middleName" => "Joseph",
+                "email" => "get2phemi96@gmail.com",
+                "phoneNumber" => "08155884804",
+                "roleName" => "LECTURER"
+            ],
+            "department" => ["id" => "dept-tech-001", "name" => "Department of Computer Science & IT"]
+        ],
+        [
             "id" => "stf-001",
+            "staffId" => "CCHMS/STAFF/NUR/001",
+            "staffNo" => "CCHMS/STAFF/NUR/001",
+            "sin" => "CCHMS/STAFF/NUR/001",
             "username" => "adeyemi.emmanuel",
-            "staffNo" => "CCHMT/STF/2026/NUR/001",
+            "password" => "CrestOak#2026",
             "designation" => "Senior Lecturer & Head of Department",
             "status" => "ACTIVE",
             "joiningDate" => "2023-09-01",
@@ -194,44 +220,50 @@ try {
             "department" => ["id" => "dept-health-001", "name" => "Department of Nursing Sciences"]
         ],
         [
+            "id" => "stf-005",
+            "staffId" => "CCHMS/STAFF/SCS/001",
+            "staffNo" => "CCHMS/STAFF/SCS/001",
+            "sin" => "CCHMS/STAFF/SCS/001",
+            "username" => "femi.adebayo",
+            "password" => "CrestOak#2026",
+            "designation" => "Senior Lecturer & Head of Department",
+            "status" => "ACTIVE",
+            "joiningDate" => "2023-08-15",
+            "rank" => "SENIOR_LECTURER",
+            "specialization" => "Computer Science & IT Infrastructure",
+            "allocatedCourses" => ["CSC 101"],
+            "user" => [
+                "firstName" => "Femi",
+                "lastName" => "Adebayo",
+                "middleName" => "Olayinka",
+                "email" => "femi.adebayo@crestoakcollege.com.ng",
+                "phoneNumber" => "08055667788",
+                "roleName" => "HOD"
+            ],
+            "department" => ["id" => "dept-tech-001", "name" => "Department of Computer Science & IT"]
+        ],
+        [
             "id" => "stf-002",
+            "staffId" => "CCHMS/STAFF/BUS/001",
+            "staffNo" => "CCHMS/STAFF/BUS/001",
+            "sin" => "CCHMS/STAFF/BUS/001",
             "username" => "okoro.grace",
-            "staffNo" => "CCHMT/ADM/2026/REG/002",
-            "designation" => "Deputy Registrar (Academic Affairs)",
+            "password" => "CrestOak#2026",
+            "designation" => "Bursar & Deputy Registrar",
             "status" => "ACTIVE",
             "joiningDate" => "2024-01-15",
-            "rank" => "REGISTRAR_OFFICER",
-            "specialization" => "Institutional Governance & Admissions",
+            "rank" => "BURSAR",
+            "specialization" => "Financial Operations & Governance",
             "allocatedCourses" => [],
             "user" => [
                 "firstName" => "Grace",
                 "lastName" => "Okoro",
-                "middleName" => "Nneka",
+                "middleName" => "Chidimma",
                 "email" => "grace.okoro@crestoakcollege.com.ng",
                 "phoneNumber" => "08144556677",
-                "roleName" => "REGISTRAR"
+                "roleName" => "BURSAR"
             ],
             "department" => ["id" => "dept-mgmt-001", "name" => "Department of Business Administration"]
-        ],
-        [
-            "id" => "stf-003",
-            "username" => "bello.ibrahim",
-            "staffNo" => "CCHMT/STF/2026/MLS/003",
-            "designation" => "Lecturer I",
-            "status" => "ACTIVE",
-            "joiningDate" => "2024-03-01",
-            "rank" => "LECTURER_I",
-            "specialization" => "Molecular Diagnostics",
-            "allocatedCourses" => ["MLS 201", "MLS 202"],
-            "user" => [
-                "firstName" => "Ibrahim",
-                "lastName" => "Bello",
-                "middleName" => "Garba",
-                "email" => "ibrahim.bello@crestoakcollege.com.ng",
-                "phoneNumber" => "08022334455",
-                "roleName" => "LECTURER"
-            ],
-            "department" => ["id" => "dept-health-002", "name" => "Department of Medical Laboratory Science"]
         ]
     ];
 
