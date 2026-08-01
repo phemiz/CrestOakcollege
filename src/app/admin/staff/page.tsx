@@ -8,9 +8,10 @@ export default function StaffPage() {
   const [isAuthorized, setIsAuthorized] = useState(false);
   const [staffList, setStaffList] = useState<any[]>([]);
   const [departments, setDepartments] = useState<any[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const [loading, setLoading] = useState<boolean>(true);
 
   useEffect(() => {
+    let isMounted = true;
     if (typeof window !== "undefined") {
       const isAuth = localStorage.getItem("isAuthenticated");
       const userStr = localStorage.getItem("user") || localStorage.getItem("cchsmt_user_session");
@@ -29,24 +30,38 @@ export default function StaffPage() {
       setIsAuthorized(true);
     }
 
-    fetch("/api/admin/staff.php")
+    fetch('/api/admin/staff.php')
       .then((res) => res.json())
       .then((data) => {
-        if (data.success) {
-          if (Array.isArray(data.staffList)) setStaffList(data.staffList);
-          if (Array.isArray(data.departments)) setDepartments(data.departments);
+        if (!isMounted) return;
+        if (Array.isArray(data)) {
+          setStaffList(data);
+        } else if (data?.staffList && Array.isArray(data.staffList)) {
+          setStaffList(data.staffList);
+        } else if (data?.staff && Array.isArray(data.staff)) {
+          setStaffList(data.staff);
         }
+        if (data?.departments && Array.isArray(data.departments)) {
+          setDepartments(data.departments);
+        }
+        setLoading(false);
       })
-      .catch(() => {})
-      .finally(() => setIsLoading(false));
+      .catch((err) => {
+        console.error('Failed to load staff roster:', err);
+        if (isMounted) setLoading(false);
+      });
+
+    return () => {
+      isMounted = false;
+    };
   }, []);
 
-  if (!isAuthorized) {
+  if (!isAuthorized || loading) {
     return (
       <div className="min-h-screen bg-slate-50 flex items-center justify-center p-4">
         <div className="flex items-center gap-3 text-slate-600 font-medium text-sm">
           <Loader2 className="h-5 w-5 animate-spin text-brand-red" />
-          <span>Verifying administrative authorization...</span>
+          <span>Loading staff registry...</span>
         </div>
       </div>
     );

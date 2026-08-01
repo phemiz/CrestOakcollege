@@ -27,7 +27,7 @@ import {
   AlertTriangle,
   Clock
 } from "lucide-react";
-import { DEFAULT_DEPARTMENTS, DEFAULT_STAFF_MEMBERS } from "@/constants/institutionalData";
+import { DEFAULT_DEPARTMENTS } from "@/constants/institutionalData";
 
 interface StaffItem {
   id: string;
@@ -121,9 +121,7 @@ export default function StaffClient({ staffList: initialStaff, departments: rawD
     : DEFAULT_DEPARTMENTS.map((d, i) => ({ id: `dept-${i + 1}`, name: d }));
 
   const router = useRouter();
-  const [staffList, setStaffList] = useState<StaffItem[]>(
-    (initialStaff && initialStaff.length > 0) ? initialStaff : (DEFAULT_STAFF_MEMBERS as any)
-  );
+  const [staffList, setStaffList] = useState<StaffItem[]>(initialStaff || []);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
 
@@ -145,72 +143,68 @@ export default function StaffClient({ staffList: initialStaff, departments: rawD
   const [copiedLink, setCopiedLink] = useState(false);
   const [copiedCreds, setCopiedCreds] = useState(false);
 
+  const normalizeStaffItem = (item: any): StaffItem => {
+    const sNo = item.staffNo || item.staff_id || item.staffId || item.sin || '';
+    const dName = resolveDepartment(item.department?.name || item.department || '', sNo);
+    return {
+      id: item.id || item.staff_id || item.staffNo || item.sin,
+      staffNo: sNo,
+      designation: item.designation || 'Staff',
+      joiningDate: item.joiningDate || item.joining_date || new Date().toISOString().split('T')[0],
+      status: item.status || "ACTIVE",
+      lastLogin: item.lastLogin || new Date().toLocaleString(),
+      allocatedCourses: item.allocatedCourses || [],
+      user: {
+        id: item.user?.id || item.id,
+        username: item.user?.username || item.username || '',
+        firstName: item.user?.firstName || item.firstName || item.first_name || '',
+        lastName: item.user?.lastName || item.lastName || item.last_name || '',
+        middleName: item.user?.middleName || item.middleName || item.middle_name || '',
+        email: item.user?.email || item.email || '',
+        phoneNumber: item.user?.phoneNumber || item.phone || item.phoneNumber || '',
+        role: {
+          name: item.user?.role?.name || item.roleName || item.role || 'LECTURER'
+        }
+      },
+      department: {
+        id: item.department?.id || ('dept-' + String(dName).toLowerCase().replace(/[^a-z0-9]/g, '-')),
+        name: dName
+      },
+      lecturer: (item.lecturer || item.academicRank || item.academic_rank) ? {
+        rank: item.lecturer?.rank || item.academicRank || item.academic_rank || 'LECTURER_II',
+        specialization: item.lecturer?.specialization || item.specialization || ''
+      } : null
+    };
+  };
+
   useEffect(() => {
+    if (Array.isArray(initialStaff) && initialStaff.length > 0) {
+      setStaffList(initialStaff.map(normalizeStaffItem));
+    }
+  }, [initialStaff]);
+
+  useEffect(() => {
+    let isMounted = true;
     const fetchStaffMembers = async () => {
       try {
         const res = await fetch("/api/admin/staff.php?_t=" + Date.now());
         if (res.ok) {
           const data = await res.json();
-          const liveList = Array.isArray(data) ? data : (data.staffList || data.data || []);
-          
-          if (Array.isArray(liveList) && liveList.length > 0) {
-            const mergedMap = new Map();
-            
-            (DEFAULT_STAFF_MEMBERS as any[]).forEach((item: any) => {
-              const key = item.user?.username || item.username || item.staffNo || item.id;
-              if (key) mergedMap.set(key, item);
-            });
-            
-            liveList.forEach((item: any) => {
-              const key = item.user?.username || item.username || item.staffNo || item.staff_id || item.id;
-              if (key) {
-                const sNo = item.staffNo || item.staff_id || item.staffId || 'CCHMT/STF/2026/SCS/001';
-                const dName = resolveDepartment(item.department?.name || item.department || '', sNo);
-                const normalizedItem: StaffItem = {
-                  id: item.id || item.staff_id || item.staffNo,
-                  staffNo: sNo,
-                  designation: item.designation || 'Staff',
-                  joiningDate: item.joiningDate || item.joining_date || new Date().toISOString().split('T')[0],
-                  status: item.status || "ACTIVE",
-                  lastLogin: item.lastLogin || new Date().toLocaleString(),
-                  allocatedCourses: item.allocatedCourses || ["NUR101", "CSC101"],
-                  user: {
-                    id: item.user?.id || item.id,
-                    username: item.user?.username || item.username || '',
-                    firstName: item.user?.firstName || item.firstName || item.first_name || '',
-                    lastName: item.user?.lastName || item.lastName || item.last_name || '',
-                    middleName: item.user?.middleName || item.middleName || item.middle_name || '',
-                    email: item.user?.email || item.email || '',
-                    phoneNumber: item.user?.phoneNumber || item.phone || item.phoneNumber || '',
-                    role: {
-                      name: item.user?.role?.name || item.roleName || item.role || 'LECTURER'
-                    }
-                  },
-                  department: {
-                    id: item.department?.id || ('dept-' + String(dName).toLowerCase().replace(/[^a-z0-9]/g, '-')),
-                    name: dName
-                  },
-                  lecturer: (item.lecturer || item.academicRank || item.academic_rank) ? {
-                    rank: item.lecturer?.rank || item.academicRank || item.academic_rank || 'LECTURER_II',
-                    specialization: item.lecturer?.specialization || item.specialization || ''
-                  } : null
-                };
-                mergedMap.set(key, normalizedItem);
-              }
-            });
-            
-            setStaffList(Array.from(mergedMap.values()));
-            return;
+          if (!isMounted) return;
+          const liveList = Array.isArray(data) ? data : (data.staffList || data.staff || data.data || []);
+          if (Array.isArray(liveList)) {
+            setStaffList(liveList.map(normalizeStaffItem));
           }
         }
       } catch (error) {
-        console.warn("Could not fetch live staff records, displaying defaults.", error);
+        console.error("Error fetching live staff records:", error);
       }
-      
-      setStaffList(DEFAULT_STAFF_MEMBERS as any);
     };
 
     fetchStaffMembers();
+    return () => {
+      isMounted = false;
+    };
   }, []);
 
   // Search & Filters
@@ -542,7 +536,7 @@ export default function StaffClient({ staffList: initialStaff, departments: rawD
   };
 
   const handleDelete = async (id: string) => {
-    if (!confirm("Are you sure you want to archive/soft-delete this staff record?")) return;
+    if (!confirm("Are you sure you want to delete this staff record?")) return;
 
     setIsSubmitting(true);
     try {
@@ -553,10 +547,9 @@ export default function StaffClient({ staffList: initialStaff, departments: rawD
       });
       const data = await res.json();
       if (data.success) {
-        setStaffList((prev) => prev.filter((s) => s.id !== id));
-        router.refresh();
+        setStaffList((prev) => prev.filter((s) => s.id !== id && s.staffNo !== id));
       } else {
-        alert("Error archiving staff: " + (data.message || "Failed"));
+        alert("Error deleting staff: " + (data.message || "Failed"));
       }
     } catch (err: any) {
       alert("Delete error: " + err.message);

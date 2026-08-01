@@ -333,27 +333,30 @@ try {
         // 2. Fetch File Storage Records
         $fileStoreStaff = readJsonStore($storeFile);
 
-        // 3. Merge DB, Store File, and Defaults
+        // Auto-seed default staff roster if persistent store is empty
+        if (empty($fileStoreStaff)) {
+            writeJsonStore($storeFile, $defaultStaff);
+            $fileStoreStaff = $defaultStaff;
+        }
+
+        // 3. Merge DB and Store File
         $mergedMap = [];
         foreach ($dbStaff as $item) {
-            $key = $item['staffNo'] ?? $item['id'];
+            $key = $item['staffNo'] ?? $item['staffId'] ?? $item['sin'] ?? $item['id'];
             if (!empty($key)) $mergedMap[$key] = $item;
         }
         foreach ($fileStoreStaff as $item) {
-            $key = $item['staffNo'] ?? $item['id'];
+            $key = $item['staffNo'] ?? $item['staffId'] ?? $item['sin'] ?? $item['id'];
             if (!empty($key)) $mergedMap[$key] = $item;
         }
-        foreach ($defaultStaff as $item) {
-            $key = $item['staffNo'] ?? $item['id'];
-            if (!empty($key) && !isset($mergedMap[$key])) {
-                $mergedMap[$key] = $item;
-            }
-        }
+
+        $finalStaffList = array_values($mergedMap);
 
         echo json_encode([
             "success" => true,
             "persistenceSuccess" => true,
-            "staff" => array_values($mergedMap),
+            "staff" => $finalStaffList,
+            "staffList" => $finalStaffList,
             "departments" => $defaultDepartments,
             "courses" => $defaultCourses
         ]);
@@ -592,11 +595,13 @@ try {
     }
 
     if ($method === 'DELETE') {
-        $id = $data['id'] ?? '';
+        $id = $data['id'] ?? $data['staffId'] ?? $data['staffNo'] ?? $data['sin'] ?? '';
         if ($id) {
             $currentStore = readJsonStore($storeFile);
             $filteredStore = array_filter($currentStore, function($s) use ($id) {
-                return ($s['id'] ?? '') !== $id;
+                $sId = $s['id'] ?? '';
+                $sStaffNo = $s['staffNo'] ?? $s['staffId'] ?? $s['sin'] ?? '';
+                return $sId !== $id && $sStaffNo !== $id;
             });
             writeJsonStore($storeFile, array_values($filteredStore));
         }
