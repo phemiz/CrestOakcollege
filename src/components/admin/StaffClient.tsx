@@ -246,15 +246,17 @@ export default function StaffClient({ staffList: initialStaff, departments: rawD
   });
 
   const computeSIN = (deptId: string, roleName: string) => {
-    if (!deptId) return "";
     const selectedDept = departments.find((d) => d.id === deptId);
-    const code = getStaffDeptCode(selectedDept?.name || "");
+    const deptName = selectedDept?.name || "";
+    const code = getStaffDeptCode(deptName);
+    const isHealth = deptName.toUpperCase().includes("NURSING") || deptName.toUpperCase().includes("HEALTH") || deptName.toUpperCase().includes("MEDICAL") || code === "NUR" || code === "MLS";
+    const collegePrefix = isHealth ? "CCHMS" : "CCHMT";
     const isAcademic = ["LECTURER", "HOD", "DEAN"].includes(roleName);
     const typePrefix = isAcademic ? "STF" : "ADM";
     const year = "2026";
-    const countInDept = staffList.filter((s) => s.department?.id === deptId).length;
+    const countInDept = staffList.filter((s) => s.department?.id === deptId || (s.staffNo && s.staffNo.includes(code))).length;
     const nextIndex = String(countInDept + 1).padStart(3, "0");
-    return `CCHMT/${typePrefix}/${year}/${code}/${nextIndex}`;
+    return `${collegePrefix}/${typePrefix}/${year}/${code}/${nextIndex}`;
   };
 
   const generateRandomPassword = () => {
@@ -851,15 +853,38 @@ export default function StaffClient({ staffList: initialStaff, departments: rawD
                   />
                 </div>
                 <div className="flex flex-col gap-1">
-                  <label className="text-[10px] uppercase font-bold text-slate-700">Staff Identification (SIN) *</label>
-                  <input
-                    type="text"
-                    required
-                    value={formData.staffNo}
-                    onChange={(e) => setFormData({ ...formData, staffNo: e.target.value })}
-                    placeholder="e.g. CCHMT/STF/2026/NUR/012"
-                    className="p-2.5 bg-white border border-slate-300 rounded-xl focus:outline-none focus:border-slate-900 text-slate-900 font-mono font-bold"
-                  />
+                  <div className="flex items-center justify-between">
+                    <label className="text-[10px] uppercase font-bold text-slate-700">Staff Identification Number (SIN) *</label>
+                    <button
+                      type="button"
+                      onClick={() => setFormData((prev) => ({ ...prev, staffNo: computeSIN(prev.departmentId, prev.roleName) }))}
+                      className="text-[10px] font-semibold text-brand-navy hover:text-brand-red flex items-center gap-1 transition-colors"
+                      title="Auto-generate fresh SIN"
+                    >
+                      <RefreshCw className="w-3 h-3" /> Auto-generate
+                    </button>
+                  </div>
+                  <div className="relative flex items-center">
+                    <input
+                      type="text"
+                      required
+                      value={formData.staffNo}
+                      onChange={(e) => setFormData({ ...formData, staffNo: e.target.value })}
+                      placeholder="Auto-generated e.g., CCHMS/2026/STF/0042 or CCHMT/STF/2026/NUR/002"
+                      className="w-full p-2.5 pr-10 bg-white border border-slate-300 rounded-xl focus:outline-none focus:border-slate-900 text-slate-900 font-mono font-bold text-sm"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setFormData((prev) => ({ ...prev, staffNo: computeSIN(prev.departmentId, prev.roleName) }))}
+                      className="absolute right-2.5 p-1 text-slate-400 hover:text-slate-700 transition-colors"
+                      title="Regenerate SIN"
+                    >
+                      <RefreshCw className="w-4 h-4" />
+                    </button>
+                  </div>
+                  <p className="text-[10px] text-slate-500 italic">
+                    Auto-generated e.g., CCHMS/2026/STF/0042 or CCHMT/STF/2026/NUR/002
+                  </p>
                 </div>
               </div>
 

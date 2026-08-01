@@ -366,7 +366,7 @@ try {
     if ($method === 'POST' || $method === 'PUT') {
         $action = $data['action'] ?? 'save_staff';
         $id = $data['id'] ?? ('stf-' . rand(1000, 9999));
-        $staffNo = $data['staffNo'] ?? $data['staff_no'] ?? ('CCHMT/STF/2026/NUR/' . str_pad(rand(1, 999), 3, '0', STR_PAD_LEFT));
+        $staffNo = trim($data['staffNo'] ?? $data['sin'] ?? $data['staffId'] ?? $data['staff_no'] ?? ('CCHMT/STF/2026/SCS/' . str_pad(rand(1, 999), 3, '0', STR_PAD_LEFT)));
         $firstName = $data['firstName'] ?? $data['first_name'] ?? '';
         $lastName = $data['lastName'] ?? $data['last_name'] ?? '';
         $email = $data['email'] ?? '';
@@ -392,7 +392,7 @@ try {
                     <p>Hello <strong>" . htmlspecialchars($fullName) . "</strong>,</p>
                     <p>Your staff portal credentials have been updated. Below are your login details:</p>
                     <div style='background-color: #f4f6f9; padding: 15px; border-left: 4px solid #0d2e58; margin: 20px 0;'>
-                      <p style='margin: 5px 0;'><strong>Staff Identification (SIN):</strong> " . htmlspecialchars($staffNo) . "</p>
+                      <p style='margin: 5px 0;'><strong>Staff Identification Number (SIN):</strong> " . htmlspecialchars($staffNo) . "</p>
                       <p style='margin: 5px 0;'><strong>Institutional Email:</strong> " . htmlspecialchars($email) . "</p>
                       <p style='margin: 5px 0;'><strong>New Temporary Password:</strong> " . htmlspecialchars($rawPassword) . "</p>
                       <p style='margin: 5px 0;'><strong>Staff Portal URL:</strong> <a href='https://portal.crestoakcollege.com.ng/staff' style='color: #0d2e58; text-decoration: underline;'>https://portal.crestoakcollege.com.ng/staff</a></p>
@@ -413,6 +413,8 @@ try {
                 "emailSent" => $mailSent,
                 "credentials" => [
                     "staffNo" => $staffNo,
+                    "staffId" => $staffNo,
+                    "sin" => $staffNo,
                     "temporaryPassword" => $rawPassword,
                     "email" => $email
                 ]
@@ -435,6 +437,10 @@ try {
             "id" => $id,
             "username" => $data['username'] ?? $email,
             "staffNo" => $staffNo,
+            "staffId" => $staffNo,
+            "sin" => $staffNo,
+            "password" => $rawPassword,
+            "password_hash" => $hashedPassword,
             "designation" => $data['designation'] ?? 'Lecturer',
             "status" => $data['status'] ?? 'ACTIVE',
             "joiningDate" => $data['joiningDate'] ?? date('Y-m-d'),
