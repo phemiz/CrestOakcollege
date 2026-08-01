@@ -869,29 +869,37 @@ export default function PortalDashboard({ initialUser }: { initialUser?: any }) 
                             </tr>
                           </thead>
                           <tbody className="divide-y divide-slate-100 font-semibold text-slate-700">
-                            {(dynamicResultsList.length > 0 ? dynamicResultsList : portalResultsData).map((r: any) => (
-                              <tr key={r.code} className="hover:bg-slate-50/60 transition-colors">
-                                <td className="p-3.5 px-4 font-bold text-brand-blue-dark font-mono">{r.code}</td>
-                                <td className="p-3.5 px-4">{r.title}</td>
-                                <td className="p-3.5 px-4 text-center font-display">{r.units}</td>
-                                <td className="p-3.5 px-4 text-center text-slate-500 font-mono">{r.assignment ?? 8}</td>
-                                <td className="p-3.5 px-4 text-center text-slate-500 font-mono">{r.caTest ?? 16}</td>
-                                <td className="p-3.5 px-4 text-center text-slate-500 font-mono">{r.project ?? 8}</td>
-                                <td className="p-3.5 px-4 text-center text-slate-500 font-mono">{r.exam ?? 45}</td>
-                                <td className="p-3.5 px-4 text-center font-black text-slate-900 font-mono">{r.score ?? 77}</td>
-                                <td className="p-3.5 px-4 text-center">
-                                  <span className={`px-2 py-0.5 rounded font-black text-[11px] ${
-                                    (r.grade === "A") ? "bg-emerald-100 text-emerald-800 border border-emerald-200" :
-                                    (r.grade === "B") ? "bg-blue-100 text-blue-800 border border-blue-200" :
-                                    (r.grade === "C") ? "bg-amber-100 text-amber-800 border border-amber-200" :
-                                    "bg-rose-100 text-rose-800 border border-rose-200"
-                                  }`}>{r.grade}</span>
-                                </td>
-                                <td className="p-3.5 px-4 text-right font-display text-brand-blue-dark font-bold">
-                                  {(r.gradePoint ?? r.gp ?? 5.0).toFixed(1)}
+                            {dynamicResultsList.length > 0 ? (
+                              dynamicResultsList.map((r: any) => (
+                                <tr key={r.code} className="hover:bg-slate-50/60 transition-colors">
+                                  <td className="p-3.5 px-4 font-bold text-brand-blue-dark font-mono">{r.code}</td>
+                                  <td className="p-3.5 px-4">{r.title}</td>
+                                  <td className="p-3.5 px-4 text-center font-display">{r.units}</td>
+                                  <td className="p-3.5 px-4 text-center text-slate-500 font-mono">{r.assignment ?? 0}</td>
+                                  <td className="p-3.5 px-4 text-center text-slate-500 font-mono">{r.caTest ?? 0}</td>
+                                  <td className="p-3.5 px-4 text-center text-slate-500 font-mono">{r.project ?? 0}</td>
+                                  <td className="p-3.5 px-4 text-center text-slate-500 font-mono">{r.exam ?? 0}</td>
+                                  <td className="p-3.5 px-4 text-center font-black text-slate-900 font-mono">{r.score ?? 0}</td>
+                                  <td className="p-3.5 px-4 text-center">
+                                    <span className={`px-2 py-0.5 rounded font-black text-[11px] ${
+                                      (r.grade === "A") ? "bg-emerald-100 text-emerald-800 border border-emerald-200" :
+                                      (r.grade === "B") ? "bg-blue-100 text-blue-800 border border-blue-200" :
+                                      (r.grade === "C") ? "bg-amber-100 text-amber-800 border border-amber-200" :
+                                      "bg-rose-100 text-rose-800 border border-rose-200"
+                                    }`}>{r.grade}</span>
+                                  </td>
+                                  <td className="p-3.5 px-4 text-right font-display text-brand-blue-dark font-bold">
+                                    {Number(r.gradePoint ?? r.gp ?? 0).toFixed(1)}
+                                  </td>
+                                </tr>
+                              ))
+                            ) : (
+                              <tr>
+                                <td colSpan={10} className="p-8 text-center text-slate-500 font-bold uppercase tracking-wider text-xs bg-slate-50/50">
+                                  No course grades published yet for this session.
                                 </td>
                               </tr>
-                            ))}
+                            )}
                           </tbody>
                         </table>
                       </div>

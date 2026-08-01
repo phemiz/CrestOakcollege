@@ -32,16 +32,16 @@ export default function StaffDashboard() {
 
   // Grade Management Form State
   const [gradeForm, setGradeForm] = useState({
-    matricNo: "CCHMS/2026/NUR/0042",
-    courseCode: "NUR 101",
-    courseTitle: "Foundations of Professional Nursing Practice",
+    matricNo: "",
+    courseCode: "",
+    courseTitle: "",
     units: 3,
     semester: "First Semester, 2025/2026",
     session: "2025/2026",
-    assignment: 8,
-    caTest: 17,
-    project: 9,
-    exam: 50
+    assignment: 0,
+    caTest: 0,
+    project: 0,
+    exam: 0
   });
   const [isSubmittingGrade, setIsSubmittingGrade] = useState(false);
   const [gradeSuccessMsg, setGradeSuccessMsg] = useState("");
@@ -616,27 +616,35 @@ export default function StaffDashboard() {
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-100 font-semibold text-slate-700">
-                      {savedGradesList.map((g: any) => (
-                        <tr key={g.id} className="hover:bg-slate-50/80 transition-colors">
-                          <td className="p-3.5 px-4 font-mono font-bold text-slate-900">{g.matricNo}</td>
-                          <td className="p-3.5 px-4 font-bold text-indigo-600">{g.courseCode}</td>
-                          <td className="p-3.5 px-4 text-center">{g.units}</td>
-                          <td className="p-3.5 px-4 text-center text-slate-500 font-mono">{g.assignment}</td>
-                          <td className="p-3.5 px-4 text-center text-slate-500 font-mono">{g.caTest}</td>
-                          <td className="p-3.5 px-4 text-center text-slate-500 font-mono">{g.project}</td>
-                          <td className="p-3.5 px-4 text-center text-slate-500 font-mono">{g.exam}</td>
-                          <td className="p-3.5 px-4 text-center font-black text-slate-900 font-mono">{g.score}</td>
-                          <td className="p-3.5 px-4 text-center">
-                            <span className={`px-2.5 py-0.5 rounded font-black text-[10px] ${
-                              g.grade === "A" ? "bg-emerald-100 text-emerald-800 border border-emerald-200" :
-                              g.grade === "B" ? "bg-blue-100 text-blue-800 border border-blue-200" :
-                              g.grade === "C" ? "bg-amber-100 text-amber-800 border border-amber-200" :
-                              "bg-rose-100 text-rose-800 border border-rose-200"
-                            }`}>{g.grade}</span>
+                      {savedGradesList.length > 0 ? (
+                        savedGradesList.map((g: any) => (
+                          <tr key={g.id} className="hover:bg-slate-50/80 transition-colors">
+                            <td className="p-3.5 px-4 font-mono font-bold text-slate-900">{g.matricNo}</td>
+                            <td className="p-3.5 px-4 font-bold text-indigo-600">{g.courseCode}</td>
+                            <td className="p-3.5 px-4 text-center">{g.units}</td>
+                            <td className="p-3.5 px-4 text-center text-slate-500 font-mono">{g.assignment}</td>
+                            <td className="p-3.5 px-4 text-center text-slate-500 font-mono">{g.caTest}</td>
+                            <td className="p-3.5 px-4 text-center text-slate-500 font-mono">{g.project}</td>
+                            <td className="p-3.5 px-4 text-center text-slate-500 font-mono">{g.exam}</td>
+                            <td className="p-3.5 px-4 text-center font-black text-slate-900 font-mono">{g.score}</td>
+                            <td className="p-3.5 px-4 text-center">
+                              <span className={`px-2.5 py-0.5 rounded font-black text-[10px] ${
+                                g.grade === "A" ? "bg-emerald-100 text-emerald-800 border border-emerald-200" :
+                                g.grade === "B" ? "bg-blue-100 text-blue-800 border border-blue-200" :
+                                g.grade === "C" ? "bg-amber-100 text-amber-800 border border-amber-200" :
+                                "bg-rose-100 text-rose-800 border border-rose-200"
+                              }`}>{g.grade}</span>
+                            </td>
+                            <td className="p-3.5 px-4 text-right font-mono font-bold text-slate-900">{Number(g.gradePoint || 0).toFixed(1)}</td>
+                          </tr>
+                        ))
+                      ) : (
+                        <tr>
+                          <td colSpan={10} className="p-8 text-center text-slate-500 font-bold uppercase tracking-wider text-xs bg-slate-50/50">
+                            No recorded course grades in gradebook yet. Enter student component scores above to publish results.
                           </td>
-                          <td className="p-3.5 px-4 text-right font-mono font-bold text-slate-900">{Number(g.gradePoint || 0).toFixed(1)}</td>
                         </tr>
-                      ))}
+                      )}
                     </tbody>
                   </table>
                 </div>
