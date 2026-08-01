@@ -2,7 +2,6 @@
 
 import React, { useState, useEffect } from "react";
 import Image from "next/image";
-import { Header } from "@/components/layout/header";
 import { Logo } from "@/components/ui/logo";
 import { portalAvailableCourses, portalResultsData, portalTimetableSlots } from "@/data/portalData";
 import { Admission } from "@/types";
@@ -527,9 +526,7 @@ export default function PortalDashboard({ initialUser }: { initialUser?: any }) 
 
   return (
     <>
-      <Header />
-
-      <main className="flex-grow bg-slate-50">
+      <div className="w-full flex flex-col gap-6">
         {!isLoggedIn || !studentProfile ? (
           // LOGIN SCREEN CONTAINER
           <section className="py-24 flex justify-center items-center px-4">
@@ -1157,7 +1154,7 @@ export default function PortalDashboard({ initialUser }: { initialUser?: any }) 
             </div>
           </div>
         )}
-      </main>
+      </div>
 
       {/* PAYSTACK & FLUTTERWAVE GATEWAY SIMULATION MODAL */}
       <AnimatePresence>
