@@ -252,7 +252,7 @@ export default function PortalDashboard({ initialUser }: { initialUser?: any }) 
         const matricNo = parsedSessionUser.matricNo || parsedSessionUser.user?.matricNo || parsedSessionUser.username || "CCHMS/2026/SCS/0001";
         const dept = parsedSessionUser.department?.name || parsedSessionUser.department || parsedSessionUser.user?.department || "Department of Nursing Sciences";
         const level = parsedSessionUser.level ? `${parsedSessionUser.level} Level` : "100 Level";
-        const gpa = parsedSessionUser.cgpa ? String(parsedSessionUser.cgpa) : "4.25";
+        const gpa = parsedSessionUser.cgpa ? String(parsedSessionUser.cgpa) : "";
         const email = parsedSessionUser.email || parsedSessionUser.user?.email || "student@crestoakcollege.com.ng";
 
         setStudentProfile({
@@ -280,9 +280,9 @@ export default function PortalDashboard({ initialUser }: { initialUser?: any }) 
         .then((res) => res.json())
         .then((data) => {
           if (!isMounted) return;
-          const calculatedCgpa = data?.cgpa || data?.results?.summary?.cgpa;
-          if (calculatedCgpa !== undefined && calculatedCgpa !== null) {
-            const formatted = parseFloat(String(calculatedCgpa)).toFixed(2);
+          const dynamicCgpa = data?.cgpa || data?.results?.summary?.cgpa;
+          if (dynamicCgpa !== undefined && dynamicCgpa !== null) {
+            const formatted = parseFloat(String(dynamicCgpa)).toFixed(2);
             setCgpa(formatted);
           }
         })
@@ -292,26 +292,30 @@ export default function PortalDashboard({ initialUser }: { initialUser?: any }) 
       fetch(`/api/student/finance.php?matricNo=${encodeURIComponent(activeMatric)}`)
         .then((res) => res.json())
         .then((data) => {
-          if (data.success && data.invoices) {
+          if (data.success && data.invoices && data.invoices.length > 0) {
             setInvoices(data.invoices);
+          } else if (savedInvoices) {
+            setInvoices(JSON.parse(savedInvoices));
+          } else {
+            setInvoices(defaultInvoices);
           }
-          if (data.success && data.receipts) {
+          if (data.success && data.receipts && data.receipts.length > 0) {
             setReceipts(data.receipts);
+          } else if (savedReceipts) {
+            setReceipts(JSON.parse(savedReceipts));
           }
         })
-        .catch((err) => console.warn("Dynamic Finance fetch notice:", err));
-
-      if (savedInvoices) {
-        setInvoices(JSON.parse(savedInvoices));
-      } else {
-        setInvoices(defaultInvoices);
-        localStorage.setItem("cchsmt_student_invoices", JSON.stringify(defaultInvoices));
-      }
-
-      // Receipts
-      if (savedReceipts) {
-        setReceipts(JSON.parse(savedReceipts));
-      }
+        .catch((err) => {
+          console.warn("Dynamic Finance fetch notice:", err);
+          if (savedInvoices) {
+            setInvoices(JSON.parse(savedInvoices));
+          } else {
+            setInvoices(defaultInvoices);
+          }
+          if (savedReceipts) {
+            setReceipts(JSON.parse(savedReceipts));
+          }
+        });
 
       // Tickets
       if (savedTickets) {
