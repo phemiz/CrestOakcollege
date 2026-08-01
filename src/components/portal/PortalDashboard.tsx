@@ -101,6 +101,13 @@ export default function PortalDashboard({ initialUser }: { initialUser?: any }) 
   // Invoices & Billing
   const [invoices, setInvoices] = useState<Invoice[]>([]);
   const [receipts, setReceipts] = useState<Receipt[]>([]);
+  const [financeSummary, setFinanceSummary] = useState<{
+    totalBilled: number;
+    totalPaid: number;
+    outstandingBalance: number;
+    minimumRequiredUpfront: number;
+    status: string;
+  } | null>(null);
   
   // Checkout simulator modal states
   const [checkoutModalOpen, setCheckoutModalOpen] = useState(false);
@@ -174,11 +181,12 @@ export default function PortalDashboard({ initialUser }: { initialUser?: any }) 
       else if (loadedFaculty === "law") tuitionRate = 400000;
 
       const defaultInvoices = [
-        { id: "INV-001", description: "Acceptance Fee *", amount: 50000, status: "Pending", category: "Acceptance", date: "June 01, 2026" },
-        { id: "INV-002", description: "First Semester Tuition (70% Upfront)", amount: tuitionRate * 0.70, status: "Pending", category: "School Fees", date: "June 02, 2026" },
-        { id: "INV-003", description: "Second Semester Tuition (30% Balance)", amount: tuitionRate * 0.30, status: "Pending", category: "School Fees", date: "June 03, 2026" },
-        { id: "INV-004", description: "Administrative & Academic Charges *", amount: loadedFaculty === "health" ? 175000 : (loadedFaculty === "natural" || loadedFaculty === "physical" ? 150000 : 120000), status: "Pending", category: "Administrative", date: "June 04, 2026" },
-        { id: "INV-005", description: "Hostel Accommodation Fee * (Optional)", amount: 200000, status: "Pending", category: "Hostel", date: "June 05, 2026" }
+        { id: "INV-001", description: "Acceptance Fee & Clearance Token *", amount: 50000, status: "Pending", category: "Acceptance", date: "June 01, 2026" },
+        { id: "INV-002", description: "Medical Examination & Health Insurance *", amount: 35000, status: "Pending", category: "Medical", date: "June 02, 2026" },
+        { id: "INV-003", description: "Administrative & Matriculation Charges *", amount: 25000, status: "Pending", category: "Administrative", date: "June 03, 2026" },
+        { id: "INV-004", description: "First Semester Tuition Fee (70% Upfront Requirement)", amount: 280000, status: "Pending", category: "School Fees", date: "June 04, 2026" },
+        { id: "INV-005", description: "Second Installment Tuition Fee (30% Exam Balance)", amount: 120000, status: "Pending", category: "School Fees", date: "June 05, 2026" },
+        { id: "INV-006", description: "Hostel Accommodation & Facilities (Optional)", amount: 260000, status: "Pending", category: "Hostel", date: "June 06, 2026" }
       ];
 
       const savedInvoices = localStorage.getItem("cchsmt_student_invoices");
@@ -231,11 +239,12 @@ export default function PortalDashboard({ initialUser }: { initialUser?: any }) 
     }
 
     const defaultInvoices = [
-      { id: "INV-001", description: "Acceptance Fee *", amount: 50000, status: "Pending", category: "Acceptance", date: "June 01, 2026" },
-      { id: "INV-002", description: "First Semester Tuition (70% Upfront)", amount: tuitionRate * 0.70, status: "Pending", category: "School Fees", date: "June 02, 2026" },
-      { id: "INV-003", description: "Second Semester Tuition (30% Balance)", amount: tuitionRate * 0.30, status: "Pending", category: "School Fees", date: "June 03, 2026" },
-      { id: "INV-004", description: "Administrative & Academic Charges *", amount: loadedFaculty === "health" ? 175000 : (loadedFaculty === "natural" || loadedFaculty === "physical" ? 150005 : 120000), status: "Pending", category: "Administrative", date: "June 04, 2026" },
-      { id: "INV-005", description: "Hostel Accommodation Fee * (Optional)", amount: 200000, status: "Pending", category: "Hostel", date: "June 05, 2026" }
+      { id: "INV-001", description: "Acceptance Fee & Clearance Token *", amount: 50000, status: "Pending", category: "Acceptance", date: "June 01, 2026" },
+      { id: "INV-002", description: "Medical Examination & Health Insurance *", amount: 35000, status: "Pending", category: "Medical", date: "June 02, 2026" },
+      { id: "INV-003", description: "Administrative & Matriculation Charges *", amount: 25000, status: "Pending", category: "Administrative", date: "June 03, 2026" },
+      { id: "INV-004", description: "First Semester Tuition Fee (70% Upfront Requirement)", amount: 280000, status: "Pending", category: "School Fees", date: "June 04, 2026" },
+      { id: "INV-005", description: "Second Installment Tuition Fee (30% Exam Balance)", amount: 120000, status: "Pending", category: "School Fees", date: "June 05, 2026" },
+      { id: "INV-006", description: "Hostel Accommodation & Facilities (Optional)", amount: 260000, status: "Pending", category: "Hostel", date: "June 06, 2026" }
     ];
 
     const savedInvoices = localStorage.getItem("cchsmt_student_invoices");
@@ -292,17 +301,24 @@ export default function PortalDashboard({ initialUser }: { initialUser?: any }) 
       fetch(`/api/student/finance.php?matricNo=${encodeURIComponent(activeMatric)}`)
         .then((res) => res.json())
         .then((data) => {
-          if (data.success && data.invoices && data.invoices.length > 0) {
-            setInvoices(data.invoices);
+          if (data.success) {
+            if (data.invoices && data.invoices.length > 0) {
+              setInvoices(data.invoices);
+            }
+            if (data.receipts) {
+              setReceipts(data.receipts);
+            }
+            setFinanceSummary({
+              totalBilled: data.totalBilled ?? data.financialSummary?.totalBilled ?? 770000,
+              totalPaid: data.totalPaid ?? data.financialSummary?.totalPaid ?? 0,
+              outstandingBalance: data.outstandingBalance ?? data.financialSummary?.outstandingBalance ?? 770000,
+              minimumRequiredUpfront: data.minimumUpfrontRequired ?? data.financialSummary?.minimumRequiredUpfront ?? 390000,
+              status: data.status ?? data.financialSummary?.paymentStatus ?? "UNPAID"
+            });
           } else if (savedInvoices) {
             setInvoices(JSON.parse(savedInvoices));
           } else {
             setInvoices(defaultInvoices);
-          }
-          if (data.success && data.receipts && data.receipts.length > 0) {
-            setReceipts(data.receipts);
-          } else if (savedReceipts) {
-            setReceipts(JSON.parse(savedReceipts));
           }
         })
         .catch((err) => {
@@ -381,11 +397,12 @@ export default function PortalDashboard({ initialUser }: { initialUser?: any }) 
     else if (matchedFaculty === "law") loggedTuition = 400000;
 
     const matchedInvoices = [
-      { id: "INV-001", description: "Acceptance Fee *", amount: 50000, status: "Pending", category: "Acceptance", date: "June 01, 2026" },
-      { id: "INV-002", description: "First Semester Tuition (70% Upfront)", amount: loggedTuition * 0.70, status: "Pending", category: "School Fees", date: "June 02, 2026" },
-      { id: "INV-003", description: "Second Semester Tuition (30% Balance)", amount: loggedTuition * 0.30, status: "Pending", category: "School Fees", date: "June 03, 2026" },
-      { id: "INV-004", description: "Administrative & Academic Charges *", amount: matchedFaculty === "health" ? 175000 : (matchedFaculty === "natural" || matchedFaculty === "physical" ? 150000 : 120000), status: "Pending", category: "Administrative", date: "June 04, 2026" },
-      { id: "INV-005", description: "Hostel Accommodation Fee * (Optional)", amount: 200000, status: "Pending", category: "Hostel", date: "June 05, 2026" }
+      { id: "INV-001", description: "Acceptance Fee & Clearance Token *", amount: 50000, status: "Pending", category: "Acceptance", date: "June 01, 2026" },
+      { id: "INV-002", description: "Medical Examination & Health Insurance *", amount: 35000, status: "Pending", category: "Medical", date: "June 02, 2026" },
+      { id: "INV-003", description: "Administrative & Matriculation Charges *", amount: 25000, status: "Pending", category: "Administrative", date: "June 03, 2026" },
+      { id: "INV-004", description: "First Semester Tuition Fee (70% Upfront Requirement)", amount: 280000, status: "Pending", category: "School Fees", date: "June 04, 2026" },
+      { id: "INV-005", description: "Second Installment Tuition Fee (30% Exam Balance)", amount: 120000, status: "Pending", category: "School Fees", date: "June 05, 2026" },
+      { id: "INV-006", description: "Hostel Accommodation & Facilities (Optional)", amount: 260000, status: "Pending", category: "Hostel", date: "June 06, 2026" }
     ];
     setInvoices(matchedInvoices);
     localStorage.setItem("cchsmt_student_invoices", JSON.stringify(matchedInvoices));
@@ -667,7 +684,10 @@ export default function PortalDashboard({ initialUser }: { initialUser?: any }) 
                       </div>
                       <div>
                         <p className="text-2xl font-extrabold text-brand-blue-dark">
-                          {formatNaira(invoices.filter(i => i.status === "Pending").reduce((acc, i) => acc + i.amount, 0))}
+                          {formatNaira(
+                            financeSummary?.outstandingBalance ??
+                            invoices.filter(i => i.status === "Pending").reduce((acc, i) => acc + i.amount, 0)
+                          )}
                         </p>
                         <p className="text-[10px] text-slate-500 font-bold mt-1 uppercase">Outstanding Balance</p>
                       </div>
@@ -895,6 +915,28 @@ export default function PortalDashboard({ initialUser }: { initialUser?: any }) 
               {/* FINANCIAL SERVICES TAB */}
               {activeTab === "billing" && (
                 <div className="flex flex-col gap-8">
+                  {/* Summary Cards */}
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                    <div className="bg-slate-50 border border-slate-150 p-4 rounded-2xl">
+                      <span className="text-slate-400 font-bold uppercase text-[10px] tracking-wider block">Total Billed Fees</span>
+                      <p className="text-xl font-extrabold text-brand-blue-dark mt-1">
+                        {formatNaira(financeSummary?.totalBilled ?? 770000)}
+                      </p>
+                    </div>
+                    <div className="bg-slate-50 border border-slate-150 p-4 rounded-2xl">
+                      <span className="text-slate-400 font-bold uppercase text-[10px] tracking-wider block">Total Amount Paid</span>
+                      <p className="text-xl font-extrabold text-emerald-600 mt-1">
+                        {formatNaira(financeSummary?.totalPaid ?? 0)}
+                      </p>
+                    </div>
+                    <div className="bg-brand-red/5 border border-brand-red/20 p-4 rounded-2xl">
+                      <span className="text-brand-red font-bold uppercase text-[10px] tracking-wider block">Outstanding Balance</span>
+                      <p className="text-xl font-extrabold text-brand-red mt-1">
+                        {formatNaira(financeSummary?.outstandingBalance ?? 770000)}
+                      </p>
+                    </div>
+                  </div>
+
                   {/* Active Invoices */}
                   <div>
                     <h4 className="font-display font-extrabold text-brand-blue-dark text-base mb-4">Outstanding Invoices (₦)</h4>
