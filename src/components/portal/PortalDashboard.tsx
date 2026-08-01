@@ -566,60 +566,37 @@ export default function PortalDashboard({ initialUser }: { initialUser?: any }) 
           </section>
         ) : (
           // PORTAL LOGGED IN LAYOUT
-          <section className="py-12 max-w-7xl mx-auto px-4 sm:px-6 md:px-8 grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+          <div className="w-full flex flex-col gap-6">
             
-            {/* Sidebar Navigation */}
-            <div className="lg:col-span-3 bg-white border border-slate-200 rounded-3xl p-5 shadow-sm flex flex-col gap-6">
-              {/* Profile Card */}
-              <div className="flex items-center gap-3 border-b border-slate-100 pb-5">
-                <div className="w-12 h-12 rounded-full bg-slate-100 border border-slate-200 flex items-center justify-center text-brand-blue">
-                  <User size={22} />
-                </div>
-                <div>
-                  <h4 className="font-display font-bold text-brand-blue-dark text-sm sm:text-base max-w-[160px] overflow-hidden text-ellipsis whitespace-nowrap">
-                    {studentProfile.fullName}
-                  </h4>
-                  <p className="text-slate-400 text-[10px] font-bold mt-0.5 uppercase tracking-wider">{studentProfile.regNumber}</p>
-                </div>
-              </div>
-
-              {/* Menu items */}
-              <div className="flex lg:flex-col overflow-x-auto no-scrollbar whitespace-nowrap gap-2 pb-1 lg:pb-0">
-                {[
-                  { id: "dashboard", label: "Dashboard", icon: User },
-                  { id: "academics", label: "Academics & Courses", icon: BookOpen },
-                  { id: "billing", label: "Financial Services", icon: Wallet },
-                  { id: "services", label: "Student Services", icon: HelpCircle }
-                ].map((item) => {
-                  const Icon = item.icon;
-                  const isActive = activeTab === item.id;
-                  return (
-                    <button
-                      key={item.id}
-                      onClick={() => setActiveTab(item.id as "dashboard" | "academics" | "billing" | "services")}
-                      className={`flex items-center gap-3.5 p-3 rounded-xl border text-left text-xs font-bold transition-all cursor-pointer shrink-0 ${
-                        isActive
-                          ? "border-brand-red bg-brand-red-light/10 text-brand-red shadow-sm"
-                          : "border-transparent text-slate-600 hover:bg-slate-50 hover:text-brand-blue"
-                      }`}
-                    >
-                      <Icon size={16} />
-                      <span>{item.label}</span>
-                    </button>
-                  );
-                })}
-              </div>
-
-              <button
-                onClick={handleLogout}
-                className="w-full mt-4 flex items-center justify-center gap-2 p-3 border border-slate-200 rounded-xl hover:bg-red-50 hover:text-red-700 text-xs font-bold text-slate-500 transition-colors cursor-pointer"
-              >
-                <span>Sign Out Portal</span>
-              </button>
+            {/* Quick Action Navigation Pills */}
+            <div className="flex overflow-x-auto no-scrollbar whitespace-nowrap gap-2 pb-2 border-b border-slate-100">
+              {[
+                { id: "dashboard", label: "Dashboard Overview", icon: User },
+                { id: "academics", label: "Academics & Courses", icon: BookOpen },
+                { id: "billing", label: "Financial Services", icon: Wallet },
+                { id: "services", label: "Student Services & Clearance", icon: HelpCircle }
+              ].map((item) => {
+                const Icon = item.icon;
+                const isActive = activeTab === item.id;
+                return (
+                  <button
+                    key={item.id}
+                    onClick={() => setActiveTab(item.id as "dashboard" | "academics" | "billing" | "services")}
+                    className={`flex items-center gap-2.5 px-4 py-2.5 rounded-xl border text-xs font-bold transition-all cursor-pointer shrink-0 ${
+                      isActive
+                        ? "border-brand-red bg-brand-red-light/10 text-brand-red shadow-sm"
+                        : "border-slate-200 bg-white text-slate-600 hover:bg-slate-50 hover:text-brand-blue"
+                    }`}
+                  >
+                    <Icon size={15} />
+                    <span>{item.label}</span>
+                  </button>
+                );
+              })}
             </div>
 
             {/* Main Content Workspace */}
-            <div className="lg:col-span-9 bg-white border border-slate-200 rounded-3xl p-6 sm:p-8 shadow-sm min-h-[60vh]">
+            <div className="w-full bg-white border border-slate-200 rounded-3xl p-6 sm:p-8 shadow-sm min-h-[60vh]">
               
               {/* DASHBOARD TAB */}
               {activeTab === "dashboard" && (
@@ -1151,7 +1128,7 @@ export default function PortalDashboard({ initialUser }: { initialUser?: any }) 
               )}
 
             </div>
-          </section>
+          </div>
         )}
       </main>
 
