@@ -34,21 +34,25 @@ export default function StaffPage() {
       .then((res) => res.json())
       .then((data) => {
         if (!isMounted) return;
-        if (Array.isArray(data)) {
-          setStaffList(data);
-        } else if (data?.staffList && Array.isArray(data.staffList)) {
-          setStaffList(data.staffList);
-        } else if (data?.staff && Array.isArray(data.staff)) {
-          setStaffList(data.staff);
-        }
+        const records = Array.isArray(data) 
+          ? data 
+          : Array.isArray(data?.staff) 
+          ? data.staff 
+          : Array.isArray(data?.staffList) 
+          ? data.staffList 
+          : [];
+        setStaffList(records);
         if (data?.departments && Array.isArray(data.departments)) {
           setDepartments(data.departments);
         }
         setLoading(false);
       })
       .catch((err) => {
-        console.error('Failed to load staff roster:', err);
-        if (isMounted) setLoading(false);
+        console.error('Error loading staff roster:', err);
+        if (isMounted) {
+          setStaffList([]);
+          setLoading(false);
+        }
       });
 
     return () => {

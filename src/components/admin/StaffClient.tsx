@@ -191,7 +191,15 @@ export default function StaffClient({ staffList: initialStaff, departments: rawD
         if (res.ok) {
           const data = await res.json();
           if (!isMounted) return;
-          const liveList = Array.isArray(data) ? data : (data.staffList || data.staff || data.data || []);
+          const liveList = Array.isArray(data) 
+            ? data 
+            : Array.isArray(data?.staff) 
+            ? data.staff 
+            : Array.isArray(data?.staffList) 
+            ? data.staffList 
+            : Array.isArray(data?.data)
+            ? data.data
+            : [];
           if (Array.isArray(liveList)) {
             setStaffList(liveList.map(normalizeStaffItem));
           }
