@@ -91,6 +91,7 @@ export default function PortalDashboard({ initialUser }: { initialUser?: any }) 
   const [studentPass, setStudentPass] = useState("");
   const [studentError, setStudentError] = useState("");
   const [studentProfile, setStudentProfile] = useState<StudentProfile | null>(null);
+  const [cgpa, setCgpa] = useState<string | null>(null);
 
   // Course registration
   const [registeredCourses, setRegisteredCourses] = useState<string[]>([]);
@@ -272,20 +273,20 @@ export default function PortalDashboard({ initialUser }: { initialUser?: any }) 
         setIsLoggedIn(true);
       }
 
-      // Real-Time Results & CGPA Fetch
+      // Real-Time Results & CGPA Fetch (Single Source of Truth)
       const activeMatric = parsedSessionUser?.matricNo || parsedSessionUser?.username || "CCHMS/2026/NUR/0042";
+      let isMounted = true;
       fetch(`/api/student/results.php?matricNo=${encodeURIComponent(activeMatric)}`)
         .then((res) => res.json())
         .then((data) => {
-          const rawCgpa = data?.cgpa || data?.results?.summary?.cgpa;
-          if (rawCgpa) {
-            const dynamicCgpa = parseFloat(String(rawCgpa)).toFixed(2);
-            setStudentProfile((prev: any) =>
-              prev ? { ...prev, gpa: dynamicCgpa } : prev
-            );
+          if (!isMounted) return;
+          const calculatedCgpa = data?.cgpa || data?.results?.summary?.cgpa;
+          if (calculatedCgpa !== undefined && calculatedCgpa !== null) {
+            const formatted = parseFloat(String(calculatedCgpa)).toFixed(2);
+            setCgpa(formatted);
           }
         })
-        .catch((err) => console.warn("Dynamic CGPA fetch notice:", err));
+        .catch((err) => console.error("CGPA Fetch Error:", err));
 
       // Real-Time Finance & 70/30 Installment Fetch
       fetch(`/api/student/finance.php?matricNo=${encodeURIComponent(activeMatric)}`)
@@ -637,7 +638,7 @@ export default function PortalDashboard({ initialUser }: { initialUser?: any }) 
                     <div className="bg-white/10 px-4 py-2.5 rounded-2xl border border-white/10 text-right shrink-0">
                       <p className="text-slate-300 text-[10px] font-bold uppercase tracking-wider">Current CGPA</p>
                       <p className="text-2xl font-black text-white mt-0.5 font-display">
-                        {parseFloat(studentProfile.gpa || "0.00").toFixed(2)}
+                        {cgpa !== null ? cgpa : "..."}
                       </p>
                     </div>
                   </div>
