@@ -30,6 +30,23 @@ export default function StaffDashboard() {
   const router = useRouter();
   const [activeTab, setActiveTab] = useState("overview");
 
+  // Grade Management Form State
+  const [gradeForm, setGradeForm] = useState({
+    matricNo: "CCHMS/2026/NUR/0042",
+    courseCode: "NUR 101",
+    courseTitle: "Foundations of Professional Nursing Practice",
+    units: 3,
+    semester: "First Semester, 2025/2026",
+    session: "2025/2026",
+    assignment: 8,
+    caTest: 17,
+    project: 9,
+    exam: 50
+  });
+  const [isSubmittingGrade, setIsSubmittingGrade] = useState(false);
+  const [gradeSuccessMsg, setGradeSuccessMsg] = useState("");
+  const [savedGradesList, setSavedGradesList] = useState<any[]>([]);
+
   useEffect(() => {
     setIsClient(true);
     if (typeof window !== "undefined") {
@@ -45,7 +62,51 @@ export default function StaffDashboard() {
         setIsAuthenticated(true);
       }
     }
+
+    // Fetch existing grades from API
+    fetch("/api/admin/grades.php")
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.success && Array.isArray(data.grades)) {
+          setSavedGradesList(data.grades);
+        }
+      })
+      .catch(() => {});
   }, []);
+
+  const handleSaveGrade = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsSubmittingGrade(true);
+    setGradeSuccessMsg("");
+
+    try {
+      const res = await fetch("/api/admin/grades.php", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action: "save_grade",
+          ...gradeForm,
+          recordedBy: effectiveUser.name || "Lecturer"
+        })
+      });
+      const data = await res.json();
+      if (data.success) {
+        setGradeSuccessMsg(`Grade saved! Student CGPA updated to ${data.calculatedCgpa}`);
+        // Refresh grades list
+        const refreshed = await fetch("/api/admin/grades.php");
+        const rData = await refreshed.json();
+        if (rData.success && Array.isArray(rData.grades)) {
+          setSavedGradesList(rData.grades);
+        }
+      } else {
+        alert("Error saving grade: " + (data.message || "Save failed."));
+      }
+    } catch (err: any) {
+      alert("Submission error: " + err.message);
+    } finally {
+      setIsSubmittingGrade(false);
+    }
+  };
 
   if (!isClient) {
     return (
@@ -360,63 +421,225 @@ export default function StaffDashboard() {
           )}
 
           {activeTab === "records" && (
-            <div className="bg-white border border-slate-200/80 rounded-3xl p-6 md:p-8 space-y-6 shadow-xs">
-              <div>
-                <h2 className="text-xl font-display font-black text-slate-900">Gradebook & Approval Log</h2>
-                <p className="text-slate-500 text-xs mt-1 font-medium">Input grades, review assessment sheets, and export transcript logs.</p>
+            <div className="space-y-8">
+              {/* Grade Entry Form Container */}
+              <div className="bg-white border border-slate-200/80 rounded-3xl p-6 md:p-8 space-y-6 shadow-xs">
+                <div className="border-b border-slate-150 pb-4 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
+                  <div>
+                    <h2 className="text-xl font-display font-black text-slate-900">Lecturer Grade Entry & Assessment Portal</h2>
+                    <p className="text-slate-500 text-xs mt-1 font-medium">
+                      Enter component scores per student. Scores automatically compute total marks, letter grades, and update student CGPA in real-time.
+                    </p>
+                  </div>
+                  <span className="bg-indigo-50 text-indigo-700 border border-indigo-200 text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wider">
+                    Official Gradebook
+                  </span>
+                </div>
+
+                {gradeSuccessMsg && (
+                  <div className="bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs font-bold p-4 rounded-2xl flex items-center gap-2">
+                    <CheckCircle2 className="w-5 h-5 text-emerald-600 shrink-0" />
+                    <span>{gradeSuccessMsg}</span>
+                  </div>
+                )}
+
+                <form onSubmit={handleSaveGrade} className="space-y-5 text-xs font-semibold text-slate-800">
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div className="flex flex-col gap-1">
+                      <label className="text-[10px] uppercase font-bold text-slate-600">Student Matriculation No *</label>
+                      <input
+                        type="text"
+                        required
+                        value={gradeForm.matricNo}
+                        onChange={(e) => setGradeForm({ ...gradeForm, matricNo: e.target.value })}
+                        placeholder="e.g. CCHMS/2026/NUR/0042"
+                        className="p-2.5 bg-white border border-slate-300 rounded-xl focus:outline-none focus:border-indigo-600 font-mono font-bold text-slate-900"
+                      />
+                    </div>
+                    <div className="flex flex-col gap-1">
+                      <label className="text-[10px] uppercase font-bold text-slate-600">Course Code *</label>
+                      <input
+                        type="text"
+                        required
+                        value={gradeForm.courseCode}
+                        onChange={(e) => setGradeForm({ ...gradeForm, courseCode: e.target.value })}
+                        placeholder="e.g. NUR 101"
+                        className="p-2.5 bg-white border border-slate-300 rounded-xl focus:outline-none focus:border-indigo-600 font-bold uppercase text-slate-900"
+                      />
+                    </div>
+                    <div className="flex flex-col gap-1">
+                      <label className="text-[10px] uppercase font-bold text-slate-600">Credit Units *</label>
+                      <input
+                        type="number"
+                        min="1"
+                        max="6"
+                        required
+                        value={gradeForm.units}
+                        onChange={(e) => setGradeForm({ ...gradeForm, units: Number(e.target.value) })}
+                        className="p-2.5 bg-white border border-slate-300 rounded-xl focus:outline-none focus:border-indigo-600 font-bold text-slate-900"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="flex flex-col gap-1">
+                    <label className="text-[10px] uppercase font-bold text-slate-600">Course Title</label>
+                    <input
+                      type="text"
+                      value={gradeForm.courseTitle}
+                      onChange={(e) => setGradeForm({ ...gradeForm, courseTitle: e.target.value })}
+                      placeholder="Course Title..."
+                      className="p-2.5 bg-white border border-slate-300 rounded-xl focus:outline-none focus:border-indigo-600 font-medium text-slate-900"
+                    />
+                  </div>
+
+                  {/* Component Breakdown Input Fields */}
+                  <div className="bg-slate-50 border border-slate-200 p-5 rounded-2xl space-y-4">
+                    <h3 className="font-display font-extrabold text-slate-900 text-xs uppercase tracking-wider">
+                      Assessment Component Breakdown
+                    </h3>
+                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+                      <div className="flex flex-col gap-1">
+                        <label className="text-[10px] uppercase font-bold text-slate-600">Assignment (Max 10)</label>
+                        <input
+                          type="number"
+                          step="0.5"
+                          min="0"
+                          max="10"
+                          required
+                          value={gradeForm.assignment}
+                          onChange={(e) => setGradeForm({ ...gradeForm, assignment: Number(e.target.value) })}
+                          className="p-2.5 bg-white border border-slate-300 rounded-xl font-mono font-bold text-slate-900 focus:outline-none focus:border-indigo-600"
+                        />
+                      </div>
+                      <div className="flex flex-col gap-1">
+                        <label className="text-[10px] uppercase font-bold text-slate-600">CA Test (Max 20)</label>
+                        <input
+                          type="number"
+                          step="0.5"
+                          min="0"
+                          max="20"
+                          required
+                          value={gradeForm.caTest}
+                          onChange={(e) => setGradeForm({ ...gradeForm, caTest: Number(e.target.value) })}
+                          className="p-2.5 bg-white border border-slate-300 rounded-xl font-mono font-bold text-slate-900 focus:outline-none focus:border-indigo-600"
+                        />
+                      </div>
+                      <div className="flex flex-col gap-1">
+                        <label className="text-[10px] uppercase font-bold text-slate-600">Project (Max 10)</label>
+                        <input
+                          type="number"
+                          step="0.5"
+                          min="0"
+                          max="10"
+                          required
+                          value={gradeForm.project}
+                          onChange={(e) => setGradeForm({ ...gradeForm, project: Number(e.target.value) })}
+                          className="p-2.5 bg-white border border-slate-300 rounded-xl font-mono font-bold text-slate-900 focus:outline-none focus:border-indigo-600"
+                        />
+                      </div>
+                      <div className="flex flex-col gap-1">
+                        <label className="text-[10px] uppercase font-bold text-slate-600">Semester Exam (Max 60)</label>
+                        <input
+                          type="number"
+                          step="0.5"
+                          min="0"
+                          max="60"
+                          required
+                          value={gradeForm.exam}
+                          onChange={(e) => setGradeForm({ ...gradeForm, exam: Number(e.target.value) })}
+                          className="p-2.5 bg-white border border-slate-300 rounded-xl font-mono font-bold text-slate-900 focus:outline-none focus:border-indigo-600"
+                        />
+                      </div>
+                    </div>
+
+                    {/* Auto Computed Live Summary Box */}
+                    {(() => {
+                      const total = Math.min(100, Math.max(0, gradeForm.assignment + gradeForm.caTest + gradeForm.project + gradeForm.exam));
+                      const grade = total >= 70 ? 'A' : total >= 60 ? 'B' : total >= 50 ? 'C' : total >= 45 ? 'D' : total >= 40 ? 'E' : 'F';
+                      const gp = total >= 70 ? 5.0 : total >= 60 ? 4.0 : total >= 50 ? 3.0 : total >= 45 ? 2.0 : total >= 40 ? 1.0 : 0.0;
+                      return (
+                        <div className="p-4 bg-indigo-900 text-white rounded-xl flex flex-wrap items-center justify-between gap-4 mt-2 shadow-xs">
+                          <div>
+                            <span className="text-[10px] text-indigo-300 font-bold uppercase tracking-wider block">Computed Total Score</span>
+                            <span className="text-2xl font-black font-mono">{total} / 100</span>
+                          </div>
+                          <div>
+                            <span className="text-[10px] text-indigo-300 font-bold uppercase tracking-wider block">Letter Grade</span>
+                            <span className="text-xl font-black bg-white/20 px-3 py-0.5 rounded-lg border border-white/20">{grade}</span>
+                          </div>
+                          <div>
+                            <span className="text-[10px] text-indigo-300 font-bold uppercase tracking-wider block">Grade Point</span>
+                            <span className="text-xl font-black font-mono">{gp.toFixed(1)}</span>
+                          </div>
+                          <div>
+                            <span className="text-[10px] text-indigo-300 font-bold uppercase tracking-wider block">Quality Points</span>
+                            <span className="text-xl font-black font-mono">{(gp * gradeForm.units).toFixed(1)}</span>
+                          </div>
+                        </div>
+                      );
+                    })()}
+                  </div>
+
+                  <div className="flex justify-end pt-2">
+                    <button
+                      type="submit"
+                      disabled={isSubmittingGrade}
+                      className="bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white font-display font-bold px-8 py-3 rounded-xl transition-all flex items-center gap-2 shadow-sm cursor-pointer"
+                    >
+                      {isSubmittingGrade ? <Loader2 className="w-4 h-4 animate-spin" /> : <CheckCircle2 className="w-4 h-4" />}
+                      <span>{isSubmittingGrade ? "Saving Grade..." : "Submit & Save Grade Record"}</span>
+                    </button>
+                  </div>
+                </form>
               </div>
-              
-              <div className="overflow-x-auto border border-slate-200 rounded-2xl">
-                <table className="w-full text-left border-collapse">
-                  <thead>
-                    <tr className="bg-slate-50 text-slate-600 text-[10px] font-bold uppercase tracking-wider border-b border-slate-200">
-                      <th className="p-4">Module Code</th>
-                      <th className="p-4">Module Name</th>
-                      <th className="p-4 text-center">Enrolled</th>
-                      <th className="p-4">CA Submission</th>
-                      <th className="p-4">Exam Submission</th>
-                      <th className="p-4">Status</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-slate-100 text-xs">
-                    <tr>
-                      <td className="p-4 font-bold text-indigo-600">CSC 201</td>
-                      <td className="p-4 text-slate-800 font-semibold">Introduction to Computer Science</td>
-                      <td className="p-4 text-center text-slate-700 font-semibold">145</td>
-                      <td className="p-4 text-emerald-600 font-bold">Submitted</td>
-                      <td className="p-4 text-amber-600 font-bold">Pending</td>
-                      <td className="p-4">
-                        <span className="bg-amber-50 text-amber-700 border border-amber-200 px-2.5 py-0.5 rounded-full font-bold uppercase text-[9px]">
-                          In Progress
-                        </span>
-                      </td>
-                    </tr>
-                    <tr>
-                      <td className="p-4 font-bold text-indigo-600">CSC 205</td>
-                      <td className="p-4 text-slate-800 font-semibold">Data Structures & Algorithms</td>
-                      <td className="p-4 text-center text-slate-700 font-semibold">92</td>
-                      <td className="p-4 text-emerald-600 font-bold">Submitted</td>
-                      <td className="p-4 text-emerald-600 font-bold">Submitted</td>
-                      <td className="p-4">
-                        <span className="bg-emerald-50 text-emerald-700 border border-emerald-200 px-2.5 py-0.5 rounded-full font-bold uppercase text-[9px]">
-                          Approved
-                        </span>
-                      </td>
-                    </tr>
-                    <tr>
-                      <td className="p-4 font-bold text-indigo-600">CSC 311</td>
-                      <td className="p-4 text-slate-800 font-semibold">Software Engineering Principles</td>
-                      <td className="p-4 text-center text-slate-700 font-semibold">78</td>
-                      <td className="p-4 text-slate-400">Not Started</td>
-                      <td className="p-4 text-slate-400">Not Started</td>
-                      <td className="p-4">
-                        <span className="bg-slate-100 text-slate-600 border border-slate-200 px-2.5 py-0.5 rounded-full font-bold uppercase text-[9px]">
-                          Idle
-                        </span>
-                      </td>
-                    </tr>
-                  </tbody>
-                </table>
+
+              {/* Roster of Saved Student Grades */}
+              <div className="bg-white border border-slate-200/80 rounded-3xl p-6 md:p-8 space-y-4 shadow-xs">
+                <div className="flex justify-between items-center">
+                  <h3 className="text-base font-display font-black text-slate-900">Recorded Course Gradebook Roster</h3>
+                  <span className="text-xs text-slate-500 font-semibold">{savedGradesList.length} Grade Records</span>
+                </div>
+                <div className="overflow-x-auto border border-slate-200 rounded-2xl">
+                  <table className="w-full text-left border-collapse text-xs">
+                    <thead>
+                      <tr className="bg-slate-50 text-slate-600 text-[10px] font-bold uppercase tracking-wider border-b border-slate-200">
+                        <th className="p-3.5 px-4">Student Matric</th>
+                        <th className="p-3.5 px-4">Course</th>
+                        <th className="p-3.5 px-4 text-center">Units</th>
+                        <th className="p-3.5 px-4 text-center">Assign (10)</th>
+                        <th className="p-3.5 px-4 text-center">CA Test (20)</th>
+                        <th className="p-3.5 px-4 text-center">Project (10)</th>
+                        <th className="p-3.5 px-4 text-center">Exam (60)</th>
+                        <th className="p-3.5 px-4 text-center">Total Score</th>
+                        <th className="p-3.5 px-4 text-center">Grade</th>
+                        <th className="p-3.5 px-4 text-right">GP</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-100 font-semibold text-slate-700">
+                      {savedGradesList.map((g: any) => (
+                        <tr key={g.id} className="hover:bg-slate-50/80 transition-colors">
+                          <td className="p-3.5 px-4 font-mono font-bold text-slate-900">{g.matricNo}</td>
+                          <td className="p-3.5 px-4 font-bold text-indigo-600">{g.courseCode}</td>
+                          <td className="p-3.5 px-4 text-center">{g.units}</td>
+                          <td className="p-3.5 px-4 text-center text-slate-500 font-mono">{g.assignment}</td>
+                          <td className="p-3.5 px-4 text-center text-slate-500 font-mono">{g.caTest}</td>
+                          <td className="p-3.5 px-4 text-center text-slate-500 font-mono">{g.project}</td>
+                          <td className="p-3.5 px-4 text-center text-slate-500 font-mono">{g.exam}</td>
+                          <td className="p-3.5 px-4 text-center font-black text-slate-900 font-mono">{g.score}</td>
+                          <td className="p-3.5 px-4 text-center">
+                            <span className={`px-2.5 py-0.5 rounded font-black text-[10px] ${
+                              g.grade === "A" ? "bg-emerald-100 text-emerald-800 border border-emerald-200" :
+                              g.grade === "B" ? "bg-blue-100 text-blue-800 border border-blue-200" :
+                              g.grade === "C" ? "bg-amber-100 text-amber-800 border border-amber-200" :
+                              "bg-rose-100 text-rose-800 border border-rose-200"
+                            }`}>{g.grade}</span>
+                          </td>
+                          <td className="p-3.5 px-4 text-right font-mono font-bold text-slate-900">{Number(g.gradePoint || 0).toFixed(1)}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
               </div>
             </div>
           )}

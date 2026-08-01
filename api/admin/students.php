@@ -366,10 +366,51 @@ try {
             }
         }
 
+        // 4. Compute Dynamic CGPA from grades_store.json
+        $gradesStoreFile = __DIR__ . '/grades_store.json';
+        if (!file_exists($gradesStoreFile) && file_exists(__DIR__ . '/../admin/grades_store.json')) {
+            $gradesStoreFile = __DIR__ . '/../admin/grades_store.json';
+        }
+        $gradesList = [];
+        if (file_exists($gradesStoreFile)) {
+            $gContent = @file_get_contents($gradesStoreFile);
+            $gDecoded = @json_decode($gContent, true);
+            if (is_array($gDecoded)) $gradesList = $gDecoded;
+        }
+
+        $finalStudents = array_values($mergedMap);
+        foreach ($finalStudents as &$st) {
+            $stMatric = $st['matricNo'] ?? '';
+            $totalUnits = 0;
+            $totalQualityPoints = 0.0;
+            $foundGrades = false;
+            foreach ($gradesList as $g) {
+                if (strtolower(trim($g['matricNo'] ?? '')) === strtolower(trim($stMatric))) {
+                    $foundGrades = true;
+                    $u = intval($g['units'] ?? 3);
+                    $gp = floatval($g['gradePoint'] ?? 0.0);
+                    $totalUnits += $u;
+                    $totalQualityPoints += ($u * $gp);
+                }
+            }
+            if ($foundGrades && $totalUnits > 0) {
+                $calcCgpa = round($totalQualityPoints / $totalUnits, 2);
+                $st['cgpa'] = number_format($calcCgpa, 2, '.', '');
+                $st['gpa'] = number_format($calcCgpa, 2, '.', '');
+            } else if (!isset($st['cgpa']) || empty($st['cgpa'])) {
+                $st['cgpa'] = "0.00";
+                $st['gpa'] = "0.00";
+            } else {
+                $st['cgpa'] = number_format(floatval($st['cgpa']), 2, '.', '');
+                $st['gpa'] = number_format(floatval($st['gpa'] ?? $st['cgpa']), 2, '.', '');
+            }
+        }
+        unset($st);
+
         echo json_encode([
             "success" => true,
             "persistenceSuccess" => true,
-            "students" => array_values($mergedMap),
+            "students" => $finalStudents,
             "departments" => $defaultDepartments,
             "programmes" => $defaultProgrammes,
             "sessions" => $defaultSessions,

@@ -1,0 +1,239 @@
+<?php
+header("Access-Control-Allow-Origin: *");
+header("Access-Control-Allow-Methods: GET, POST, OPTIONS");
+header("Access-Control-Allow-Headers: Content-Type, Authorization");
+header("Content-Type: application/json; charset=UTF-8");
+
+if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
+    http_response_code(200);
+    exit();
+}
+
+$storeFile = __DIR__ . '/grades_store.json';
+if (!file_exists($storeFile) && file_exists(__DIR__ . '/../admin/grades_store.json')) {
+    $storeFile = __DIR__ . '/../admin/grades_store.json';
+}
+
+function readGradesStore($file) {
+    if (file_exists($file)) {
+        $content = @file_get_contents($file);
+        $data = @json_decode($content, true);
+        if (is_array($data)) return $data;
+    }
+    return [];
+}
+
+function writeGradesStore($file, array $grades) {
+    @file_put_contents($file, json_encode($grades, JSON_PRETTY_PRINT));
+    @chmod($file, 0666);
+}
+
+function calculateGradeAndPoint($score) {
+    $score = floatval($score);
+    if ($score >= 70) return ["grade" => "A", "point" => 5.0];
+    if ($score >= 60) return ["grade" => "B", "point" => 4.0];
+    if ($score >= 50) return ["grade" => "C", "point" => 3.0];
+    if ($score >= 45) return ["grade" => "D", "point" => 2.0];
+    if ($score >= 40) return ["grade" => "E", "point" => 1.0];
+    return ["grade" => "F", "point" => 0.0];
+}
+
+// Seed default sample grades if store empty
+$currentGrades = readGradesStore($storeFile);
+if (empty($currentGrades)) {
+    $defaultGrades = [
+        [
+            "id" => "GRD-001",
+            "matricNo" => "CCHMS/2026/NUR/0042",
+            "courseCode" => "NUR 101",
+            "courseTitle" => "Foundations of Professional Nursing Practice",
+            "units" => 3,
+            "semester" => "First Semester, 2025/2026",
+            "session" => "2025/2026",
+            "assignment" => 8,
+            "caTest" => 17,
+            "project" => 9,
+            "exam" => 50,
+            "score" => 84,
+            "grade" => "A",
+            "gradePoint" => 5.0,
+            "qualityPoints" => 15.0
+        ],
+        [
+            "id" => "GRD-002",
+            "matricNo" => "CCHMS/2026/NUR/0042",
+            "courseCode" => "ANA 102",
+            "courseTitle" => "Human Anatomy & General Physiology I",
+            "units" => 4,
+            "semester" => "First Semester, 2025/2026",
+            "session" => "2025/2026",
+            "assignment" => 9,
+            "caTest" => 16,
+            "project" => 8,
+            "exam" => 45,
+            "score" => 78,
+            "grade" => "A",
+            "gradePoint" => 5.0,
+            "qualityPoints" => 20.0
+        ],
+        [
+            "id" => "GRD-003",
+            "matricNo" => "CCHMS/2026/MLS/0088",
+            "courseCode" => "MLS 103",
+            "courseTitle" => "Fundamentals of Medical Laboratory Science",
+            "units" => 3,
+            "semester" => "First Semester, 2025/2026",
+            "session" => "2025/2026",
+            "assignment" => 7,
+            "caTest" => 14,
+            "project" => 8,
+            "exam" => 43,
+            "score" => 72,
+            "grade" => "A",
+            "gradePoint" => 5.0,
+            "qualityPoints" => 15.0
+        ]
+    ];
+    writeGradesStore($storeFile, $defaultGrades);
+    $currentGrades = $defaultGrades;
+}
+
+$rawInput = file_get_contents('php://input');
+$requestData = json_decode($rawInput, true) ?? $_POST ?? [];
+$method = $_SERVER['REQUEST_METHOD'];
+
+if ($method === 'GET') {
+    $matricNo = trim($_GET['matricNo'] ?? $_GET['username'] ?? '');
+    $courseCode = trim($_GET['courseCode'] ?? '');
+
+    if ($matricNo) {
+        $studentGrades = array_filter($currentGrades, function($g) use ($matricNo) {
+            return strtolower(trim($g['matricNo'] ?? '')) === strtolower(trim($matricNo));
+        });
+
+        $totalUnits = 0;
+        $totalQualityPoints = 0.0;
+        foreach ($studentGrades as $g) {
+            $u = intval($g['units'] ?? 3);
+            $qp = floatval($g['qualityPoints'] ?? (floatval($g['units']) * floatval($g['gradePoint'])));
+            $totalUnits += $u;
+            $totalQualityPoints += $qp;
+        }
+
+        $cgpa = $totalUnits > 0 ? round($totalQualityPoints / $totalUnits, 2) : 0.00;
+
+        echo json_encode([
+            "success" => true,
+            "matricNo" => $matricNo,
+            "cgpa" => number_format($cgpa, 2, '.', ''),
+            "totalUnits" => $totalUnits,
+            "totalQualityPoints" => $totalQualityPoints,
+            "grades" => array_values($studentGrades)
+        ]);
+        exit();
+    }
+
+    if ($courseCode) {
+        $courseGrades = array_filter($currentGrades, function($g) use ($courseCode) {
+            return strtolower(str_replace(' ', '', $g['courseCode'] ?? '')) === strtolower(str_replace(' ', '', $courseCode));
+        });
+        echo json_encode([
+            "success" => true,
+            "courseCode" => $courseCode,
+            "grades" => array_values($courseGrades)
+        ]);
+        exit();
+    }
+
+    echo json_encode([
+        "success" => true,
+        "grades" => $currentGrades
+    ]);
+    exit();
+}
+
+if ($method === 'POST') {
+    $action = $requestData['action'] ?? 'save_grade';
+    $matricNo = trim($requestData['matricNo'] ?? '');
+    $courseCode = trim($requestData['courseCode'] ?? '');
+    $courseTitle = trim($requestData['courseTitle'] ?? 'Registered Course');
+    $units = intval($requestData['units'] ?? 3);
+    $semester = trim($requestData['semester'] ?? 'First Semester, 2025/2026');
+    $session = trim($requestData['session'] ?? '2025/2026');
+
+    // Breakdown scores
+    $assignment = min(10, max(0, floatval($requestData['assignment'] ?? 0)));
+    $caTest = min(20, max(0, floatval($requestData['caTest'] ?? 0)));
+    $project = min(10, max(0, floatval($requestData['project'] ?? 0)));
+    $exam = min(60, max(0, floatval($requestData['exam'] ?? 0)));
+    $totalScore = min(100, max(0, $assignment + $caTest + $project + $exam));
+
+    $gradeInfo = calculateGradeAndPoint($totalScore);
+    $gradePoint = $gradeInfo['point'];
+    $letterGrade = $gradeInfo['grade'];
+    $qualityPoints = $units * $gradePoint;
+
+    if (!$matricNo || !$courseCode) {
+        echo json_encode(["success" => false, "message" => "Matriculation number and Course Code are required."]);
+        exit();
+    }
+
+    $existingIndex = -1;
+    foreach ($currentGrades as $idx => $g) {
+        if (strtolower(trim($g['matricNo'])) === strtolower(trim($matricNo)) &&
+            strtolower(str_replace(' ', '', $g['courseCode'])) === strtolower(str_replace(' ', '', $courseCode))) {
+            $existingIndex = $idx;
+            break;
+        }
+    }
+
+    $gradeRecord = [
+        "id" => $existingIndex >= 0 ? $currentGrades[$existingIndex]['id'] : ("GRD-" . rand(1000, 9999)),
+        "matricNo" => $matricNo,
+        "courseCode" => $courseCode,
+        "courseTitle" => $courseTitle,
+        "units" => $units,
+        "semester" => $semester,
+        "session" => $session,
+        "assignment" => $assignment,
+        "caTest" => $caTest,
+        "project" => $project,
+        "exam" => $exam,
+        "score" => $totalScore,
+        "grade" => $letterGrade,
+        "gradePoint" => $gradePoint,
+        "qualityPoints" => $qualityPoints,
+        "recordedBy" => $requestData['recordedBy'] ?? 'Course Lecturer',
+        "updatedAt" => date('Y-m-d H:i:s')
+    ];
+
+    if ($existingIndex >= 0) {
+        $currentGrades[$existingIndex] = $gradeRecord;
+    } else {
+        $currentGrades[] = $gradeRecord;
+    }
+
+    writeGradesStore($storeFile, $currentGrades);
+
+    // Compute updated student CGPA
+    $studentGrades = array_filter($currentGrades, function($g) use ($matricNo) {
+        return strtolower(trim($g['matricNo'])) === strtolower(trim($matricNo));
+    });
+    $totalUnitsSum = 0;
+    $totalQualityPointsSum = 0.0;
+    foreach ($studentGrades as $g) {
+        $totalUnitsSum += intval($g['units']);
+        $totalQualityPointsSum += floatval($g['qualityPoints']);
+    }
+    $newCgpa = $totalUnitsSum > 0 ? round($totalQualityPointsSum / $totalUnitsSum, 2) : 0.00;
+
+    echo json_encode([
+        "success" => true,
+        "message" => "Grade saved successfully.",
+        "grade" => $gradeRecord,
+        "calculatedCgpa" => number_format($newCgpa, 2, '.', ''),
+        "totalQualityPoints" => $totalQualityPointsSum,
+        "totalUnits" => $totalUnitsSum
+    ]);
+    exit();
+}

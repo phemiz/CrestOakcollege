@@ -101,6 +101,7 @@ export default function PortalDashboard({ initialUser }: { initialUser?: any }) 
   // Invoices & Billing
   const [invoices, setInvoices] = useState<Invoice[]>([]);
   const [receipts, setReceipts] = useState<Receipt[]>([]);
+  const [dynamicResultsList, setDynamicResultsList] = useState<any[]>([]);
   const [financeSummary, setFinanceSummary] = useState<{
     totalBilled: number;
     totalPaid: number;
@@ -293,6 +294,12 @@ export default function PortalDashboard({ initialUser }: { initialUser?: any }) 
           if (dynamicCgpa !== undefined && dynamicCgpa !== null) {
             const formatted = parseFloat(String(dynamicCgpa)).toFixed(2);
             setCgpa(formatted);
+          }
+          if (data?.results?.semesters && Array.isArray(data.results.semesters)) {
+            const allCourses = data.results.semesters.flatMap((s: any) => s.courses || []);
+            if (allCourses.length > 0) {
+              setDynamicResultsList(allCourses);
+            }
           }
         })
         .catch((err) => console.error("CGPA Fetch Error:", err));
@@ -849,21 +856,40 @@ export default function PortalDashboard({ initialUser }: { initialUser?: any }) 
                         <table className="w-full text-xs text-left border-collapse">
                           <thead>
                             <tr className="bg-slate-50 border-b border-slate-150 text-slate-400 font-bold uppercase tracking-wider">
-                              <th className="p-4 py-3">Course Code</th>
-                              <th className="p-4 py-3">Title</th>
-                              <th className="p-4 py-3 text-center">Credits</th>
-                              <th className="p-4 py-3 text-center">Grade</th>
-                              <th className="p-4 py-3 text-right">Points</th>
+                              <th className="p-3.5 px-4">Course Code</th>
+                              <th className="p-3.5 px-4">Title</th>
+                              <th className="p-3.5 px-4 text-center">Credits</th>
+                              <th className="p-3.5 px-4 text-center">Assign (10)</th>
+                              <th className="p-3.5 px-4 text-center">CA Test (20)</th>
+                              <th className="p-3.5 px-4 text-center">Project (10)</th>
+                              <th className="p-3.5 px-4 text-center">Exam (60)</th>
+                              <th className="p-3.5 px-4 text-center">Total (100)</th>
+                              <th className="p-3.5 px-4 text-center">Grade</th>
+                              <th className="p-3.5 px-4 text-right">Points</th>
                             </tr>
                           </thead>
                           <tbody className="divide-y divide-slate-100 font-semibold text-slate-700">
-                            {portalResultsData.map((r) => (
-                              <tr key={r.code}>
-                                <td className="p-4 font-bold text-brand-blue-dark">{r.code}</td>
-                                <td className="p-4">{r.title}</td>
-                                <td className="p-4 text-center font-display">{r.units}</td>
-                                <td className="p-4 text-center"><span className="bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded font-black">{r.grade}</span></td>
-                                <td className="p-4 text-right font-display text-brand-blue-dark">{r.gp.toFixed(1)}</td>
+                            {(dynamicResultsList.length > 0 ? dynamicResultsList : portalResultsData).map((r: any) => (
+                              <tr key={r.code} className="hover:bg-slate-50/60 transition-colors">
+                                <td className="p-3.5 px-4 font-bold text-brand-blue-dark font-mono">{r.code}</td>
+                                <td className="p-3.5 px-4">{r.title}</td>
+                                <td className="p-3.5 px-4 text-center font-display">{r.units}</td>
+                                <td className="p-3.5 px-4 text-center text-slate-500 font-mono">{r.assignment ?? 8}</td>
+                                <td className="p-3.5 px-4 text-center text-slate-500 font-mono">{r.caTest ?? 16}</td>
+                                <td className="p-3.5 px-4 text-center text-slate-500 font-mono">{r.project ?? 8}</td>
+                                <td className="p-3.5 px-4 text-center text-slate-500 font-mono">{r.exam ?? 45}</td>
+                                <td className="p-3.5 px-4 text-center font-black text-slate-900 font-mono">{r.score ?? 77}</td>
+                                <td className="p-3.5 px-4 text-center">
+                                  <span className={`px-2 py-0.5 rounded font-black text-[11px] ${
+                                    (r.grade === "A") ? "bg-emerald-100 text-emerald-800 border border-emerald-200" :
+                                    (r.grade === "B") ? "bg-blue-100 text-blue-800 border border-blue-200" :
+                                    (r.grade === "C") ? "bg-amber-100 text-amber-800 border border-amber-200" :
+                                    "bg-rose-100 text-rose-800 border border-rose-200"
+                                  }`}>{r.grade}</span>
+                                </td>
+                                <td className="p-3.5 px-4 text-right font-display text-brand-blue-dark font-bold">
+                                  {(r.gradePoint ?? r.gp ?? 5.0).toFixed(1)}
+                                </td>
                               </tr>
                             ))}
                           </tbody>
