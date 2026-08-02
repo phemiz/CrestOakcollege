@@ -340,34 +340,43 @@ try {
         }
 
         // 3. Merge DB and Store File
-        $mergedMap = [];
-        foreach ($dbStaff as $item) {
-            $key = $item['staffNo'] ?? $item['staffId'] ?? $item['sin'] ?? $item['id'];
-            if (!empty($key)) $mergedMap[$key] = $item;
-        }
-        foreach ($fileStoreStaff as $item) {
-            $key = $item['staffNo'] ?? $item['staffId'] ?? $item['sin'] ?? $item['id'];
-            if (!empty($key)) $mergedMap[$key] = $item;
-        }
+        $rawStaffList = array_merge($dbStaff, $fileStoreStaff);
+        $uniqueStaff = [];
+        $seenIds = [];
 
-        $finalStaffList = array_values($mergedMap);
-        foreach ($finalStaffList as &$item) {
+        foreach ($rawStaffList as $item) {
+            $id = $item['id'] ?? $item['staffNo'] ?? $item['staffId'] ?? $item['sin'] ?? uniqid('stf-');
+            if (in_array($id, $seenIds)) continue;
+            $seenIds[] = $id;
+
+            $item['id'] = $id;
             $item['staffNo'] = $item['staffNo'] ?? $item['staffId'] ?? $item['sin'] ?? 'STAFF-PENDING';
             $item['staffId'] = $item['staffId'] ?? $item['staffNo'];
             $item['sin']     = $item['sin']     ?? $item['staffNo'];
             $item['specialization'] = $item['specialization'] ?? '';
             $item['allocatedCourses'] = is_array($item['allocatedCourses'] ?? null) ? $item['allocatedCourses'] : [];
+
+            if (!isset($item['user']) || !is_array($item['user'])) {
+                $item['user'] = [
+                    'firstName' => $item['first_name'] ?? 'Staff',
+                    'lastName' => $item['last_name'] ?? 'Member',
+                    'middleName' => $item['middle_name'] ?? '',
+                    'email' => $item['email'] ?? '',
+                    'phoneNumber' => $item['phone'] ?? '',
+                    'roleName' => $item['role'] ?? 'LECTURER'
+                ];
+            }
+
+            $uniqueStaff[] = $item;
         }
-        unset($item);
 
         echo json_encode([
             "success" => true,
             "persistenceSuccess" => true,
-            "staff" => $finalStaffList,
-            "staffList" => $finalStaffList,
+            "staff" => $uniqueStaff,
             "departments" => $defaultDepartments,
             "courses" => $defaultCourses
-        ]);
+        ], JSON_UNESCAPED_SLASHES);
         exit();
     }
 

@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import {
   Search,
@@ -32,6 +32,8 @@ import { DEFAULT_DEPARTMENTS } from "@/constants/institutionalData";
 interface StaffItem {
   id: string;
   staffNo: string;
+  staffId?: string;
+  sin?: string;
   designation: string;
   joiningDate: Date | string;
   status?: "ACTIVE" | "SUSPENDED" | "ON_LEAVE";
@@ -568,8 +570,20 @@ export default function StaffClient({ staffList: initialStaff, departments: rawD
     }
   };
 
-  const filteredStaff = staffList.filter((staff) => {
-    const fullName = `${staff.user?.firstName || ""} ${staff.user?.lastName || ""}`.toLowerCase();
+  const safeStaffList = useMemo(() => {
+    const list = Array.isArray(staffList) ? staffList : [];
+    return list.map((staff, index) => ({
+      ...staff,
+      uniqueKey: staff.id || staff.staffNo || `staff-row-${index}`,
+      displayName: staff.user 
+        ? `${staff.user.firstName || ''} ${staff.user.middleName || ''} ${staff.user.lastName || ''}`.replace(/\s+/g, ' ').trim() 
+        : 'Unknown Staff',
+      staffNo: staff.staffNo || staff.sin || 'N/A',
+    }));
+  }, [staffList]);
+
+  const filteredStaff = safeStaffList.filter((staff) => {
+    const fullName = staff.displayName.toLowerCase();
     const username = (staff.user?.username || "").toLowerCase();
     const email = (staff.user?.email || "").toLowerCase();
     const staffNo = (staff.staffNo || "").toLowerCase();
@@ -684,8 +698,8 @@ export default function StaffClient({ staffList: initialStaff, departments: rawD
                   </td>
                 </tr>
               ) : (
-                paginatedStaff.map((staff, idx) => (
-                  <tr key={staff.id || staff.staffNo || `staff-key-${idx}`} className="hover:bg-slate-50/80 transition-colors">
+                paginatedStaff.map((staff) => (
+                  <tr key={staff.uniqueKey} className="hover:bg-slate-50/80 transition-colors">
                     <td className="py-3.5 px-4">
                       <div className="font-bold text-slate-900">
                         {staff.user.firstName} {staff.user.middleName || ""} {staff.user.lastName}
