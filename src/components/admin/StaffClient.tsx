@@ -346,19 +346,19 @@ export default function StaffClient({ staffList: initialStaff, departments: rawD
     setEditingStaff(staff);
     setShowPassword(false);
     setFormData({
-      username: staff.user.username || "",
-      email: staff.user.email,
+      username: staff.user?.username || "",
+      email: staff.user?.email || "",
       password: "",
-      firstName: staff.user.firstName,
-      lastName: staff.user.lastName,
-      middleName: staff.user.middleName || "",
-      phoneNumber: staff.user.phoneNumber || "",
-      staffNo: staff.staffNo,
-      designation: staff.designation,
+      firstName: staff.user?.firstName || "",
+      lastName: staff.user?.lastName || "",
+      middleName: staff.user?.middleName || "",
+      phoneNumber: staff.user?.phoneNumber || "",
+      staffNo: staff.staffNo || "",
+      designation: staff.designation || "",
       status: staff.status || "ACTIVE",
       joiningDate: typeof staff.joiningDate === "string" ? staff.joiningDate.split("T")[0] : new Date().toISOString().split("T")[0],
-      departmentId: staff.department.id,
-      roleName: (staff.user.role.name as any) || "LECTURER",
+      departmentId: staff.department?.id || "",
+      roleName: (staff.user?.role?.name as any) || "LECTURER",
       rank: staff.lecturer?.rank || "LECTURER_II",
       specialization: staff.lecturer?.specialization || "",
       sendEmail: false,
@@ -572,14 +572,24 @@ export default function StaffClient({ staffList: initialStaff, departments: rawD
 
   const safeStaffList = useMemo(() => {
     const list = Array.isArray(staffList) ? staffList : [];
-    return list.map((staff, index) => ({
-      ...staff,
-      uniqueKey: staff.id || staff.staffNo || `staff-row-${index}`,
-      displayName: staff.user 
-        ? `${staff.user.firstName || ''} ${staff.user.middleName || ''} ${staff.user.lastName || ''}`.replace(/\s+/g, ' ').trim() 
-        : 'Unknown Staff',
-      staffNo: staff.staffNo || staff.sin || 'N/A',
-    }));
+    return list.map((staff, index) => {
+      const deptName = typeof staff?.department === "string" 
+        ? staff.department 
+        : staff?.department?.name || 'Unassigned Department';
+      const department = {
+        id: staff?.department?.id || ('dept-' + String(deptName).toLowerCase().replace(/[^a-z0-9]/g, '-')),
+        name: deptName
+      };
+      return {
+        ...staff,
+        uniqueKey: staff.id || staff.staffNo || `staff-row-${index}`,
+        displayName: staff.user 
+          ? `${staff.user.firstName || ''} ${staff.user.middleName || ''} ${staff.user.lastName || ''}`.replace(/\s+/g, ' ').trim() 
+          : 'Unknown Staff',
+        staffNo: staff.staffNo || staff.sin || 'N/A',
+        department,
+      };
+    });
   }, [staffList]);
 
   const filteredStaff = safeStaffList.filter((staff) => {
