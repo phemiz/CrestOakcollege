@@ -370,12 +370,19 @@ try {
             $uniqueStaff[] = $item;
         }
 
+        $cleanDepartments = array_values(array_filter($defaultDepartments ?? [], function($d) {
+            return is_array($d) && !empty($d['name']);
+        }));
+        $cleanCourses = array_values(array_filter($defaultCourses ?? [], function($c) {
+            return is_array($c) && (!empty($c['name']) || !empty($c['title']) || !empty($c['code']));
+        }));
+
         echo json_encode([
             "success" => true,
             "persistenceSuccess" => true,
             "staff" => $uniqueStaff,
-            "departments" => $defaultDepartments,
-            "courses" => $defaultCourses
+            "departments" => $cleanDepartments,
+            "courses" => $cleanCourses
         ], JSON_UNESCAPED_SLASHES);
         exit();
     }

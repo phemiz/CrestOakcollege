@@ -660,9 +660,9 @@ export default function StaffClient({ staffList: initialStaff, departments: rawD
             className="w-full py-2.5 px-3 bg-white border border-slate-300 rounded-xl text-xs font-semibold text-slate-900 focus:outline-none focus:border-slate-900 focus:ring-1 focus:ring-slate-900 transition-colors"
           >
             <option value="ALL">All Departments</option>
-            {departments.map((dept) => (
-              <option key={dept.id} value={dept.id}>
-                {dept.name}
+            {(departments || []).map((dept: any) => (
+              <option key={dept?.id || dept?.name} value={dept?.id}>
+                {dept?.name || dept?.title || 'General Department'}
               </option>
             ))}
           </select>
@@ -1053,9 +1053,9 @@ export default function StaffClient({ staffList: initialStaff, departments: rawD
                     className="p-2.5 bg-white border border-slate-300 rounded-xl focus:outline-none focus:border-slate-900 text-slate-900 font-bold"
                   >
                     <option value="">-- Select Department --</option>
-                    {departments.map((dept) => (
-                      <option key={dept.id} value={dept.id}>
-                        {dept.name}
+                    {(departments || []).map((dept: any) => (
+                      <option key={dept?.id || dept?.name} value={dept?.id}>
+                        {dept?.name || dept?.title || 'General Department'}
                       </option>
                     ))}
                   </select>
@@ -1250,16 +1250,16 @@ export default function StaffClient({ staffList: initialStaff, departments: rawD
             </div>
 
             <p className="text-xs text-slate-600 font-medium">
-              Map taught course codes to <strong className="font-mono text-slate-900">{courseStaff.staffNo}</strong> ({courseStaff.user.firstName} {courseStaff.user.lastName}).
+              Map taught course codes to <strong className="font-mono text-slate-900">{courseStaff?.staffNo}</strong> ({courseStaff?.user?.firstName || 'Staff'} {courseStaff?.user?.lastName || 'Member'}).
             </p>
 
             <div className="space-y-2 max-h-60 overflow-y-auto pr-1">
-              {AVAILABLE_COURSES.map((course) => {
-                const isSelected = selectedCourses.includes(course.code);
+              {(AVAILABLE_COURSES || []).map((course: any) => {
+                const isSelected = selectedCourses.includes(course?.code);
                 return (
                   <div
-                    key={course.code}
-                    onClick={() => toggleCourseAllocation(course.code)}
+                    key={course?.code || course?.id}
+                    onClick={() => course?.code && toggleCourseAllocation(course.code)}
                     className={`p-3 rounded-xl border flex items-center justify-between cursor-pointer transition-all ${
                       isSelected
                         ? "bg-blue-50 border-blue-300 text-blue-900"
