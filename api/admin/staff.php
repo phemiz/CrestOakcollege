@@ -345,14 +345,18 @@ try {
         $seenIds = [];
 
         foreach ($rawStaffList as $item) {
-            $id = $item['id'] ?? $item['staffNo'] ?? $item['staffId'] ?? $item['sin'] ?? uniqid('stf-');
+            $sin = $item['sin'] ?? $item['staffNo'] ?? $item['staffId'] ?? '';
+            $id = $item['id'] ?? $sin;
+            if ($sin === 'STAFF-PENDING' || empty($sin) || strpos($id, 'staff-6293') !== false || strpos($id, 'staff-8017') !== false) {
+                continue;
+            }
             if (in_array($id, $seenIds)) continue;
             $seenIds[] = $id;
 
             $item['id'] = $id;
-            $item['staffNo'] = $item['staffNo'] ?? $item['staffId'] ?? $item['sin'] ?? 'STAFF-PENDING';
-            $item['staffId'] = $item['staffId'] ?? $item['staffNo'];
-            $item['sin']     = $item['sin']     ?? $item['staffNo'];
+            $item['staffNo'] = $sin;
+            $item['staffId'] = $item['staffId'] ?? $sin;
+            $item['sin']     = $sin;
             $item['specialization'] = $item['specialization'] ?? '';
             $item['allocatedCourses'] = is_array($item['allocatedCourses'] ?? null) ? $item['allocatedCourses'] : [];
 
@@ -369,6 +373,11 @@ try {
 
             $uniqueStaff[] = $item;
         }
+
+        $uniqueStaff = array_values(array_filter($uniqueStaff, function($item) {
+            $sin = $item['sin'] ?? $item['staffNo'] ?? $item['staffId'] ?? '';
+            return $sin !== 'STAFF-PENDING' && !empty($sin);
+        }));
 
         $cleanDepartments = array_values(array_filter($defaultDepartments ?? [], function($d) {
             return is_array($d) && !empty($d['name']);

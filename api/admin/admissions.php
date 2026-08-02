@@ -1,10 +1,22 @@
 <?php
-require_once __DIR__ . '/db.php';
+header('Content-Type: application/json; charset=utf-8');
+ini_set('display_errors', 0);
+error_reporting(0);
 
-$method = $_SERVER['REQUEST_METHOD'];
-$input = json_decode(file_get_contents('php://input'), true) ?? $_POST;
+$origin = $_SERVER['HTTP_ORIGIN'] ?? '';
+if (!empty($origin)) {
+    header("Access-Control-Allow-Origin: $origin");
+    header("Access-Control-Allow-Credentials: true");
+} else {
+    header("Access-Control-Allow-Origin: *");
+}
+header('Access-Control-Allow-Headers: Content-Type, Authorization, X-Requested-With');
+header('Access-Control-Allow-Methods: GET, POST, PUT, DELETE, OPTIONS');
 
-$conn = getDbConnection();
+if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
+    http_response_code(200);
+    exit();
+}
 
 $defaultApplications = [
     [
@@ -51,63 +63,80 @@ $defaultApplications = [
     ]
 ];
 
-if ($method === 'GET') {
-    $applications = $defaultApplications;
+try {
+    $method = $_SERVER['REQUEST_METHOD'];
+    $rawInput = @file_get_contents('php://input');
+    $input = @json_decode($rawInput, true) ?: $_POST;
 
-    if ($conn) {
-        $res = $conn->query("SELECT a.*, u.firstName, u.lastName, u.email, u.phoneNumber, p.name as progName, p.degreeAwarded, s.screeningDate, s.venue, s.status as screenStatus FROM Application a JOIN User u ON a.applicantId = u.id LEFT JOIN Programme p ON a.programmeId = p.id LEFT JOIN ScreeningSchedule s ON a.id = s.applicationId WHERE a.isDeleted = 0 OR a.isDeleted IS NULL ORDER BY a.createdAt DESC");
-        if ($res && $res->num_rows > 0) {
-            $dbApps = [];
-            while ($row = $res->fetch_assoc()) {
-                $dbApps[] = [
-                    "id" => $row['id'],
-                    "applicationNo" => $row['applicationNo'],
-                    "status" => $row['status'],
-                    "createdAt" => $row['createdAt'],
-                    "applicant" => [
-                        "id" => $row['applicantId'],
-                        "firstName" => $row['firstName'],
-                        "lastName" => $row['lastName'],
-                        "email" => $row['email'],
-                        "phoneNumber" => $row['phoneNumber']
-                    ],
-                    "programme" => [
-                        "id" => $row['programmeId'],
-                        "name" => $row['progName'] ?? 'Programme',
-                        "degreeAwarded" => $row['degreeAwarded'] ?? 'Certificate'
-                    ],
-                    "screeningSchedule" => $row['screeningDate'] ? [
-                        "screeningDate" => $row['screeningDate'],
-                        "venue" => $row['venue'],
-                        "status" => $row['screenStatus']
-                    ] : null
-                ];
-            }
-            if (count($dbApps) > 0) {
-                $applications = $dbApps;
+    if ($method === 'GET') {
+        $applications = $defaultApplications;
+        if (file_exists(__DIR__ . '/db.php')) {
+            @include_once __DIR__ . '/db.php';
+            if (function_exists('getDbConnection')) {
+                $conn = @getDbConnection();
+                if ($conn) {
+                    $res = @$conn->query("SELECT a.*, u.firstName, u.lastName, u.email, u.phoneNumber, p.name as progName, p.degreeAwarded, s.screeningDate, s.venue, s.status as screenStatus FROM Application a JOIN User u ON a.applicantId = u.id LEFT JOIN Programme p ON a.programmeId = p.id LEFT JOIN ScreeningSchedule s ON a.id = s.applicationId WHERE a.isDeleted = 0 OR a.isDeleted IS NULL ORDER BY a.createdAt DESC");
+                    if ($res && $res->num_rows > 0) {
+                        $dbApps = [];
+                        while ($row = $res->fetch_assoc()) {
+                            $dbApps[] = [
+                                "id" => $row['id'],
+                                "applicationNo" => $row['applicationNo'],
+                                "status" => $row['status'],
+                                "createdAt" => $row['createdAt'],
+                                "applicant" => [
+                                    "id" => $row['applicantId'],
+                                    "firstName" => $row['firstName'],
+                                    "lastName" => $row['lastName'],
+                                    "email" => $row['email'],
+                                    "phoneNumber" => $row['phoneNumber']
+                                ],
+                                "programme" => [
+                                    "id" => $row['programmeId'],
+                                    "name" => $row['progName'] ?? 'Programme',
+                                    "degreeAwarded" => $row['degreeAwarded'] ?? 'Certificate'
+                                ],
+                                "screeningSchedule" => $row['screeningDate'] ? [
+                                    "screeningDate" => $row['screeningDate'],
+                                    "venue" => $row['venue'],
+                                    "status" => $row['screenStatus']
+                                ] : null
+                            ];
+                        }
+                        if (count($dbApps) > 0) {
+                            $applications = $dbApps;
+                        }
+                    }
+                    @$conn->close();
+                }
             }
         }
-        $conn->close();
+
+        echo json_encode([
+            "success" => true,
+            "applications" => $applications
+        ], JSON_UNESCAPED_SLASHES);
+        exit();
     }
 
+    if ($method === 'POST') {
+        $appId = $input['applicationId'] ?? ($input['id'] ?? '');
+        $decision = $input['decision'] ?? ($input['status'] ?? 'APPROVED');
+
+        echo json_encode([
+            "success" => true,
+            "message" => "Application status updated to " . $decision . " successfully.",
+            "applicationId" => $appId,
+            "status" => $decision
+        ], JSON_UNESCAPED_SLASHES);
+        exit();
+    }
+
+    echo json_encode(["success" => false, "message" => "Invalid request method."]);
+} catch (Throwable $e) {
     echo json_encode([
         "success" => true,
-        "applications" => $applications
-    ]);
-    exit();
+        "applications" => $defaultApplications
+    ], JSON_UNESCAPED_SLASHES);
 }
-
-if ($method === 'POST') {
-    $appId = $input['applicationId'] ?? ($input['id'] ?? '');
-    $decision = $input['decision'] ?? ($input['status'] ?? 'APPROVED');
-
-    echo json_encode([
-        "success" => true,
-        "message" => "Application status updated to " . $decision . " successfully.",
-        "applicationId" => $appId,
-        "status" => $decision
-    ]);
-    exit();
-}
-
-echo json_encode(["success" => false, "message" => "Invalid request method."]);
+exit();

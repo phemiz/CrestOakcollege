@@ -611,11 +611,10 @@ try {
         $persistenceSuccess = $dbWriteSuccess || $fileWriteSuccess;
 
         if (!$persistenceSuccess) {
-            http_response_code(500);
             echo json_encode([
                 "success" => false,
                 "persistenceSuccess" => false,
-                "error" => "Failed to write student to persistent storage on host server."
+                "message" => "Storage permission error: Unable to write to students_store.json"
             ]);
             exit();
         }
