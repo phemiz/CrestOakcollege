@@ -34,6 +34,7 @@ interface StaffItem {
   staffNo: string;
   staffId?: string;
   sin?: string;
+  email?: string;
   designation: string;
   joiningDate: Date | string;
   status?: "ACTIVE" | "SUSPENDED" | "ON_LEAVE";
@@ -47,6 +48,7 @@ interface StaffItem {
     middleName: string | null;
     email: string;
     phoneNumber: string | null;
+    roleName?: string;
     role: {
       name: string;
     };
@@ -514,9 +516,9 @@ export default function StaffClient({ staffList: initialStaff, departments: rawD
           action: "password_reset",
           staffNo: manageCredentialsStaff.staffNo,
           staffId: manageCredentialsStaff.staffNo,
-          email: manageCredentialsStaff.user.email,
+          email: manageCredentialsStaff.user?.email || manageCredentialsStaff.email || "",
           newPassword: resetPasswordValue,
-          roleName: manageCredentialsStaff.user.role.name
+          roleName: manageCredentialsStaff.user?.role?.name || manageCredentialsStaff.user?.roleName || "LECTURER"
         })
       });
       const data = await res.json();
@@ -524,8 +526,8 @@ export default function StaffClient({ staffList: initialStaff, departments: rawD
         setIssuedCredentials({
           staffId: manageCredentialsStaff.staffNo,
           temporaryPassword: resetPasswordValue,
-          email: manageCredentialsStaff.user.email,
-          role: manageCredentialsStaff.user.role.name,
+          email: manageCredentialsStaff.user?.email || manageCredentialsStaff.email || "",
+          role: manageCredentialsStaff.user?.role?.name || manageCredentialsStaff.user?.roleName || "LECTURER",
           sendEmail: true,
           forcePasswordChange: true
         });
@@ -712,9 +714,9 @@ export default function StaffClient({ staffList: initialStaff, departments: rawD
                   <tr key={staff.uniqueKey} className="hover:bg-slate-50/80 transition-colors">
                     <td className="py-3.5 px-4">
                       <div className="font-bold text-slate-900">
-                        {staff.user.firstName} {staff.user.middleName || ""} {staff.user.lastName}
+                        {staff.user?.firstName || "Staff"} {staff.user?.middleName || ""} {staff.user?.lastName || "Member"}
                       </div>
-                      <div className="text-[11px] text-slate-400">{staff.user.email}</div>
+                      <div className="text-[11px] text-slate-400">{staff.user?.email || staff.email || "No Email"}</div>
                     </td>
                     <td className="py-3.5 px-4 font-mono font-bold text-slate-800">{staff.staffNo}</td>
                     <td className="py-3.5 px-4 font-semibold text-slate-700">{resolveDepartment(staff.department?.name, staff.staffNo)}</td>
@@ -722,20 +724,20 @@ export default function StaffClient({ staffList: initialStaff, departments: rawD
                       <div className="flex items-center gap-1.5 mb-0.5">
                         <span
                           className={`inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-bold uppercase tracking-wider ${
-                            staff.user.role.name === "ADMIN" || staff.user.role.name === "SUPER_ADMIN"
+                            staff.user?.role?.name === "ADMIN" || staff.user?.role?.name === "SUPER_ADMIN"
                               ? "bg-purple-100 text-purple-700 border border-purple-200"
-                              : staff.user.role.name === "REGISTRAR"
+                              : staff.user?.role?.name === "REGISTRAR"
                               ? "bg-rose-100 text-rose-700 border border-rose-200"
-                              : staff.user.role.name === "DEAN" || staff.user.role.name === "HOD"
+                              : staff.user?.role?.name === "DEAN" || staff.user?.role?.name === "HOD"
                               ? "bg-indigo-100 text-indigo-700 border border-indigo-200"
-                              : staff.user.role.name === "BURSAR"
+                              : staff.user?.role?.name === "BURSAR"
                               ? "bg-amber-100 text-amber-700 border border-amber-200"
-                              : staff.user.role.name === "LECTURER"
+                              : staff.user?.role?.name === "LECTURER"
                               ? "bg-blue-100 text-blue-700 border border-blue-200"
                               : "bg-slate-100 text-slate-700 border border-slate-200"
                           }`}
                         >
-                          {staff.user.role.name}
+                          {staff.user?.role?.name || "LECTURER"}
                         </span>
                       </div>
                       <div className="text-[11px] text-slate-600 font-medium">{staff.designation}</div>

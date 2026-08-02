@@ -17,6 +17,18 @@
 </IfModule>
 
 <IfModule mod_headers.c>
+    # Never cache HTML files or JSON endpoints
+    <FilesMatch "\.(html|htm|json)$">
+        Header set Cache-Control "no-cache, no-store, must-revalidate"
+        Header set Pragma "no-cache"
+        Header set Expires 0
+    </FilesMatch>
+
+    # Cache static JS/CSS chunks with revalidation
+    <FilesMatch "\.(js|css)$">
+        Header set Cache-Control "max-age=0, must-revalidate"
+    </FilesMatch>
+
     <FilesMatch "\.(ttf|ttc|otf|eot|woff|woff2|font.css|css|png|jpg|jpeg|svg|webp|ico)$">
         Header set Access-Control-Allow-Origin "*"
         Header set Cache-Control "max-age=31536000, public"
