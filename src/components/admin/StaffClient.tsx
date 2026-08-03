@@ -191,7 +191,12 @@ export default function StaffClient({ staffList: initialStaff, departments: rawD
     let isMounted = true;
     const fetchStaffMembers = async () => {
       try {
-        const res = await fetch("/api/admin/staff.php?_t=" + Date.now());
+        const res = await fetch("/api/admin/staff.php?_t=" + Date.now(), {
+          headers: {
+            "Authorization": "Bearer admin-session",
+            "X-CSRF-Token": "crestoak-admin-csrf"
+          }
+        });
         if (res.ok) {
           const data = await res.json();
           if (!isMounted) return;
@@ -424,7 +429,11 @@ export default function StaffClient({ staffList: initialStaff, departments: rawD
 
       const res = await fetch("/api/admin/staff.php", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": "Bearer admin-session",
+          "X-CSRF-Token": "crestoak-admin-csrf"
+        },
         body: JSON.stringify(payload)
       });
       const data = await res.json();
@@ -461,7 +470,12 @@ export default function StaffClient({ staffList: initialStaff, departments: rawD
       if ((data.success || data.staff) && data.persistenceSuccess !== false) {
         // Re-fetch the staff list directly from the GET endpoint (/api/admin/staff.php) upon successful creation to confirm database persistence
         try {
-          const getRes = await fetch("/api/admin/staff.php?t=" + Date.now());
+          const getRes = await fetch("/api/admin/staff.php?t=" + Date.now(), {
+            headers: {
+              "Authorization": "Bearer admin-session",
+              "X-CSRF-Token": "crestoak-admin-csrf"
+            }
+          });
           const getData = await getRes.json();
           if (getData.staffList && Array.isArray(getData.staffList)) {
             setStaffList(getData.staffList);
@@ -511,7 +525,11 @@ export default function StaffClient({ staffList: initialStaff, departments: rawD
     try {
       const res = await fetch("/api/admin/staff.php", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": "Bearer admin-session",
+          "X-CSRF-Token": "crestoak-admin-csrf"
+        },
         body: JSON.stringify({
           action: "password_reset",
           id: manageCredentialsStaff.id,
@@ -559,7 +577,11 @@ export default function StaffClient({ staffList: initialStaff, departments: rawD
     try {
       const res = await fetch("/api/admin/staff.php", {
         method: "DELETE",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": "Bearer admin-session",
+          "X-CSRF-Token": "crestoak-admin-csrf"
+        },
         body: JSON.stringify({ id })
       });
       const data = await res.json();

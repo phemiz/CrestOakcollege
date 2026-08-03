@@ -30,7 +30,12 @@ export default function StaffPage() {
       setIsAuthorized(true);
     }
 
-    fetch('/api/admin/staff.php')
+    fetch('/api/admin/staff.php', {
+      headers: {
+        'Authorization': 'Bearer admin-session',
+        'X-CSRF-Token': 'crestoak-admin-csrf'
+      }
+    })
       .then((res) => res.json())
       .then((data) => {
         if (!isMounted) return;
