@@ -1,22 +1,6 @@
 <?php
-ini_set('display_errors', 0);
-error_reporting(E_ALL);
+require_once __DIR__ . '/db.php';
 
-$origin = $_SERVER['HTTP_ORIGIN'] ?? '';
-if (!empty($origin)) {
-    header("Access-Control-Allow-Origin: $origin");
-    header("Access-Control-Allow-Credentials: true");
-} else {
-    header("Access-Control-Allow-Origin: *");
-}
-header('Content-Type: application/json; charset=utf-8');
-header('Access-Control-Allow-Headers: Content-Type, Authorization, X-Requested-With');
-header('Access-Control-Allow-Methods: GET, POST, PUT, DELETE, OPTIONS');
-
-if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
-    http_response_code(200);
-    exit();
-}
 
 // Resolve students_store.json — check sibling dir and main api dir
 $candidatePaths = [
@@ -337,6 +321,53 @@ try {
         }
         unset($st);
 
+        // JSON store records from older versions are flat. Return one stable
+        // contract to the React client regardless of where the record came from.
+        $finalStudents = array_values(array_map(function ($student) use ($defaultDepartments, $defaultProgrammes) {
+            $savedUser = is_array($student['user'] ?? null) ? $student['user'] : [];
+            $savedDepartment = is_array($student['department'] ?? null) ? $student['department'] : [];
+            $savedProgramme = is_array($student['programme'] ?? null) ? $student['programme'] : [];
+
+            $departmentId = $savedDepartment['id'] ?? $student['departmentId'] ?? 'dept-health-001';
+            $departmentName = $savedDepartment['name'] ?? (is_string($student['department'] ?? null) ? $student['department'] : null) ?? $student['departmentName'] ?? '';
+            foreach ($defaultDepartments as $department) {
+                if ($department['id'] === $departmentId || ($departmentName !== '' && $department['name'] === $departmentName)) {
+                    $departmentId = $department['id'];
+                    $departmentName = $department['name'];
+                    break;
+                }
+            }
+
+            $programmeId = $savedProgramme['id'] ?? $student['programmeId'] ?? 'prog-001';
+            $programmeName = $savedProgramme['name'] ?? (is_string($student['programme'] ?? null) ? $student['programme'] : null) ?? $student['programmeName'] ?? '';
+            foreach ($defaultProgrammes as $programme) {
+                if ($programme['id'] === $programmeId || ($programmeName !== '' && $programme['name'] === $programmeName)) {
+                    $programmeId = $programme['id'];
+                    $programmeName = $programme['name'];
+                    break;
+                }
+            }
+
+            if (empty($student['level']) && preg_match('/\d+/', (string) ($student['academicLevel'] ?? ''), $levelMatch)) {
+                $student['level'] = (int) $levelMatch[0];
+            }
+            $student['status'] = $student['status'] ?? $student['portalStatus'] ?? 'ACTIVE';
+            $student['user'] = array_merge([
+                'firstName' => $student['firstName'] ?? '',
+                'lastName' => $student['lastName'] ?? '',
+                'middleName' => $student['middleName'] ?? '',
+                'email' => $student['email'] ?? '',
+                'phoneNumber' => $student['phoneNumber'] ?? $student['phone'] ?? '',
+                'dob' => $student['dob'] ?? '2004-01-01',
+            ], $savedUser);
+            $student['department'] = ['id' => $departmentId, 'name' => $departmentName ?: 'Unassigned'];
+            $student['programme'] = ['id' => $programmeId, 'name' => $programmeName ?: 'Unassigned'];
+            $student['entrySessionId'] = $student['entrySessionId'] ?? 'sess-2026';
+            $student['currentSessionId'] = $student['currentSessionId'] ?? 'sess-2026';
+            $student['currentSemesterId'] = $student['currentSemesterId'] ?? 'sem-first';
+            return $student;
+        }, $finalStudents));
+
         echo json_encode([
             "success" => true,
             "persistenceSuccess" => true,
@@ -420,7 +451,16 @@ try {
                     ]
                 ];
             }
-            writeJsonStore($storeFile, array_values($currentStore));
+            $storeWriteSuccess = writeJsonStore($storeFile, array_values($currentStore));
+            if (!$storeWriteSuccess) {
+                http_response_code(500);
+                echo json_encode([
+                    "success" => false,
+                    "persistenceSuccess" => false,
+                    "message" => "Storage permission error: Unable to update password in students_store.json"
+                ]);
+                exit();
+            }
 
             // 2. NOW dispatch email wrapped in non-blocking try-catch
             $mailSent = false;
@@ -651,12 +691,15 @@ try {
             }
         }
 
+        $responseStudent = $studentObject;
+        unset($responseStudent['password'], $responseStudent['password_hash'], $responseStudent['initialPassword'], $responseStudent['user']['password']);
+
         echo json_encode([
             "success" => true,
             "persistenceSuccess" => true,
             "message" => "Student created and persisted successfully.",
             "emailSent" => $mailSent,
-            "student" => $studentObject,
+            "student" => $responseStudent,
             "credentials" => [
                 "matricNo" => $matricNo,
                 "temporaryPassword" => $rawPassword,

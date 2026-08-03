@@ -113,6 +113,39 @@ function getDeptCode(deptName: string = "") {
   return upper.substring(0, 3).replace(/[^A-Z]/g, "S") || "SCS";
 }
 
+function normalizeStudent(student: any): StudentItem {
+  const department = typeof student.department === "object" && student.department !== null
+    ? student.department
+    : { id: student.departmentId || "dept-health-001", name: student.department || student.departmentName || "Unassigned" };
+  const programme = typeof student.programme === "object" && student.programme !== null
+    ? student.programme
+    : { id: student.programmeId || "prog-001", name: student.programme || student.programmeName || "Unassigned" };
+  const user = typeof student.user === "object" && student.user !== null
+    ? student.user
+    : {
+        firstName: student.firstName || "",
+        lastName: student.lastName || "",
+        middleName: student.middleName || null,
+        email: student.email || "",
+        phoneNumber: student.phoneNumber || student.phone || null,
+        dob: student.dob,
+      };
+
+  return {
+    ...student,
+    level: Number(student.level || student.academicLevel?.match(/\d+/)?.[0] || 100),
+    cgpa: Number(student.cgpa || 0),
+    gpa: Number(student.gpa || 0),
+    status: student.status || student.portalStatus || "ACTIVE",
+    user,
+    department,
+    programme,
+    entrySessionId: student.entrySessionId || "sess-2026",
+    currentSessionId: student.currentSessionId || "sess-2026",
+    currentSemesterId: student.currentSemesterId || "sem-first",
+  } as StudentItem;
+}
+
 function SegmentedMatricInput({
   value,
   onChange,
@@ -245,7 +278,7 @@ export default function StudentsClient({
     : DEFAULT_SEMESTERS.map((sem, i) => ({ id: `sem-${i + 1}`, name: sem }));
 
   const router = useRouter();
-  const [students, setStudents] = useState<StudentItem[]>(initialStudents);
+  const [students, setStudents] = useState<StudentItem[]>(() => (initialStudents || []).map(normalizeStudent));
   const [departmentsList, setDepartmentsList] = useState<DropdownItem[]>(departments);
   const [programmesList, setProgrammesList] = useState<DropdownItem[]>(programmes);
   const [logs, setLogs] = useState<AuditLogItem[]>(initialLogs);
@@ -253,7 +286,7 @@ export default function StudentsClient({
 
   useEffect(() => {
     if (Array.isArray(initialStudents)) {
-      setStudents(initialStudents);
+      setStudents(initialStudents.map(normalizeStudent));
     }
   }, [initialStudents]);
 
@@ -264,14 +297,7 @@ export default function StudentsClient({
         const data = await response.json();
 
         if (data.success && Array.isArray(data.students)) {
-          // Map numerical fields cleanly to handle level/cgpa safely
-          const normalizedStudents = data.students.map((student: any) => ({
-            ...student,
-            level: Number(student.level || 100),
-            cgpa: Number(student.cgpa || 0),
-            departmentName: student.department?.name || 'Unassigned',
-            programmeName: student.programme?.name || 'Unassigned'
-          }));
+          const normalizedStudents = data.students.map(normalizeStudent);
 
           setStudents(normalizedStudents);
           if (data.departments && Array.isArray(data.departments)) {
@@ -463,7 +489,7 @@ export default function StudentsClient({
           const getRes = await fetch("/api/admin/students.php?t=" + Date.now());
           const getData = await getRes.json();
           if (getData.students && Array.isArray(getData.students)) {
-            setStudents(getData.students);
+            setStudents(getData.students.map(normalizeStudent));
           } else if (editingStudent) {
             setStudents((prev) =>
               prev.map((s) => (s.id === editingStudent.id ? { ...s, ...data.student } : s))
