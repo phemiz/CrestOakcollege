@@ -18,9 +18,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
     exit();
 }
 
-// Resolve students_store.json — check sibling and parent dirs
+// Resolve students_store.json — check sibling dir and main api dir
 $candidatePaths = [
     __DIR__ . '/students_store.json',
+    __DIR__ . '/../../api/admin/students_store.json',
     __DIR__ . '/../admin/students_store.json',
 ];
 $jsonStorePath = __DIR__ . '/students_store.json'; // default writable location
