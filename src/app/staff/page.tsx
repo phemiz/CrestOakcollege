@@ -18,8 +18,42 @@ import {
   Clock, 
   Search,
   Plus,
-  Loader2
+  Loader2,
+  RefreshCw,
+  AlertCircle
 } from "lucide-react";
+
+interface LiveCourse {
+  code: string;
+  title: string;
+  name: string;
+  units: number;
+  department: string;
+  enrolledCount: number;
+  students: number;
+  schedule: string;
+  room: string;
+}
+
+interface GradeRecord {
+  id: string;
+  matricNo: string;
+  courseCode: string;
+  courseTitle: string;
+  units: number;
+  semester: string;
+  session: string;
+  assignment: number;
+  caTest: number;
+  project: number;
+  exam: number;
+  score: number;
+  grade: string;
+  gradePoint: number;
+  qualityPoints: number;
+  recordedBy: string;
+  updatedAt: string;
+}
 
 export default function StaffDashboard() {
   const [isClient, setIsClient] = useState(false);
@@ -29,6 +63,11 @@ export default function StaffDashboard() {
   const session = sessionResult?.data;
   const router = useRouter();
   const [activeTab, setActiveTab] = useState("overview");
+
+  // Live data state
+  const [liveCourses, setLiveCourses] = useState<LiveCourse[]>([]);
+  const [coursesLoading, setCoursesLoading] = useState(false);
+  const [coursesError, setCoursesError] = useState("");
 
   // Grade Management Form State
   const [gradeForm, setGradeForm] = useState({
@@ -45,64 +84,148 @@ export default function StaffDashboard() {
   });
   const [isSubmittingGrade, setIsSubmittingGrade] = useState(false);
   const [gradeSuccessMsg, setGradeSuccessMsg] = useState("");
-  const [savedGradesList, setSavedGradesList] = useState<any[]>([]);
+  const [savedGradesList, setSavedGradesList] = useState<GradeRecord[]>([]);
+  const [gradesLoading, setGradesLoading] = useState(false);
+
+  // Total enrolled across all courses (for overview)
+  const totalEnrolled = liveCourses.reduce((sum, c) => sum + (c.students || c.enrolledCount || 0), 0);
+
+  const fetchLiveCourses = async (user: any) => {
+    if (!user) return;
+    setCoursesLoading(true);
+    setCoursesError("");
+    const sin = user.sin ?? user.staffNo ?? user.staffId ?? user.username ?? "";
+    const email = user.email ?? "";
+    const params = new URLSearchParams();
+    if (sin) params.set("sin", sin);
+    else if (email) params.set("email", email);
+    try {
+      const res = await fetch(`/api/staff/courses.php?${params.toString()}`);
+      const data = await res.json();
+      if (data.success && Array.isArray(data.courses)) {
+        setLiveCourses(data.courses);
+      } else {
+        setCoursesError("Could not load courses from server.");
+      }
+    } catch {
+      setCoursesError("Network error fetching courses.");
+    } finally {
+      setCoursesLoading(false);
+    }
+  };
+
+  const fetchSavedGrades = async (user: any) => {
+    setGradesLoading(true);
+    const sin = user?.sin ?? user?.staffNo ?? "";
+    const email = user?.email ?? "";
+    const params = new URLSearchParams();
+    if (sin) params.set("sin", sin);
+    else if (email) params.set("email", email);
+    try {
+      const res = await fetch(`/api/staff/gradebook.php?${params.toString()}`);
+      const data = await res.json();
+      if (data.success && Array.isArray(data.grades)) {
+        setSavedGradesList(data.grades);
+      }
+    } catch {
+      // Fallback to admin grades endpoint
+      try {
+        const res2 = await fetch("/api/admin/grades.php");
+        const d2 = await res2.json();
+        if (d2.success && Array.isArray(d2.grades)) setSavedGradesList(d2.grades);
+      } catch {}
+    } finally {
+      setGradesLoading(false);
+    }
+  };
 
   useEffect(() => {
     setIsClient(true);
     if (typeof window !== "undefined") {
       const auth = localStorage.getItem("isAuthenticated") === "true";
       const userStr = localStorage.getItem("user") || localStorage.getItem("cchsmt_user_session");
+      let parsedUser: any = null;
       if (auth && userStr) {
         try {
-          const parsed = JSON.parse(userStr);
-          setLocalUser(parsed);
+          parsedUser = JSON.parse(userStr);
+          setLocalUser(parsedUser);
           setIsAuthenticated(true);
-        } catch (e) {}
+        } catch {}
       } else if (auth) {
         setIsAuthenticated(true);
       }
-    }
 
-    // Fetch existing grades from API
-    fetch("/api/admin/grades.php")
-      .then((res) => res.json())
-      .then((data) => {
-        if (data.success && Array.isArray(data.grades)) {
-          setSavedGradesList(data.grades);
-        }
-      })
-      .catch(() => {});
+      const activeUser = parsedUser || (session?.user as any);
+      if (activeUser) {
+        fetchLiveCourses(activeUser);
+        fetchSavedGrades(activeUser);
+      } else {
+        // Still try to fetch all grades without filter
+        fetchSavedGrades(null);
+      }
+    }
   }, []);
+
+  // Also re-fetch when session loads
+  useEffect(() => {
+    if (session?.user && liveCourses.length === 0) {
+      fetchLiveCourses(session.user as any);
+      fetchSavedGrades(session.user as any);
+    }
+  }, [session]);
 
   const handleSaveGrade = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmittingGrade(true);
     setGradeSuccessMsg("");
 
+    const activeUser = (session?.user as any) || localUser;
+
     try {
-      const res = await fetch("/api/admin/grades.php", {
+      const res = await fetch("/api/staff/gradebook.php", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           action: "save_grade",
           ...gradeForm,
-          recordedBy: effectiveUser.name || "Lecturer"
+          sin: activeUser?.sin ?? activeUser?.staffNo ?? "",
+          email: activeUser?.email ?? "",
+          lecturerName: activeUser?.name ?? activeUser?.firstName ?? "Lecturer",
+          recordedBy: activeUser?.name ?? activeUser?.email ?? "Lecturer"
         })
       });
       const data = await res.json();
       if (data.success) {
-        setGradeSuccessMsg(`Grade saved! Student CGPA updated to ${data.calculatedCgpa}`);
-        // Refresh grades list
-        const refreshed = await fetch("/api/admin/grades.php");
-        const rData = await refreshed.json();
-        if (rData.success && Array.isArray(rData.grades)) {
-          setSavedGradesList(rData.grades);
-        }
+        setGradeSuccessMsg(`✔ Grade saved! Student CGPA updated to ${data.calculatedCgpa}`);
+        // Refresh grade list
+        await fetchSavedGrades(activeUser);
+        // Reset score fields only (preserve matric/course for quick repeated entry)
+        setGradeForm(prev => ({ ...prev, assignment: 0, caTest: 0, project: 0, exam: 0 }));
       } else {
         alert("Error saving grade: " + (data.message || "Save failed."));
       }
     } catch (err: any) {
-      alert("Submission error: " + err.message);
+      // Fallback to old admin endpoint
+      try {
+        const res2 = await fetch("/api/admin/grades.php", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            action: "save_grade",
+            ...gradeForm,
+            recordedBy: activeUser?.name || "Lecturer"
+          })
+        });
+        const d2 = await res2.json();
+        if (d2.success) {
+          setGradeSuccessMsg(`✔ Grade saved! CGPA updated to ${d2.calculatedCgpa}`);
+          await fetchSavedGrades(activeUser);
+        } else {
+          alert("Error saving grade: " + (d2.message || "Save failed."));
+        }
+      } catch {
+        alert("Network error: " + err.message);
+      }
     } finally {
       setIsSubmittingGrade(false);
     }
@@ -119,7 +242,7 @@ export default function StaffDashboard() {
     );
   }
 
-  const effectiveUser = session?.user || localUser || {
+  const effectiveUser = (session?.user as any) || localUser || {
     name: localUser?.username || "Academic Staff Member",
     email: localUser?.email || "staff@crestoakcollege.com.ng",
     role: "Staff",
@@ -137,17 +260,11 @@ export default function StaffDashboard() {
     signOut({ callbackUrl: "/login/?gateway=staff" });
   };
 
-  // Mock data for lecturer
-  const courses = [
-    { code: "CSC 201", name: "Introduction to Computer Science", students: 145, schedule: "Mon/Wed 9:00 AM", room: "Lecture Hall A" },
-    { code: "CSC 205", name: "Data Structures & Algorithms", students: 92, schedule: "Tue/Thu 11:00 AM", room: "Lab 3" },
-    { code: "CSC 311", name: "Software Engineering Principles", students: 78, schedule: "Friday 2:00 PM", room: "Seminar Room 2" },
-  ];
-
+  // Summary tasks derived from live data
   const tasks = [
-    { id: 1, title: "Submit Grade Sheet for CSC 201", deadline: "In 2 days", priority: "high", status: "pending" },
-    { id: 2, title: "Approve Student Course Registrations", deadline: "In 5 days", priority: "medium", status: "pending" },
-    { id: 3, title: "Upload Course Syllabus for CSC 311", deadline: "Completed", priority: "low", status: "completed" },
+    { id: 1, title: `Submit Grade Sheets for ${liveCourses.length} Course${liveCourses.length !== 1 ? "s" : ""}`, deadline: "Ongoing", priority: "high" as const, status: "pending" as const },
+    { id: 2, title: "Approve Student Course Registrations", deadline: "In 5 days", priority: "medium" as const, status: "pending" as const },
+    { id: 3, title: "Upload Course Syllabi for Registered Courses", deadline: "Completed", priority: "low" as const, status: "completed" as const },
   ];
 
   return (
@@ -213,6 +330,11 @@ export default function StaffDashboard() {
               >
                 <BookOpen className="w-4.5 h-4.5" />
                 <span>My Courses</span>
+                {liveCourses.length > 0 && (
+                  <span className="ml-auto bg-indigo-100 text-indigo-700 text-[10px] font-black px-1.5 py-0.5 rounded-full">
+                    {liveCourses.length}
+                  </span>
+                )}
               </button>
               <button
                 onClick={() => setActiveTab("records")}
@@ -224,6 +346,11 @@ export default function StaffDashboard() {
               >
                 <FileSpreadsheet className="w-4.5 h-4.5" />
                 <span>Gradebook</span>
+                {savedGradesList.length > 0 && (
+                  <span className="ml-auto bg-emerald-100 text-emerald-700 text-[10px] font-black px-1.5 py-0.5 rounded-full">
+                    {savedGradesList.length}
+                  </span>
+                )}
               </button>
             </nav>
           </div>
@@ -263,6 +390,11 @@ export default function StaffDashboard() {
                   Faculty: <span className="text-indigo-300 font-bold">{effectiveUser.faculty}</span>
                 </div>
               )}
+              {liveCourses.length > 0 && (
+                <div className="bg-white/10 backdrop-blur-xs text-white px-3.5 py-1.5 rounded-full border border-white/15">
+                  Courses: <span className="text-emerald-300 font-bold">{liveCourses.length} Allocated</span>
+                </div>
+              )}
             </div>
           </div>
 
@@ -272,15 +404,17 @@ export default function StaffDashboard() {
               <div className="bg-white border border-slate-200/80 rounded-2xl p-6 shadow-xs">
                 <div className="flex justify-between items-start">
                   <div>
-                    <p className="text-slate-500 text-xs font-bold uppercase tracking-wider">Active Students</p>
-                    <h3 className="text-3xl font-display font-black text-slate-900 mt-2">315</h3>
+                    <p className="text-slate-500 text-xs font-bold uppercase tracking-wider">Total Students</p>
+                    <h3 className="text-3xl font-display font-black text-slate-900 mt-2">
+                      {coursesLoading ? "..." : totalEnrolled > 0 ? totalEnrolled : "—"}
+                    </h3>
                   </div>
                   <div className="p-3 bg-blue-50 text-blue-600 rounded-xl border border-blue-100">
                     <Users className="w-5 h-5" />
                   </div>
                 </div>
                 <div className="text-xs text-slate-500 mt-4 flex items-center gap-1.5 font-medium">
-                  <span className="text-emerald-600 font-bold">▲ +12%</span> since last semester
+                  <span className="text-emerald-600 font-bold">Across all your courses</span>
                 </div>
               </div>
 
@@ -289,14 +423,20 @@ export default function StaffDashboard() {
                 <div className="flex justify-between items-start">
                   <div>
                     <p className="text-slate-500 text-xs font-bold uppercase tracking-wider">Assigned Courses</p>
-                    <h3 className="text-3xl font-display font-black text-slate-900 mt-2">3</h3>
+                    <h3 className="text-3xl font-display font-black text-slate-900 mt-2">
+                      {coursesLoading ? (
+                        <Loader2 className="w-6 h-6 animate-spin text-indigo-500 mt-2" />
+                      ) : (
+                        liveCourses.length || "0"
+                      )}
+                    </h3>
                   </div>
                   <div className="p-3 bg-emerald-50 text-emerald-600 rounded-xl border border-emerald-100">
                     <BookOpen className="w-5 h-5" />
                   </div>
                 </div>
                 <div className="text-xs text-slate-500 mt-4 font-medium">
-                  Full-time lecturer workload
+                  {coursesLoading ? "Loading from server..." : liveCourses.length > 0 ? "Live from staff records" : "No courses allocated yet"}
                 </div>
               </div>
 
@@ -304,15 +444,17 @@ export default function StaffDashboard() {
               <div className="bg-white border border-slate-200/80 rounded-2xl p-6 shadow-xs">
                 <div className="flex justify-between items-start">
                   <div>
-                    <p className="text-slate-500 text-xs font-bold uppercase tracking-wider">Academic Calendar</p>
-                    <h3 className="text-xl font-display font-black text-slate-900 mt-2">Week 8</h3>
+                    <p className="text-slate-500 text-xs font-bold uppercase tracking-wider">Grade Records</p>
+                    <h3 className="text-3xl font-display font-black text-slate-900 mt-2">
+                      {savedGradesList.length}
+                    </h3>
                   </div>
                   <div className="p-3 bg-purple-50 text-purple-600 rounded-xl border border-purple-100">
-                    <Calendar className="w-5 h-5" />
+                    <FileSpreadsheet className="w-5 h-5" />
                   </div>
                 </div>
                 <div className="text-xs text-slate-500 mt-4 font-medium">
-                  Midterm examination period
+                  Recorded in gradebook
                 </div>
               </div>
 
@@ -320,24 +462,48 @@ export default function StaffDashboard() {
               <div className="md:col-span-2 bg-white border border-slate-200/80 rounded-2xl p-6 space-y-6 shadow-xs">
                 <div className="flex justify-between items-center">
                   <h3 className="text-base font-display font-black text-slate-900">Course Schedule</h3>
-                  <button className="text-xs text-indigo-600 hover:text-indigo-700 font-bold cursor-pointer">View Calendar</button>
+                  <button
+                    onClick={() => fetchLiveCourses(effectiveUser)}
+                    className="text-xs text-indigo-600 hover:text-indigo-700 font-bold cursor-pointer flex items-center gap-1"
+                  >
+                    <RefreshCw className="w-3 h-3" />
+                    Refresh
+                  </button>
                 </div>
-                <div className="divide-y divide-slate-100">
-                  {courses.map((course) => (
-                    <div key={course.code} className="py-4 first:pt-0 last:pb-0 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
-                      <div>
-                        <span className="text-xs font-bold text-indigo-600 uppercase">{course.code}</span>
-                        <h4 className="text-sm font-bold text-slate-900 mt-0.5">{course.name}</h4>
-                        <p className="text-xs text-slate-500 mt-1 flex items-center gap-1.5 font-medium">
-                          <Clock className="w-3.5 h-3.5 text-slate-400" /> {course.schedule} &bull; {course.room}
-                        </p>
+
+                {coursesLoading ? (
+                  <div className="flex items-center justify-center py-8 gap-2 text-slate-400">
+                    <Loader2 className="w-5 h-5 animate-spin" />
+                    <span className="text-xs font-medium">Loading courses...</span>
+                  </div>
+                ) : coursesError ? (
+                  <div className="flex items-center gap-2 text-red-600 text-xs bg-red-50 p-3 rounded-xl border border-red-100">
+                    <AlertCircle className="w-4 h-4 shrink-0" />
+                    <span>{coursesError}</span>
+                  </div>
+                ) : liveCourses.length === 0 ? (
+                  <p className="text-xs text-slate-400 font-medium text-center py-6">
+                    No courses allocated yet. Contact admin to assign courses to your profile.
+                  </p>
+                ) : (
+                  <div className="divide-y divide-slate-100">
+                    {liveCourses.map((course) => (
+                      <div key={course.code} className="py-4 first:pt-0 last:pb-0 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
+                        <div>
+                          <span className="text-xs font-bold text-indigo-600 uppercase">{course.code}</span>
+                          <h4 className="text-sm font-bold text-slate-900 mt-0.5">{course.title || course.name}</h4>
+                          <p className="text-xs text-slate-500 mt-1 flex items-center gap-1.5 font-medium">
+                            <BookOpen className="w-3.5 h-3.5 text-slate-400" />
+                            {course.units} Credit Units • {course.department}
+                          </p>
+                        </div>
+                        <span className="text-xs bg-slate-100 text-slate-700 px-3 py-1 rounded-full border border-slate-200 font-semibold whitespace-nowrap">
+                          {course.students || course.enrolledCount || 0} Students enrolled
+                        </span>
                       </div>
-                      <span className="text-xs bg-slate-100 text-slate-700 px-3 py-1 rounded-full border border-slate-200 font-semibold">
-                        {course.students} Students enrolled
-                      </span>
-                    </div>
-                  ))}
-                </div>
+                    ))}
+                  </div>
+                )}
               </div>
 
               {/* Checklist Tasks */}
@@ -378,45 +544,80 @@ export default function StaffDashboard() {
               <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
                 <div>
                   <h2 className="text-xl font-display font-black text-slate-900">My Academic Modules</h2>
-                  <p className="text-slate-500 text-xs mt-1 font-medium">Review lecture materials and active course profiles</p>
+                  <p className="text-slate-500 text-xs mt-1 font-medium">
+                    Live data from staff records — {liveCourses.length} course{liveCourses.length !== 1 ? "s" : ""} allocated
+                  </p>
                 </div>
-                <div className="relative w-full sm:w-64">
-                  <span className="absolute inset-y-0 left-0 pl-3 flex items-center text-slate-400">
-                    <Search className="w-4 h-4" />
-                  </span>
-                  <input
-                    type="text"
-                    placeholder="Search courses..."
-                    className="w-full pl-9 pr-4 py-2 bg-slate-50 border border-slate-300 rounded-xl text-xs text-slate-900 placeholder:text-slate-400 focus:outline-none focus:border-slate-900"
-                  />
-                </div>
+                <button
+                  onClick={() => fetchLiveCourses(effectiveUser)}
+                  disabled={coursesLoading}
+                  className="flex items-center gap-2 text-xs bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200 font-bold px-4 py-2 rounded-xl transition-all cursor-pointer disabled:opacity-50"
+                >
+                  <RefreshCw className={`w-3.5 h-3.5 ${coursesLoading ? "animate-spin" : ""}`} />
+                  Refresh
+                </button>
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                {courses.map((course) => (
-                  <div key={course.code} className="bg-slate-50 border border-slate-200 p-6 rounded-2xl hover:border-slate-300 transition-all group">
-                    <div className="flex justify-between items-start">
-                      <span className="text-xs bg-indigo-50 text-indigo-700 border border-indigo-200 px-2.5 py-1 rounded-full font-bold uppercase tracking-wider">
-                        {course.code}
-                      </span>
-                      <span className="text-xs text-slate-500 font-medium">{course.room}</span>
-                    </div>
-                    <h3 className="text-base font-bold text-slate-900 mt-4 group-hover:text-indigo-600 transition-colors">
-                      {course.name}
-                    </h3>
-                    <div className="mt-6 grid grid-cols-2 gap-4 text-xs border-t border-slate-200 pt-4">
-                      <div>
-                        <p className="text-slate-500 font-medium">Students</p>
-                        <p className="text-sm font-bold text-slate-900 mt-1">{course.students} Registered</p>
-                      </div>
-                      <div>
-                        <p className="text-slate-500 font-medium">Schedule</p>
-                        <p className="text-sm font-bold text-slate-900 mt-1">{course.schedule.split(" ")[0]}</p>
-                      </div>
-                    </div>
+              {coursesLoading ? (
+                <div className="flex items-center justify-center py-16 gap-3 text-slate-400">
+                  <Loader2 className="w-6 h-6 animate-spin text-indigo-500" />
+                  <span className="text-sm font-medium">Loading your courses from the server...</span>
+                </div>
+              ) : coursesError ? (
+                <div className="flex items-center gap-3 text-red-600 text-sm bg-red-50 p-4 rounded-2xl border border-red-100">
+                  <AlertCircle className="w-5 h-5 shrink-0" />
+                  <div>
+                    <p className="font-bold">Could not load courses</p>
+                    <p className="text-xs font-medium mt-0.5">{coursesError}</p>
                   </div>
-                ))}
-              </div>
+                </div>
+              ) : liveCourses.length === 0 ? (
+                <div className="text-center py-16 text-slate-400">
+                  <BookOpen className="w-12 h-12 mx-auto mb-3 opacity-30" />
+                  <p className="font-bold text-sm">No courses allocated</p>
+                  <p className="text-xs mt-1">Contact the admin to assign courses to your staff profile.</p>
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  {liveCourses.map((course) => (
+                    <div key={course.code} className="bg-slate-50 border border-slate-200 p-6 rounded-2xl hover:border-slate-300 transition-all group">
+                      <div className="flex justify-between items-start">
+                        <span className="text-xs bg-indigo-50 text-indigo-700 border border-indigo-200 px-2.5 py-1 rounded-full font-bold uppercase tracking-wider">
+                          {course.code}
+                        </span>
+                        <span className="text-xs text-slate-500 font-medium">{course.units} Units</span>
+                      </div>
+                      <h3 className="text-base font-bold text-slate-900 mt-4 group-hover:text-indigo-600 transition-colors">
+                        {course.title || course.name}
+                      </h3>
+                      <p className="text-[10px] text-slate-400 font-medium mt-1">{course.department}</p>
+                      <div className="mt-6 grid grid-cols-2 gap-4 text-xs border-t border-slate-200 pt-4">
+                        <div>
+                          <p className="text-slate-500 font-medium">Students</p>
+                          <p className="text-sm font-bold text-slate-900 mt-1">
+                            {course.students || course.enrolledCount || 0} Enrolled
+                          </p>
+                        </div>
+                        <div>
+                          <p className="text-slate-500 font-medium">Grades Recorded</p>
+                          <p className="text-sm font-bold text-slate-900 mt-1">
+                            {savedGradesList.filter(g => g.courseCode.replace(/ /g, '') === course.code.replace(/ /g, '')).length}
+                          </p>
+                        </div>
+                      </div>
+                      <button
+                        onClick={() => {
+                          setGradeForm(prev => ({ ...prev, courseCode: course.code, courseTitle: course.title || course.name, units: course.units || 3 }));
+                          setActiveTab("records");
+                        }}
+                        className="mt-4 w-full text-xs bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 rounded-xl transition-colors cursor-pointer"
+                      >
+                        Enter Grades →
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
           )}
 
@@ -458,14 +659,36 @@ export default function StaffDashboard() {
                     </div>
                     <div className="flex flex-col gap-1">
                       <label className="text-[10px] uppercase font-bold text-slate-600">Course Code *</label>
-                      <input
-                        type="text"
-                        required
-                        value={gradeForm.courseCode}
-                        onChange={(e) => setGradeForm({ ...gradeForm, courseCode: e.target.value })}
-                        placeholder="e.g. NUR 101"
-                        className="p-2.5 bg-white border border-slate-300 rounded-xl focus:outline-none focus:border-indigo-600 font-bold uppercase text-slate-900"
-                      />
+                      {liveCourses.length > 0 ? (
+                        <select
+                          required
+                          value={gradeForm.courseCode}
+                          onChange={(e) => {
+                            const selected = liveCourses.find(c => c.code === e.target.value);
+                            setGradeForm({ 
+                              ...gradeForm, 
+                              courseCode: e.target.value,
+                              courseTitle: selected?.title || selected?.name || gradeForm.courseTitle,
+                              units: selected?.units || gradeForm.units
+                            });
+                          }}
+                          className="p-2.5 bg-white border border-slate-300 rounded-xl focus:outline-none focus:border-indigo-600 font-bold text-slate-900"
+                        >
+                          <option value="">— Select Course —</option>
+                          {liveCourses.map(c => (
+                            <option key={c.code} value={c.code}>{c.code} — {c.title || c.name}</option>
+                          ))}
+                        </select>
+                      ) : (
+                        <input
+                          type="text"
+                          required
+                          value={gradeForm.courseCode}
+                          onChange={(e) => setGradeForm({ ...gradeForm, courseCode: e.target.value })}
+                          placeholder="e.g. NUR 101"
+                          className="p-2.5 bg-white border border-slate-300 rounded-xl focus:outline-none focus:border-indigo-600 font-bold uppercase text-slate-900"
+                        />
+                      )}
                     </div>
                     <div className="flex flex-col gap-1">
                       <label className="text-[10px] uppercase font-bold text-slate-600">Credit Units *</label>
@@ -501,11 +724,7 @@ export default function StaffDashboard() {
                       <div className="flex flex-col gap-1">
                         <label className="text-[10px] uppercase font-bold text-slate-600">Assignment (Max 10)</label>
                         <input
-                          type="number"
-                          step="0.5"
-                          min="0"
-                          max="10"
-                          required
+                          type="number" step="0.5" min="0" max="10" required
                           value={gradeForm.assignment}
                           onChange={(e) => setGradeForm({ ...gradeForm, assignment: Number(e.target.value) })}
                           className="p-2.5 bg-white border border-slate-300 rounded-xl font-mono font-bold text-slate-900 focus:outline-none focus:border-indigo-600"
@@ -514,11 +733,7 @@ export default function StaffDashboard() {
                       <div className="flex flex-col gap-1">
                         <label className="text-[10px] uppercase font-bold text-slate-600">CA Test (Max 20)</label>
                         <input
-                          type="number"
-                          step="0.5"
-                          min="0"
-                          max="20"
-                          required
+                          type="number" step="0.5" min="0" max="20" required
                           value={gradeForm.caTest}
                           onChange={(e) => setGradeForm({ ...gradeForm, caTest: Number(e.target.value) })}
                           className="p-2.5 bg-white border border-slate-300 rounded-xl font-mono font-bold text-slate-900 focus:outline-none focus:border-indigo-600"
@@ -527,11 +742,7 @@ export default function StaffDashboard() {
                       <div className="flex flex-col gap-1">
                         <label className="text-[10px] uppercase font-bold text-slate-600">Project (Max 10)</label>
                         <input
-                          type="number"
-                          step="0.5"
-                          min="0"
-                          max="10"
-                          required
+                          type="number" step="0.5" min="0" max="10" required
                           value={gradeForm.project}
                           onChange={(e) => setGradeForm({ ...gradeForm, project: Number(e.target.value) })}
                           className="p-2.5 bg-white border border-slate-300 rounded-xl font-mono font-bold text-slate-900 focus:outline-none focus:border-indigo-600"
@@ -540,11 +751,7 @@ export default function StaffDashboard() {
                       <div className="flex flex-col gap-1">
                         <label className="text-[10px] uppercase font-bold text-slate-600">Semester Exam (Max 60)</label>
                         <input
-                          type="number"
-                          step="0.5"
-                          min="0"
-                          max="60"
-                          required
+                          type="number" step="0.5" min="0" max="60" required
                           value={gradeForm.exam}
                           onChange={(e) => setGradeForm({ ...gradeForm, exam: Number(e.target.value) })}
                           className="p-2.5 bg-white border border-slate-300 rounded-xl font-mono font-bold text-slate-900 focus:outline-none focus:border-indigo-600"
@@ -597,7 +804,17 @@ export default function StaffDashboard() {
               <div className="bg-white border border-slate-200/80 rounded-3xl p-6 md:p-8 space-y-4 shadow-xs">
                 <div className="flex justify-between items-center">
                   <h3 className="text-base font-display font-black text-slate-900">Recorded Course Gradebook Roster</h3>
-                  <span className="text-xs text-slate-500 font-semibold">{savedGradesList.length} Grade Records</span>
+                  <div className="flex items-center gap-3">
+                    <span className="text-xs text-slate-500 font-semibold">{savedGradesList.length} Grade Records</span>
+                    <button
+                      onClick={() => fetchSavedGrades(effectiveUser)}
+                      disabled={gradesLoading}
+                      className="flex items-center gap-1 text-xs text-indigo-600 hover:text-indigo-700 font-bold cursor-pointer disabled:opacity-50"
+                    >
+                      <RefreshCw className={`w-3 h-3 ${gradesLoading ? "animate-spin" : ""}`} />
+                      Refresh
+                    </button>
+                  </div>
                 </div>
                 <div className="overflow-x-auto border border-slate-200 rounded-2xl">
                   <table className="w-full text-left border-collapse text-xs">
@@ -616,8 +833,14 @@ export default function StaffDashboard() {
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-100 font-semibold text-slate-700">
-                      {savedGradesList.length > 0 ? (
-                        savedGradesList.map((g: any) => (
+                      {gradesLoading ? (
+                        <tr>
+                          <td colSpan={10} className="p-8 text-center">
+                            <Loader2 className="w-5 h-5 animate-spin text-indigo-500 mx-auto" />
+                          </td>
+                        </tr>
+                      ) : savedGradesList.length > 0 ? (
+                        savedGradesList.map((g) => (
                           <tr key={g.id} className="hover:bg-slate-50/80 transition-colors">
                             <td className="p-3.5 px-4 font-mono font-bold text-slate-900">{g.matricNo}</td>
                             <td className="p-3.5 px-4 font-bold text-indigo-600">{g.courseCode}</td>
