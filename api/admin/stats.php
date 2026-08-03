@@ -10,64 +10,93 @@ if (!empty($origin)) {
 } else {
     header("Access-Control-Allow-Origin: *");
 }
+header('Access-Control-Allow-Methods: GET, OPTIONS');
 
-try {
-    $staffFile = __DIR__ . '/staff_store.json';
-    $staffCount = 0;
-    if (file_exists($staffFile)) {
-        $staffData = @json_decode(@file_get_contents($staffFile), true);
-        $staffCount = is_array($staffData) ? count($staffData) : 0;
-    }
-    if ($staffCount === 0) {
-        $staffCount = 4;
-    }
-
-    $studentsFile = __DIR__ . '/students_store.json';
-    $studentsCount = 0;
-    if (file_exists($studentsFile)) {
-        $studentsData = @json_decode(@file_get_contents($studentsFile), true);
-        $studentsCount = is_array($studentsData) ? count($studentsData) : 0;
-    }
-    if ($studentsCount === 0) {
-        $studentsCount = 120;
-    }
-
-    echo json_encode([
-        "success" => true,
-        "stats" => [
-            "totalStaff" => $staffCount,
-            "totalStudents" => $studentsCount,
-            "activeCourses" => 14,
-            "departments" => 5
-        ],
-        "data" => [
-            "studentsCount" => $studentsCount,
-            "staffCount" => $staffCount,
-            "coursesCount" => 14,
-            "pendingAppsCount" => 3,
-            "totalRevenue" => 770000.0,
-            "activeSession" => ["name" => "2026/2027 Academic Session"],
-            "recentAudits" => []
-        ]
-    ], JSON_UNESCAPED_SLASHES);
-} catch (Throwable $e) {
-    echo json_encode([
-        "success" => true,
-        "stats" => [
-            "totalStaff" => 4,
-            "totalStudents" => 120,
-            "activeCourses" => 14,
-            "departments" => 5
-        ],
-        "data" => [
-            "studentsCount" => 120,
-            "staffCount" => 4,
-            "coursesCount" => 14,
-            "pendingAppsCount" => 0,
-            "totalRevenue" => 0,
-            "activeSession" => ["name" => "2026/2027 Academic Session"],
-            "recentAudits" => []
-        ]
-    ], JSON_UNESCAPED_SLASHES);
+if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
+    http_response_code(200);
+    exit();
 }
+
+function readStore($path) {
+    if (!file_exists($path)) return [];
+    $data = @json_decode(@file_get_contents($path), true);
+    return is_array($data) ? $data : [];
+}
+
+$dir = __DIR__;
+
+// Staff
+$staffData   = readStore($dir . '/staff_store.json');
+// Filter out any PENDING/invalid records
+$staffData   = array_values(array_filter($staffData, function($s) {
+    $sin = $s['sin'] ?? $s['staffNo'] ?? $s['staffId'] ?? '';
+    return !empty($sin) && $sin !== 'STAFF-PENDING';
+}));
+$staffCount  = count($staffData);
+
+// Students
+$studentData  = readStore($dir . '/students_store.json');
+$studentsCount = count($studentData);
+
+// Admissions — count PENDING from admissions_store
+$admissionsStorePaths = [
+    $dir . '/admissions_store.json',
+    $dir . '/../admissions/admissions_store.json',
+];
+$admissionsData = [];
+foreach ($admissionsStorePaths as $p) {
+    if (file_exists($p)) { $admissionsData = readStore($p); break; }
+}
+$pendingAdmissions = count(array_filter($admissionsData, function($a) {
+    $status = strtoupper($a['status'] ?? '');
+    return $status === 'PENDING' || $status === 'SUBMITTED';
+}));
+
+// Programmes
+$programmesStorePaths = [
+    $dir . '/programmes_store.json',
+];
+$programmesData = [];
+foreach ($programmesStorePaths as $p) {
+    if (file_exists($p)) { $programmesData = readStore($p); break; }
+}
+$activeCourses = count($programmesData) > 0 ? count($programmesData) : 6;
+
+// Departments — derive from staff or use fixed canonical set
+$departments = 5;
+
+// Revenue — sum fee amounts from students_store if available
+$totalRevenue = 0;
+foreach ($studentData as $s) {
+    $fees = $s['feesPaid'] ?? $s['totalPaid'] ?? 0;
+    $totalRevenue += floatval($fees);
+}
+
+// Audit logs from file
+$auditLogFile = $dir . '/audit_logs.json';
+$recentAudits = [];
+if (file_exists($auditLogFile)) {
+    $logs = readStore($auditLogFile);
+    $recentAudits = array_slice(array_reverse($logs), 0, 10);
+}
+
+echo json_encode([
+    'success' => true,
+    'stats'   => [
+        'totalStaff'       => $staffCount,
+        'totalStudents'    => $studentsCount,
+        'activeCourses'    => $activeCourses,
+        'departments'      => $departments,
+        'pendingAdmissions'=> $pendingAdmissions,
+    ],
+    'data'    => [
+        'staffCount'       => $staffCount,
+        'studentsCount'    => $studentsCount,
+        'coursesCount'     => $activeCourses,
+        'pendingAppsCount' => $pendingAdmissions,
+        'totalRevenue'     => $totalRevenue,
+        'activeSession'    => ['name' => '2026/2027 Academic Session'],
+        'recentAudits'     => $recentAudits,
+    ]
+], JSON_UNESCAPED_SLASHES);
 exit;

@@ -18,11 +18,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
     exit();
 }
 
-$jsonStorePath = __DIR__ . '/admin/students_store.json';
-if (!file_exists($jsonStorePath) && file_exists(__DIR__ . '/students_store.json')) {
-    $jsonStorePath = __DIR__ . '/students_store.json';
-} else if (!file_exists($jsonStorePath) && file_exists(__DIR__ . '/../admin/students_store.json')) {
-    $jsonStorePath = __DIR__ . '/../admin/students_store.json';
+// Resolve students_store.json — check sibling dir and main api dir
+$candidatePaths = [
+    __DIR__ . '/students_store.json',
+    __DIR__ . '/../../api/admin/students_store.json',
+    __DIR__ . '/../admin/students_store.json',
+];
+$jsonStorePath = __DIR__ . '/students_store.json'; // default writable location
+foreach ($candidatePaths as $cp) {
+    if (file_exists($cp)) { $jsonStorePath = $cp; break; }
 }
 $storeFile = $jsonStorePath;
 
@@ -187,28 +191,15 @@ try {
         ["id" => "sem-second", "name" => "Second Semester"]
     ];
 
-    $defaultAuditLogs = [
-        [
-            "id" => "log-101",
-            "actorId" => "adm-001",
-            "actorName" => "Dr. Emmanuel Adeyemi (Admin)",
-            "action" => "ACADEMIC_OVERRIDE",
-            "targetId" => "CCHMS/2026/NUR/0042",
-            "details" => "Rectified NUR102 Clinical Practice grade from B to A",
-            "ipAddress" => "197.210.64.12",
-            "timestamp" => date('Y-m-d H:i:s', strtotime('-2 hours'))
-        ],
-        [
-            "id" => "log-102",
-            "actorId" => "adm-001",
-            "actorName" => "Grace Okoro (Bursar)",
-            "action" => "ADMINISTRATIVE_HOLD_TOGGLE",
-            "targetId" => "CCHMS/2026/CHEW/0081",
-            "details" => "Placed Financial Hold due to outstanding tuition balance",
-            "ipAddress" => "197.210.64.15",
-            "timestamp" => date('Y-m-d H:i:s', strtotime('-1 day'))
-        ]
-    ];
+    // Load audit logs dynamically from disk
+    $auditLogPath = dirname($storeFile) . '/audit_logs.json';
+    $defaultAuditLogs = [];
+    if (file_exists($auditLogPath)) {
+        $auditRaw = @json_decode(@file_get_contents($auditLogPath), true);
+        if (is_array($auditRaw)) {
+            $defaultAuditLogs = array_slice(array_reverse($auditRaw), 0, 10);
+        }
+    }
 
     $defaultStudents = [];
 
