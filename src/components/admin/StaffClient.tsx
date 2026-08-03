@@ -514,10 +514,13 @@ export default function StaffClient({ staffList: initialStaff, departments: rawD
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           action: "password_reset",
+          id: manageCredentialsStaff.id,
+          sin: manageCredentialsStaff.sin || manageCredentialsStaff.staffNo,
           staffNo: manageCredentialsStaff.staffNo,
           staffId: manageCredentialsStaff.staffNo,
-          email: manageCredentialsStaff.user?.email || manageCredentialsStaff.email || "",
+          password: resetPasswordValue,
           newPassword: resetPasswordValue,
+          email: manageCredentialsStaff.user?.email || manageCredentialsStaff.email || "",
           roleName: manageCredentialsStaff.user?.role?.name || manageCredentialsStaff.user?.roleName || "LECTURER"
         })
       });

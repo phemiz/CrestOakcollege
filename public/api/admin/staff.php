@@ -408,6 +408,28 @@ try {
             $rawPassword = $data['newPassword'] ?? $data['password'] ?? ('CrestOakStaff#' . rand(1000, 9999));
             $hashedPassword = password_hash($rawPassword, PASSWORD_BCRYPT);
             
+            // Save new password directly to staff_store.json
+            $currentStore = readJsonStore($storeFile);
+            $storeUpdated = false;
+            foreach ($currentStore as &$s) {
+                $sSin = strtolower(preg_replace('/[^a-z0-9]/i', '', $s['sin'] ?? $s['staffNo'] ?? $s['staffId'] ?? ''));
+                $targetSin = strtolower(preg_replace('/[^a-z0-9]/i', '', $staffNo));
+                if (($s['id'] ?? '') === $id || (!empty($targetSin) && $sSin === $targetSin)) {
+                    $s['password'] = $rawPassword;
+                    $s['password_hash'] = $hashedPassword;
+                    $s['initialPassword'] = $rawPassword;
+                    if (!isset($s['user']) || !is_array($s['user'])) {
+                        $s['user'] = [];
+                    }
+                    $s['user']['password'] = $rawPassword;
+                    $storeUpdated = true;
+                    break;
+                }
+            }
+            if ($storeUpdated) {
+                writeJsonStore($storeFile, $currentStore);
+            }
+            
             $mailSent = false;
             if (!empty($email)) {
                 $toEmail = $email;
