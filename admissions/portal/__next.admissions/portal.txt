@@ -1,3 +1,5 @@
 1:"$Sreact.fragment"
-0:{"rsc":["$","$1","c",{"children":[[["$","script","script-0",{"src":"/_next/static/chunks/2uz1g63s5dpz6.js","async":true}]],"$L2"]}],"isPartial":false,"staleTime":300,"varyParams":null,"buildId":"sgB-8ii9F-I2RY15aNVra"}
-2:E{"digest":"NEXT_REDIRECT;replace;/login;307;"}
+2:I[29652,["/_next/static/chunks/3jb8osu7c49t6.js","/_next/static/chunks/3de3nv78x9pe2.js","/_next/static/chunks/2zyx7p89avm_m.js","/_next/static/chunks/2s4gv-hzkvd_g.js"],"default"]
+3:I[34679,["/_next/static/chunks/3jb8osu7c49t6.js","/_next/static/chunks/3de3nv78x9pe2.js","/_next/static/chunks/2zyx7p89avm_m.js"],"default"]
+4:I[8170,["/_next/static/chunks/3jb8osu7c49t6.js","/_next/static/chunks/3de3nv78x9pe2.js","/_next/static/chunks/2zyx7p89avm_m.js"],"default"]
+0:{"rsc":["$","$1","c",{"children":[[["$","script","script-0",{"src":"/_next/static/chunks/2s4gv-hzkvd_g.js","async":true}]],["$","$L2",null,{"user":{"name":"Applicant User","email":"applicant@crestoakcollege.com.ng","role":"APPLICANT"},"hasAdmissionLetter":true,"children":["$","$L3",null,{"parallelRouterKey":"children","template":["$","$L4",null,{}]}]}]]}],"isPartial":false,"staleTime":300,"varyParams":null,"buildId":"zuz_EQntWsnSK1gFk0KhG"}

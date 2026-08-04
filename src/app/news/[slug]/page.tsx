@@ -3,7 +3,6 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ArrowLeft, Calendar, User, BookOpen } from "lucide-react";
-import db from "@/lib/db";
 import { Header } from "@/components/layout/header";
 import { Footer } from "@/components/layout/footer";
 import { generateSEO } from "@/utils/seo";
@@ -24,29 +23,9 @@ interface PageProps {
 
 // Generate Dynamic SEO Metadata
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
-  // Await the params if it's a promise
   const resolvedParams = await params;
   const { slug } = resolvedParams;
 
-  // 1. Search database
-  let article = null;
-  try {
-    article = await db.news.findUnique({
-      where: { slug, isDeleted: false }
-    });
-  } catch (error) {
-    console.error(`[news/[slug]/page.tsx] generateMetadata db query failed for slug ${slug}:`, error);
-  }
-
-  if (article && article.isPublished) {
-    return generateSEO({
-      title: article.title,
-      description: article.content.substring(0, 160).replace(/<[^>]*>/g, ""),
-      path: `/news/${slug}`
-    });
-  }
-
-  // 2. Search static fallback
   const staticArticle = newsAndEvents.find((item) => item.slug === slug);
   if (staticArticle) {
     return generateSEO({
@@ -57,8 +36,8 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   }
 
   return generateSEO({
-    title: "Article Not Found",
-    description: "The requested news article could not be located.",
+    title: "News Announcement",
+    description: "Official announcement from CrestOak College of Health Sciences & Technology.",
     path: `/news/${slug}`
   });
 }
@@ -67,109 +46,30 @@ export default async function NewsDetailPage({ params }: PageProps) {
   const resolvedParams = await params;
   const { slug } = resolvedParams;
 
-  // 1. Query DB
-  let dbArticle = null;
-  try {
-    dbArticle = await db.news.findUnique({
-      where: { slug, isDeleted: false },
-      include: {
-        author: {
-          select: {
-            firstName: true,
-            lastName: true,
-            avatarUrl: true
-          }
-        }
-      }
-    });
-  } catch (error) {
-    console.error(`[news/[slug]/page.tsx] dbArticle query failed for slug ${slug}:`, error);
-  }
-
-  let articleData: {
-    title: string;
-    content: string;
-    date: string;
-    category: string;
-    alert?: string;
-    featuredImage?: string | null;
-    authorName: string;
-  } | null = null;
-
-  if (dbArticle && dbArticle.isPublished) {
-    const pubDate = dbArticle.publishedAt || dbArticle.createdAt;
-    articleData = {
-      title: dbArticle.title,
-      content: dbArticle.content,
-      date: pubDate.toLocaleDateString("en-US", {
-        month: "long",
-        day: "numeric",
-        year: "numeric"
-      }),
-      category: "Announcement",
-      alert: "Official",
-      featuredImage: dbArticle.featuredImage,
-      authorName: `${dbArticle.author.firstName} ${dbArticle.author.lastName}`
-    };
-  } else {
-    // 2. Query Static Fallback
-    const staticArticle = newsAndEvents.find((item) => item.slug === slug);
-    if (staticArticle) {
-      articleData = {
-        title: staticArticle.title,
-        content: staticArticle.desc,
-        date: staticArticle.date,
-        category: staticArticle.category,
-        alert: staticArticle.alert,
-        featuredImage: null,
-        authorName: "Registry Office"
-      };
-    }
-  }
-
-  // If not found, return 404 page
-  if (!articleData) {
+  const staticArticle = newsAndEvents.find((item) => item.slug === slug);
+  if (!staticArticle) {
     notFound();
   }
 
-  // Fetch recent news (excluding the current one) to display in sidebar
-  let recentDbArticles: any[] = [];
-  try {
-    recentDbArticles = await db.news.findMany({
-      where: {
-        isPublished: true,
-        isDeleted: false,
-        NOT: { slug }
-      },
-      orderBy: {
-        publishedAt: "desc"
-      },
-      take: 3
-    });
-  } catch (error) {
-    console.error("[news/[slug]/page.tsx] recentDbArticles query failed:", error);
-  }
+  const articleData = {
+    title: staticArticle.title,
+    content: staticArticle.desc,
+    date: staticArticle.date,
+    category: staticArticle.category || "Announcement",
+    alert: staticArticle.alert || "Official",
+    featuredImage: "/crestoak-poster.jpg",
+    authorName: "Registry Office"
+  };
 
-  const recentSidebarItems = [
-    ...recentDbArticles.map((item) => ({
+  const recentSidebarItems = newsAndEvents
+    .filter((item) => item.slug !== slug)
+    .map((item) => ({
       title: item.title,
-      slug: item.slug,
-      date: (item.publishedAt || item.createdAt).toLocaleDateString("en-US", {
-        month: "short",
-        day: "numeric",
-        year: "numeric"
-      }),
-      category: "Announcement"
-    })),
-    ...newsAndEvents
-      .filter((item) => item.slug !== slug)
-      .map((item) => ({
-        title: item.title,
-        slug: item.slug || "",
-        date: item.date,
-        category: item.category
-      }))
-  ].slice(0, 4); // limit to 4 recent items
+      slug: item.slug || "",
+      date: item.date,
+      category: item.category
+    }))
+    .slice(0, 4);
 
   return (
     <div className="min-h-screen flex flex-col bg-brand-bg-light">
@@ -215,17 +115,11 @@ export default async function NewsDetailPage({ params }: PageProps) {
 
               {/* Main Image */}
               <div className="relative h-64 sm:h-96 w-full rounded-2xl overflow-hidden mb-8 bg-slate-100 border border-slate-100">
-                {articleData.featuredImage ? (
-                  <img
-                    src={articleData.featuredImage}
-                    alt={articleData.title}
-                    className="w-full h-full object-cover"
-                  />
-                ) : (
-                  <div className="w-full h-full bg-gradient-to-br from-brand-blue/5 to-brand-blue-dark/10 flex items-center justify-center p-12 text-brand-blue-light/10">
-                    <BookOpen size={96} className="text-brand-blue-light/20" />
-                  </div>
-                )}
+                <img
+                  src={articleData.featuredImage}
+                  alt={articleData.title}
+                  className="w-full h-full object-cover"
+                />
               </div>
 
               {/* Content Body */}
@@ -247,7 +141,6 @@ export default async function NewsDetailPage({ params }: PageProps) {
 
             {/* Right Column: Sidebar */}
             <aside className="lg:col-span-4 flex flex-col gap-8">
-              {/* Sticky wrapper */}
               <div className="sticky top-24 flex flex-col gap-8">
                 {/* Academic Partnership Box */}
                 <div className="bg-brand-blue-dark text-white rounded-3xl p-6 relative overflow-hidden border border-brand-blue shadow-lg">
@@ -279,25 +172,21 @@ export default async function NewsDetailPage({ params }: PageProps) {
                   </h3>
 
                   <div className="flex flex-col gap-5">
-                    {recentSidebarItems.length === 0 ? (
-                      <div className="text-center text-xs font-semibold text-slate-400 py-4">No other recent articles.</div>
-                    ) : (
-                      recentSidebarItems.map((item, index) => (
-                        <Link
-                          href={`/news/${item.slug}`}
-                          key={index}
-                          className="flex flex-col gap-1.5 group cursor-pointer"
-                        >
-                          <div className="flex items-center justify-between text-[9px] text-slate-400 font-bold uppercase tracking-wider">
-                            <span>{item.date}</span>
-                            <span className="text-brand-red font-extrabold">{item.category}</span>
-                          </div>
-                          <h4 className="font-display font-bold text-brand-blue-dark text-xs sm:text-sm leading-snug group-hover:text-brand-red transition-colors line-clamp-2">
-                            {item.title}
-                          </h4>
-                        </Link>
-                      ))
-                    )}
+                    {recentSidebarItems.map((item, index) => (
+                      <Link
+                        href={`/news/${item.slug}`}
+                        key={index}
+                        className="flex flex-col gap-1.5 group cursor-pointer"
+                      >
+                        <div className="flex items-center justify-between text-[9px] text-slate-400 font-bold uppercase tracking-wider">
+                          <span>{item.date}</span>
+                          <span className="text-brand-red font-extrabold">{item.category}</span>
+                        </div>
+                        <h4 className="font-display font-bold text-brand-blue-dark text-xs sm:text-sm leading-snug group-hover:text-brand-red transition-colors line-clamp-2">
+                          {item.title}
+                        </h4>
+                      </Link>
+                    ))}
                   </div>
                 </div>
               </div>

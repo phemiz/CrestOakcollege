@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { signOut, useSession } from "next-auth/react";
+import { useAuth, useSession } from "@/components/providers/session-provider";
 import { useRouter } from "next/navigation";
 import { Logo } from "@/components/ui/logo";
 import { 
@@ -256,8 +256,10 @@ export default function StaffDashboard() {
       localStorage.removeItem("user");
       localStorage.removeItem("cchsmt_user_session");
       localStorage.removeItem("userRole");
+      document.cookie = "cchsmt_user_session=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT";
+      document.cookie = "user=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT";
+      window.location.href = "/login/?gateway=staff";
     }
-    signOut({ callbackUrl: "/login/?gateway=staff" });
   };
 
   // Summary tasks derived from live data

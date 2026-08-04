@@ -9,9 +9,11 @@ export default function robots(): MetadataRoute.Robots {
       userAgent: "*",
       allow: "/",
       disallow: [
-        "/admin/",   // Restrict Admin CMS pages from crawling
-        "/portal/",  // Restrict protected student dashboard logs
-        "/api/",     // Restrict public routing of background Server Action routers
+        "/admin/*",
+        "/portal/*",
+        "/staff/*",
+        "/bursary/*",
+        "/api/*",
       ],
     },
     sitemap: `${siteUrl}/sitemap.xml`,

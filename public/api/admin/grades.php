@@ -18,7 +18,7 @@ function readGradesStore($file) {
 
 function writeGradesStore($file, array $grades) {
     @file_put_contents($file, json_encode($grades, JSON_PRETTY_PRINT));
-    @chmod($file, 0666);
+    @chmod($file, 0644);
 }
 
 function calculateGradeAndPoint($score) {

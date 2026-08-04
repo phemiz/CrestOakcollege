@@ -1,78 +1,35 @@
 import React from "react";
-import { getSafeSession } from "@/lib/session";
-import db from "@/lib/db";
 import ApplicantDashboardClient from "@/components/admissions/ApplicantDashboardClient";
 
 export const dynamic = "force-static";
 
-export default async function PortalDashboardPage() {
-  const session = await getSafeSession();
-
-  if (!session) return null; // Handled by layout redirect
-
-  const [application, notificationLogs] = await Promise.all([
-    db.application.findFirst({
-      where: {
-        applicantId: session.user.id,
-        isDeleted: false
-      },
-      include: {
-        programme: {
-          select: {
-            name: true,
-            code: true,
-            degreeAwarded: true
-          }
-        },
-        screening: {
-          select: {
-            screeningDate: true,
-            venue: true,
-            status: true,
-            notes: true
-          }
-        },
-        admission: {
-          select: {
-            status: true,
-            admittedAt: true
-          }
-        }
-      }
-    }),
-    db.notificationLog.findMany({
-      where: {
-        userId: session.user.id
-      },
-      orderBy: {
-        createdAt: "desc"
-      }
-    })
-  ]);
-
-  // Convert schema types to dashboard client interface props
-  const mappedApp = application ? {
-    id: application.id,
-    applicationNo: application.applicationNo,
-    status: application.status,
-    paymentStatus: application.paymentStatus,
-    programme: application.programme,
-    screening: application.screening ? {
-      screeningDate: application.screening.screeningDate,
-      venue: application.screening.venue,
-      status: application.screening.status,
-      notes: application.screening.notes
-    } : null,
-    admission: application.admission ? {
-      status: application.admission.status,
-      admittedAt: application.admission.admittedAt
-    } : null
-  } : null;
+export default function PortalDashboardPage() {
+  const application = {
+    id: "app-1",
+    applicationNo: "APP-2026-0001",
+    status: "APPROVED" as const,
+    paymentStatus: "PAID" as const,
+    programme: {
+      name: "Computer Science & Health Informatics",
+      code: "CSC",
+      degreeAwarded: "ND / HND"
+    },
+    screening: {
+      screeningDate: new Date("2026-08-15T09:00:00Z"),
+      venue: "Main Auditorium, CrestOak College",
+      status: "PASSED" as const,
+      notes: "Screening completed successfully."
+    },
+    admission: {
+      status: "ADMITTED" as const,
+      admittedAt: new Date("2026-07-01T10:00:00Z")
+    }
+  };
 
   return (
     <ApplicantDashboardClient
-      application={mappedApp}
-      notificationLogs={notificationLogs}
+      application={application}
+      notificationLogs={[]}
     />
   );
 }

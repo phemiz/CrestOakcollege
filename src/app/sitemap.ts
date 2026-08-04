@@ -12,13 +12,13 @@ export default function sitemap(): MetadataRoute.Sitemap {
     "/bursary",
     "/gallery",
     "/contact",
+    "/news",
     "/login",
   ];
 
   return routes.map((route) => {
-    // Priority levels: Homepage is highest (1.0), other core pages are high (0.8)
     const priority = route === "" ? 1.0 : 0.8;
-    const changeFrequency = (route === "" || route === "/academics" || route === "/admissions") 
+    const changeFrequency = (route === "" || route === "/academics" || route === "/admissions" || route === "/news") 
       ? ("weekly" as const) 
       : ("monthly" as const);
 

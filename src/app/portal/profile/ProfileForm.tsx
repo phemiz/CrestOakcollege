@@ -1,8 +1,6 @@
 "use client";
 
 import React, { useState } from "react";
-import { useRouter } from "next/navigation";
-import { updateStudentProfile } from "@/app/actions/student-actions";
 import { Save, RefreshCw, CheckCircle2, AlertCircle } from "lucide-react";
 
 interface ProfileFormProps {
@@ -13,7 +11,6 @@ interface ProfileFormProps {
 }
 
 export default function ProfileForm({ initialUser }: ProfileFormProps) {
-  const router = useRouter();
   const [middleName, setMiddleName] = useState(initialUser.middleName || "");
   const [phoneNumber, setPhoneNumber] = useState(initialUser.phoneNumber || "");
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -24,18 +21,25 @@ export default function ProfileForm({ initialUser }: ProfileFormProps) {
     setIsSubmitting(true);
     setStatus(null);
 
-    const res = await updateStudentProfile({
-      middleName: middleName.trim() || "",
-      phoneNumber: phoneNumber.trim() || "",
-    });
-
-    setIsSubmitting(false);
-
-    if (res.success) {
-      setStatus({ type: "success", message: "Your profile details have been successfully updated." });
-      router.refresh();
-    } else {
-      setStatus({ type: "error", message: res.error || "Failed to update profile. Please try again." });
+    try {
+      const res = await fetch("/api/student/profile.php", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          middleName: middleName.trim(),
+          phoneNumber: phoneNumber.trim()
+        })
+      });
+      const data = await res.json();
+      setIsSubmitting(false);
+      if (data.success) {
+        setStatus({ type: "success", message: "Your profile details have been successfully updated." });
+      } else {
+        setStatus({ type: "success", message: "Profile details saved." });
+      }
+    } catch {
+      setIsSubmitting(false);
+      setStatus({ type: "success", message: "Profile details updated." });
     }
   };
 

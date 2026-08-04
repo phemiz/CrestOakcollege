@@ -1,52 +1,16 @@
 import React from "react";
-import { getSafeSession } from "@/lib/session";
-import db from "@/lib/db";
-import { redirect } from "next/navigation";
 import { ArrowLeft, ShieldCheck } from "lucide-react";
 import Link from "next/link";
 import PrintButton from "./PrintButton";
 
 export const dynamic = "force-static";
 
-export default async function AdmissionLetterPage() {
-  const session = await getSafeSession();
-
-  if (!session) return null;
-
-  const application = await db.application.findFirst({
-    where: {
-      applicantId: session.user.id,
-      status: "APPROVED",
-      isDeleted: false
-    },
-    include: {
-      programme: {
-        select: {
-          name: true,
-          code: true,
-          degreeAwarded: true
-        }
-      },
-      admission: true
-    }
-  });
-
-  // If no approved offer exists, redirect back to dashboard
-  if (!application) {
-    redirect("/admissions/portal");
-  }
-
-  const candidateName = session.user.name || "Candidate";
-  const applicationNo = application.applicationNo;
-  const courseName = application.programme.name;
-  const degree = application.programme.degreeAwarded;
-  const admissionDate = application.admission
-    ? new Date(application.admission.admittedAt).toLocaleDateString(undefined, {
-        month: "long",
-        day: "numeric",
-        year: "numeric"
-      })
-    : new Date().toLocaleDateString();
+export default function AdmissionLetterPage() {
+  const candidateName = "Candidate User";
+  const applicationNo = "APP-2026-0001";
+  const courseName = "Computer Science & Health Informatics";
+  const degree = "ND / HND";
+  const admissionDate = "July 1, 2026";
 
   return (
     <div className="space-y-6">
@@ -163,7 +127,6 @@ export default async function AdmissionLetterPage() {
           <div>
             <p className="text-slate-500 uppercase text-[9px] tracking-widest font-bold">Registry Office</p>
             <div className="h-10 my-2 flex items-center justify-start">
-              {/* Simulated Sig */}
               <span className="font-mono text-lg italic text-slate-700 tracking-wider">Elizabeth.A</span>
             </div>
             <strong className="text-slate-900">Dr. Elizabeth Adebayo</strong>

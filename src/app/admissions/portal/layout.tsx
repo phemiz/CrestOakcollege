@@ -1,38 +1,21 @@
-import { redirect } from "next/navigation";
-import { getSafeSession } from "@/lib/session";
-import db from "@/lib/db";
+import React from "react";
 import PortalLayoutClient from "@/components/admissions/PortalLayoutClient";
 
-export default async function PortalLayout({
+export const dynamic = "force-static";
+
+export default function PortalLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  const session = await getSafeSession();
-
-  if (!session) {
-    redirect("/login");
-  }
-
-  // Ensure role is APPLICANT (case-insensitive checks)
-  const userRole = session.user.role || "";
-  if (userRole.toUpperCase() !== "APPLICANT") {
-    redirect("/login?error=AccessDenied");
-  }
-
-  // Check if they have an approved application to unlock the admission letter link
-  const approvedApp = await db.application.findFirst({
-    where: {
-      applicantId: session.user.id,
-      status: "APPROVED",
-      isDeleted: false
-    }
-  });
-
-  const hasAdmissionLetter = !!approvedApp;
+  const applicantUser = {
+    name: "Applicant User",
+    email: "applicant@crestoakcollege.com.ng",
+    role: "APPLICANT"
+  };
 
   return (
-    <PortalLayoutClient user={session.user} hasAdmissionLetter={hasAdmissionLetter}>
+    <PortalLayoutClient user={applicantUser} hasAdmissionLetter={true}>
       {children}
     </PortalLayoutClient>
   );

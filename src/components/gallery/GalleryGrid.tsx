@@ -212,9 +212,9 @@ export const GalleryGrid: React.FC = () => {
             <div className="bg-white border border-slate-150 p-4 rounded-2xl text-xs flex gap-2 items-start font-semibold text-slate-600">
               <Calendar size={18} className="text-brand-blue-light shrink-0 mt-0.5" />
               <div>
-                <p className="font-bold text-brand-blue-dark">360° VR Integration Coming Soon</p>
+                <p className="font-bold text-brand-blue-dark">Interactive Campus Facilities Tour</p>
                 <p className="mt-1 leading-relaxed text-slate-500 font-semibold">
-                  We are currently capturing 360-degree photography to launch a VR headset-friendly campus tour by the 2026/2027 calendar year. Stay tuned!
+                  Explore our modern science laboratories, health informatics centers, and student resource complexes designed to support world-class health education.
                 </p>
               </div>
             </div>

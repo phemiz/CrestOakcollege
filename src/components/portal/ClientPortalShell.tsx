@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { signOut } from "next-auth/react";
+
 import { Logo } from "@/components/ui/logo";
 import { 
   User, 
@@ -78,6 +78,8 @@ export default function ClientPortalShell({ children, user, announcements }: Cli
       localStorage.removeItem("cchsmt_student_profile");
       localStorage.removeItem("isAuthenticated");
       localStorage.removeItem("userRole");
+      document.cookie = "cchsmt_user_session=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT";
+      document.cookie = "user=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT";
       sessionStorage.clear();
 
       window.location.href = "/login/?gateway=portal";

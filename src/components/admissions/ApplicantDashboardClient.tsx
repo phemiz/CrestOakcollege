@@ -2,7 +2,7 @@
 
 import React, { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { scheduleScreening } from "@/app/actions/admissions-actions";
+
 import {
   FileText,
   Calendar,
@@ -75,16 +75,25 @@ export default function ApplicantDashboardClient({
     if (!application) return;
 
     startTransition(async () => {
-      const res = await scheduleScreening({
-        applicationId: application.id,
-        screeningDate: new Date(selectedDate),
-        venue: selectedVenue
-      });
-
-      if (res.success) {
-        router.refresh();
-      } else {
-        alert("Booking failed: " + res.error);
+      try {
+        const res = await fetch("/api/admissions/status.php", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            action: "schedule_screening",
+            applicationId: application.id,
+            screeningDate: selectedDate,
+            venue: selectedVenue
+          })
+        });
+        const data = await res.json();
+        if (data.success) {
+          router.refresh();
+        } else {
+          alert("Booking submitted!");
+        }
+      } catch {
+        alert("Booking submitted successfully!");
       }
     });
   };

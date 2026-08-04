@@ -1,6 +1,5 @@
 import React from "react";
 import type { Metadata } from "next";
-import db from "@/lib/db";
 import { Header } from "@/components/layout/header";
 import { Footer } from "@/components/layout/footer";
 import { generateSEO } from "@/utils/seo";
@@ -22,108 +21,30 @@ export const metadata: Metadata = generateSEO({
   ]
 });
 
-export default async function NewsListingPage() {
-  // Fetch published news from the database
-  let dbNewsList: any[] = [];
-  try {
-    dbNewsList = await db.news.findMany({
-      where: {
-        isPublished: true,
-        isDeleted: false
-      },
-      orderBy: {
-        publishedAt: "desc"
-      },
-      include: {
-        author: {
-          select: {
-            firstName: true,
-            lastName: true
-          }
-        }
-      }
-    });
-  } catch (error) {
-    console.error("[news/page.tsx] Database query failed, falling back to static news:", error);
-  }
-
-  // Map database news items to the UnifiedNewsItem interface
-  const mappedDbNews = dbNewsList.map((item) => ({
-    id: item.id,
-    title: item.title,
-    slug: item.slug,
-    content: item.content,
-    date: (item.publishedAt || item.createdAt || new Date()).toISOString(), // Temporarily use ISO string for sorting
-    category: "Announcement",
-    alert: "Official",
-    featuredImage: item.featuredImage,
-    authorName: item.author ? `${item.author.firstName} ${item.author.lastName}` : "Registry Office"
-  }));
-
-  // Map static news items to the UnifiedNewsItem interface
-  const mappedStaticNews = newsAndEvents.map((item) => {
-    // Parse the date string safely or default to a date
-    let dateObj: Date;
+export default function NewsListingPage() {
+  const mappedStaticNews: UnifiedNewsItem[] = newsAndEvents.map((item) => {
+    let formattedDate = "Recently";
     try {
-      dateObj = new Date(item.date);
-      if (isNaN(dateObj.getTime())) {
-        dateObj = new Date();
+      const d = new Date(item.date);
+      if (!isNaN(d.getTime())) {
+        formattedDate = d.toLocaleDateString("en-US", {
+          month: "long",
+          day: "numeric",
+          year: "numeric"
+        });
       }
-    } catch {
-      dateObj = new Date();
-    }
+    } catch {}
 
     return {
       id: `static-${item.id}`,
       title: item.title,
-      slug: item.slug || "",
+      slug: item.slug || `news-${item.id}`,
       content: item.desc,
-      date: dateObj.toISOString(), // Temporarily use ISO string for sorting
+      date: formattedDate,
       category: item.category,
       alert: item.alert,
-      featuredImage: null,
+      featuredImage: "/crestoak-poster.jpg",
       authorName: "Registry Office"
-    };
-  });
-
-  // Merge and filter out duplicates by slug
-  const allNewsMap = new Map<string, UnifiedNewsItem>();
-  
-  // Database news takes priority over static if slugs conflict
-  mappedStaticNews.forEach((item) => {
-    if (item.slug) {
-      allNewsMap.set(item.slug, item);
-    }
-  });
-  
-  mappedDbNews.forEach((item) => {
-    if (item.slug) {
-      allNewsMap.set(item.slug, item);
-    }
-  });
-
-  const mergedNews = Array.from(allNewsMap.values());
-
-  // Sort chronologically desc
-  mergedNews.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
-
-  // Format the dates back into readable strings for display
-  const finalNews: UnifiedNewsItem[] = mergedNews.map((item) => {
-    let formattedDate = "";
-    try {
-      const d = new Date(item.date);
-      formattedDate = d.toLocaleDateString("en-US", {
-        month: "long",
-        day: "numeric",
-        year: "numeric"
-      });
-    } catch {
-      formattedDate = "Recently";
-    }
-
-    return {
-      ...item,
-      date: formattedDate
     };
   });
 
@@ -153,7 +74,7 @@ export default async function NewsListingPage() {
 
         {/* Search & Listing Content */}
         <section className="max-w-7xl mx-auto px-4 sm:px-6 md:px-8 py-16">
-          <NewsList initialNews={finalNews} />
+          <NewsList initialNews={mappedStaticNews} />
         </section>
       </main>
 

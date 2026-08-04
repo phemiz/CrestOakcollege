@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { initializePaystackPayment, queryTransactionStatus } from "@/app/actions/paystack-actions";
+
 import { 
   CreditCard, 
   CheckCircle2, 
@@ -96,14 +96,27 @@ export default function BillingClientView({ invoices, payments, studentName, mat
     setIsProcessing(true);
     setErrorMessage(null);
 
-    const res = await initializePaystackPayment(selectedInvoice.id);
-
-    if (res.success && res.authorizationUrl) {
-      // Redirect student to Paystack checkout (or callback simulator if mock)
-      window.location.href = res.authorizationUrl;
-    } else {
+    try {
+      const res = await fetch("/api/bursary/dashboard.php", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action: "initialize_payment",
+          invoiceId: selectedInvoice.id,
+          amount: selectedInvoice.amount,
+          invoiceNo: selectedInvoice.invoiceNo
+        })
+      });
+      const data = await res.json();
+      if (data.success && data.authorizationUrl) {
+        window.location.href = data.authorizationUrl;
+      } else {
+        setIsProcessing(false);
+        setErrorMessage(data.message || "Could not initialize checkout with Paystack gateway.");
+      }
+    } catch {
       setIsProcessing(false);
-      setErrorMessage(res.error || "Could not initialize checkout with Paystack gateway.");
+      setErrorMessage("Network error initializing payment with server.");
     }
   };
 
@@ -111,19 +124,28 @@ export default function BillingClientView({ invoices, payments, studentName, mat
     setVerifyingPaymentId(paymentId);
     setVerificationFeedback(null);
 
-    const res = await queryTransactionStatus(paymentId);
-    setVerifyingPaymentId(null);
+    try {
+      const res = await fetch(`/api/bursary/dashboard.php?action=verify&reference=${encodeURIComponent(reference)}`);
+      const data = await res.json();
+      setVerifyingPaymentId(null);
 
-    if (res.success) {
-      setVerificationFeedback({
-        success: true,
-        message: `Reference ${reference} verified successfully! Your account has been updated.`
-      });
-      router.refresh();
-    } else {
+      if (data.success) {
+        setVerificationFeedback({
+          success: true,
+          message: `Reference ${reference} verified successfully! Your account has been updated.`
+        });
+        router.refresh();
+      } else {
+        setVerificationFeedback({
+          success: false,
+          message: data.message || `Could not settle reference ${reference}. If you were charged, please contact Bursary.`
+        });
+      }
+    } catch {
+      setVerifyingPaymentId(null);
       setVerificationFeedback({
         success: false,
-        message: res.error || `Could not settle reference ${reference}. If you were charged, please contact Bursary.`
+        message: `Network error verifying reference ${reference}.`
       });
     }
   };

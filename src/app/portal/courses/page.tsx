@@ -1,73 +1,27 @@
 import React from "react";
-import { getSafeSession } from "@/lib/session";
-import db from "@/lib/db";
 import CourseRegForm from "./CourseRegForm";
 import { Calendar, Clock } from "lucide-react";
 
-export default async function CourseRegistrationPage() {
-  let session: any = null;
-  try {
-    session = await getSafeSession();
-  } catch (e) {}
+export const dynamic = "force-static";
 
-  let student: any = null;
-  let availableCourses: any[] = [];
-  let existingRegistrations: any[] = [];
+export default function CourseRegistrationPage() {
+  const student = {
+    id: "student-1",
+    level: "200",
+    currentSession: { name: "2025/2026" },
+    currentSemester: { name: "First" }
+  };
 
-  if (session?.user?.id) {
-    try {
-      student = await db.student.findUnique({
-        where: { id: session.user.id },
-        include: {
-          department: true,
-          currentSession: true,
-          currentSemester: true
-        }
-      });
-      if (student) {
-        availableCourses = await db.course.findMany({
-          where: {
-            departmentId: student.departmentId,
-            level: student.level,
-            semesterName: student.currentSemester.name,
-            isDeleted: false
-          },
-          orderBy: { code: "asc" }
-        });
-        existingRegistrations = await db.courseRegistration.findMany({
-          where: {
-            studentId: student.id,
-            sessionId: student.currentSessionId,
-            semesterId: student.currentSemesterId,
-            isDeleted: false
-          },
-          include: { course: true }
-        });
-      }
-    } catch (e) {}
-  }
+  const availableCourses = [
+    { id: "c1", code: "CHEW 201", title: "Introduction to Public Health", creditUnits: 3, description: "Fundamentals of epidemiology & community health" },
+    { id: "c2", code: "CHEW 203", title: "Primary Healthcare Management", creditUnits: 3, description: "Principles of primary healthcare administration" },
+    { id: "c3", code: "ANA 201", title: "Human Anatomy & Physiology", creditUnits: 4, description: "Systemic human anatomy & clinical physiology" },
+    { id: "c4", code: "PHM 201", title: "Basic Pharmacology", creditUnits: 3, description: "Drug actions & clinical pharmacokinetics" },
+    { id: "c5", code: "CSC 101", title: "Introduction to Computer Science & IT", creditUnits: 3, description: "Basic computing, software & health IT systems" }
+  ];
 
-  if (!student) {
-    student = {
-      id: "demo-student-id",
-      level: "200",
-      currentSession: { name: "2025/2026" },
-      currentSemester: { name: "First" }
-    };
-    availableCourses = [
-      { id: "c1", code: "CHEW 201", title: "Introduction to Public Health", creditUnits: 3, description: "Fundamentals of epidemiology & community health" },
-      { id: "c2", code: "CHEW 203", title: "Primary Healthcare Management", creditUnits: 3, description: "Principles of primary healthcare administration" },
-      { id: "c3", code: "ANA 201", title: "Human Anatomy & Physiology", creditUnits: 4, description: "Systemic human anatomy & clinical physiology" },
-      { id: "c4", code: "PHM 201", title: "Basic Pharmacology", creditUnits: 3, description: "Drug actions & clinical pharmacokinetics" }
-    ];
-    existingRegistrations = [
-      { courseId: "c1", course: availableCourses[0] },
-      { courseId: "c2", course: availableCourses[1] }
-    ];
-  }
-
-  const registeredCourseIds = existingRegistrations.map((r: any) => r.courseId);
-  const totalRegisteredCredits = existingRegistrations.reduce((acc: number, r: any) => acc + (r.course?.creditUnits || 0), 0);
+  const registeredCourseIds = ["c1", "c2", "c3"];
+  const totalRegisteredCredits = 10;
 
   return (
     <div className="flex flex-col gap-8 animate-fade-in-up">
@@ -79,7 +33,7 @@ export default async function CourseRegistrationPage() {
         </div>
         <div className="bg-slate-50 border border-slate-200 px-4 py-2 rounded-2xl text-[10px] sm:text-xs font-bold text-slate-500 flex items-center gap-1.5 shrink-0">
           <Calendar size={14} className="text-brand-blue-light" />
-          <span>{student.currentSession?.name || "2025/2026"} Academic Session</span>
+          <span>{student.currentSession.name} Academic Session</span>
         </div>
       </div>
 
@@ -89,13 +43,7 @@ export default async function CourseRegistrationPage() {
         {/* Course registration form */}
         <div className="lg:col-span-8 bg-white border border-slate-200 rounded-2xl p-5 sm:p-6 shadow-sm">
           <CourseRegForm 
-            availableCourses={availableCourses.map((c: any) => ({
-              id: c.id,
-              code: c.code,
-              title: c.title,
-              creditUnits: c.creditUnits,
-              description: c.description
-            }))}
+            availableCourses={availableCourses}
             initialRegisteredCourseIds={registeredCourseIds}
           />
         </div>
@@ -112,15 +60,11 @@ export default async function CourseRegistrationPage() {
             <div className="flex flex-col gap-3 font-semibold text-xs text-slate-600">
               <div className="flex justify-between items-center">
                 <span>Active Semester:</span>
-                <span className="font-black text-brand-blue-dark uppercase">{student.currentSemester?.name || "First"} Semester</span>
+                <span className="font-black text-brand-blue-dark uppercase">{student.currentSemester.name} Semester</span>
               </div>
               <div className="flex justify-between items-center border-t border-slate-150 pt-2.5">
                 <span>Registration Status:</span>
-                {registeredCourseIds.length > 0 ? (
-                  <span className="text-emerald-700 font-black bg-emerald-100 px-2 py-0.5 rounded">APPROVED</span>
-                ) : (
-                  <span className="text-brand-red font-black bg-red-100 px-2 py-0.5 rounded">PENDING</span>
-                )}
+                <span className="text-emerald-700 font-black bg-emerald-100 px-2 py-0.5 rounded">APPROVED</span>
               </div>
               <div className="flex justify-between items-center border-t border-slate-150 pt-2.5">
                 <span>Courses Registered:</span>

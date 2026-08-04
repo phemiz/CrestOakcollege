@@ -38,16 +38,16 @@ function writeJsonStore($filePath, array $items) {
     $json = json_encode($items, JSON_PRETTY_PRINT);
     $written = @file_put_contents($filePath, $json) !== false;
     if ($written) {
-        @chmod($filePath, 0666);
+        @chmod($filePath, 0644);
     }
     return $written;
 }
 
 function sendViaSMTP($toEmail, $subject, $htmlMessage, $portalName = 'CrestOak College Portal') {
-    $from = 'noreply@crestoakcollege.com.ng';
-    $replyTo = 'info@crestoakcollege.com.ng';
-    $username = 'noreply@crestoakcollege.com.ng';
-    $password = 'CrestOakMailer2026!';
+    $from = getenv('SMTP_FROM') ?: 'noreply@crestoakcollege.com.ng';
+    $replyTo = getenv('SMTP_REPLYTO') ?: 'info@crestoakcollege.com.ng';
+    $username = getenv('SMTP_USER') ?: 'noreply@crestoakcollege.com.ng';
+    $password = getenv('SMTP_PASS') ?: (getenv('SMTP_PASSWORD') ?: ($_ENV['SMTP_PASS'] ?? ''));
     $mailSent = false;
 
     // Direct local and remote host array to test socket connections

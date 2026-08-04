@@ -4,9 +4,6 @@ import React, { useState, useEffect } from "react";
 import Image from "next/image";
 import { Logo } from "@/components/ui/logo";
 import { portalAvailableCourses, portalResultsData, portalTimetableSlots } from "@/data/portalData";
-import { Admission } from "@/types";
-import { signOut } from "next-auth/react";
-
 import { motion, AnimatePresence } from "framer-motion";
 import { 
   User, 
@@ -369,9 +366,9 @@ export default function PortalDashboard({ initialUser }: { initialUser?: any }) 
     let matchedFaculty = "health";
 
     try {
-      const apps: Admission[] = JSON.parse(savedAppsStr);
+      const apps: any[] = JSON.parse(savedAppsStr);
       const match = apps.find(
-        (a) => a.regNumber.toUpperCase() === studentId.toUpperCase()
+        (a: any) => a.regNumber && a.regNumber.toUpperCase() === studentId.toUpperCase()
       );
       if (match) {
         matchedName = match.fullName;

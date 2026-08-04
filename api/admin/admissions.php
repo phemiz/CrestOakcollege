@@ -20,7 +20,7 @@ function readA($p) {
 }
 function writeA($p, $d) {
     $ok = @file_put_contents($p, json_encode($d, JSON_PRETTY_PRINT)) !== false;
-    if ($ok) @chmod($p, 0666); return $ok;
+    if ($ok) @chmod($p, 0644); return $ok;
 }
 
 $method = $_SERVER['REQUEST_METHOD'];

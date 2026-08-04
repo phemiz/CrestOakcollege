@@ -5,6 +5,10 @@ error_reporting(E_ALL);
 $allowedOrigins = [
     'https://admin.crestoakcollege.com.ng',
     'https://portal.crestoakcollege.com.ng',
+    'https://staff.crestoakcollege.com.ng',
+    'https://admissions.crestoakcollege.com.ng',
+    'https://pay.crestoakcollege.com.ng',
+    'https://register.crestoakcollege.com.ng',
     'https://crestoakcollege.com.ng',
     'http://localhost:3000',
     'http://localhost:3001',
@@ -28,14 +32,25 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
 
 function getDbConnection() {
     $dbHost = getenv('DB_HOST') ?: ($_ENV['DB_HOST'] ?? '127.0.0.1');
-    $dbName = getenv('DB_NAME') ?: ($_ENV['DB_NAME'] ?? 'crestoa2_crestoak_db');
-    $dbUser = getenv('DB_USER') ?: ($_ENV['DB_USER'] ?? 'crestoa2_crestoak_db');
-    $dbPass = getenv('DB_PASS') ?: ($_ENV['DB_PASS'] ?? 'CrestOak2026!DB');
+    $dbName = getenv('DB_NAME') ?: ($_ENV['DB_NAME'] ?? null);
+    $dbUser = getenv('DB_USER') ?: ($_ENV['DB_USER'] ?? null);
+    $dbPass = getenv('DB_PASS') ?: ($_ENV['DB_PASS'] ?? null);
 
-    $conn = @new mysqli($dbHost, $dbUser, $dbPass, $dbName);
-    if ($conn->connect_error) {
+    if (!$dbName || !$dbUser || $dbPass === null) {
+        error_log("Database configuration error: Missing DB environment variables.");
         return null;
     }
-    $conn->set_charset("utf8mb4");
-    return $conn;
+
+    try {
+        $conn = new mysqli($dbHost, $dbUser, $dbPass, $dbName);
+        if ($conn->connect_error) {
+            error_log("Database connection failed: " . $conn->connect_error);
+            return null;
+        }
+        $conn->set_charset("utf8mb4");
+        return $conn;
+    } catch (Throwable $e) {
+        error_log("Database connection exception: " . $e->getMessage());
+        return null;
+    }
 }

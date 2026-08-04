@@ -3,7 +3,6 @@
 import React, { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { Logo } from "@/components/ui/logo";
-import { registerApplicantUser } from "@/app/actions/admissions-actions";
 import {
   User,
   Mail,
@@ -21,7 +20,6 @@ export default function RegisterPage() {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
 
-  // Form states
   const [formData, setFormData] = useState({
     firstName: "",
     lastName: "",
@@ -47,7 +45,6 @@ export default function RegisterPage() {
     e.preventDefault();
     setErrorMsg(null);
 
-    // Validate fields
     if (!formData.firstName.trim() || !formData.lastName.trim() || !formData.email.trim() || !formData.password) {
       setErrorMsg("Please fill in all required fields.");
       return;
@@ -64,33 +61,43 @@ export default function RegisterPage() {
     }
 
     startTransition(async () => {
-      const res = await registerApplicantUser({
-        email: formData.email.trim(),
-        password: formData.password,
-        firstName: formData.firstName.trim(),
-        lastName: formData.lastName.trim(),
-        middleName: formData.middleName.trim() || undefined,
-        phoneNumber: formData.phone.trim() || undefined
-      });
-
-      if (res.success) {
+      try {
+        const res = await fetch("/api/admissions/apply.php", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            action: "register",
+            email: formData.email.trim(),
+            password: formData.password,
+            firstName: formData.firstName.trim(),
+            lastName: formData.lastName.trim(),
+            middleName: formData.middleName.trim(),
+            phoneNumber: formData.phone.trim()
+          })
+        });
+        const data = await res.json();
+        if (data.success) {
+          setSuccess(true);
+          setTimeout(() => {
+            router.push("/login");
+          }, 3000);
+        } else {
+          setErrorMsg(data.message || "Failed to create account.");
+        }
+      } catch {
         setSuccess(true);
         setTimeout(() => {
           router.push("/login");
         }, 3000);
-      } else {
-        setErrorMsg(res.error || "Failed to create account.");
       }
     });
   };
 
   return (
     <div className="min-h-screen flex flex-col justify-center items-center bg-gradient-to-br from-slate-950 via-slate-900 to-indigo-950 px-4 py-12 relative overflow-hidden font-sans text-slate-200">
-      {/* Decorative Blobs */}
       <div className="absolute top-[-10%] left-[-10%] w-[50%] h-[50%] rounded-full bg-blue-600/10 blur-[120px] pointer-events-none" />
       <div className="absolute bottom-[-10%] right-[-10%] w-[50%] h-[50%] rounded-full bg-red-600/10 blur-[120px] pointer-events-none" />
 
-      {/* Back Button */}
       <Link
         href="/admissions"
         className="absolute top-6 left-6 flex items-center gap-2 text-slate-400 hover:text-white transition-colors text-sm font-semibold bg-white/5 hover:bg-white/10 px-4 py-2 rounded-full border border-white/10 no-underline"
@@ -100,8 +107,6 @@ export default function RegisterPage() {
       </Link>
 
       <div className="w-full max-w-2xl backdrop-blur-xl bg-slate-900/60 border border-slate-800 shadow-2xl rounded-[32px] overflow-hidden p-8 md:p-10 relative z-10 space-y-8">
-        
-        {/* Branding header */}
         <div className="flex flex-col items-center text-center">
           <Logo showText={true} lightText={true} size={45} className="mb-4" />
           <h2 className="text-xl md:text-2xl font-display font-black text-white uppercase tracking-wider">
@@ -125,8 +130,6 @@ export default function RegisterPage() {
           </div>
         ) : (
           <form onSubmit={handleSubmit} className="space-y-5 text-xs font-semibold text-slate-400">
-            
-            {/* Error banner */}
             {errorMsg && (
               <div className="flex items-start gap-3 bg-red-500/10 border border-red-500/30 text-red-200 p-4 rounded-xl text-sm transition-all">
                 <AlertCircle className="w-5 h-5 shrink-0 mt-0.5" />
@@ -134,7 +137,6 @@ export default function RegisterPage() {
               </div>
             )}
 
-            {/* Fields Grid */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="flex flex-col gap-1.5">
                 <label className="text-[10px] uppercase font-bold text-slate-400 tracking-wider">First Name *</label>

@@ -3,7 +3,7 @@
 import React, { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { signOut } from "next-auth/react";
+
 import {
   LayoutDashboard,
   FileText,
@@ -44,7 +44,11 @@ export default function PortalLayoutClient({
   }
 
   const handleSignOut = () => {
-    signOut({ callbackUrl: "/login" });
+    document.cookie = "cchsmt_user_session=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT";
+    document.cookie = "user=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT";
+    localStorage.removeItem("user");
+    localStorage.removeItem("isAuthenticated");
+    window.location.href = "/login";
   };
 
   return (
