@@ -1,4 +1,6 @@
 <?php
+require_once __DIR__.'/../auth/session.php';
+require_session(['ADMIN','SUPERADMIN']);
 // Mirror — delegate to main api/admin/admissions.php
 $target = realpath(__DIR__ . '/../../api/admin/admissions.php');
 if ($target && file_exists($target)) { require_once $target; exit; }
@@ -30,6 +32,7 @@ if ($method === 'GET') {
     echo json_encode(['success'=>true,'applications'=>readA($storePath),'total'=>count(readA($storePath))],JSON_UNESCAPED_SLASHES); exit;
 }
 if ($method === 'POST') {
+    validate_csrf();
     $apps    = readA($storePath);
     $appId   = $input['applicationId'] ?? $input['id'] ?? '';
     $status  = strtoupper($input['decision'] ?? $input['status'] ?? 'APPROVED');

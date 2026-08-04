@@ -146,12 +146,10 @@ try {
             $redirectUrl = '/bursary/dashboard';
         } else if (in_array($role, ['LECTURER', 'HOD', 'DEAN', 'REGISTRAR', 'STAFF'])) {
             $redirectUrl = '/staff';
+            // After successful authentication, create a secure server‑side session
+            $sessionToken = create_session((int)$matchedUser['id'], $matchedUser['role']);
+            // No client‑side JSON session is stored; CSRF token is set by create_session()
         }
-
-        // Set persistent authentication cookie
-        $jsonSession = json_encode($matchedUser);
-        setcookie("cchsmt_user_session", $jsonSession, time() + (86400 * 30), "/");
-        setcookie("user", $jsonSession, time() + (86400 * 30), "/");
 
         echo json_encode([
             'success' => true,

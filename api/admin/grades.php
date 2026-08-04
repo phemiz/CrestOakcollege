@@ -1,4 +1,6 @@
 <?php
+require_once __DIR__.'/../auth/session.php';
+require_session(['ADMIN','SUPERADMIN']);
 require_once __DIR__ . '/db.php';
 
 
@@ -88,6 +90,7 @@ if ($method === 'GET') {
 }
 
 if ($method === 'POST') {
+    validate_csrf();
     $action = $requestData['action'] ?? 'save_grade';
     $matricNo = trim($requestData['matricNo'] ?? '');
     $courseCode = trim($requestData['courseCode'] ?? '');
