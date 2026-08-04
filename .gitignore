@@ -40,6 +40,3 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
-
-# PHP config with live credentials (edit directly on server via File Manager)
-api/config.php
