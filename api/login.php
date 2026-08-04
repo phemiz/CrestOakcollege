@@ -136,28 +136,28 @@ try {
     $conn->close();
 
     if ($matchedUser) {
-        $token = bin2hex(random_bytes(32));
         $role = $matchedUser['role'];
+
+        // Create a secure server-side session for ALL roles
+        require_once __DIR__ . '/auth/session.php';
+        $sessionToken = create_session((int)$matchedUser['id'], $role);
 
         $redirectUrl = '/portal/dashboard';
         if (in_array($role, ['ADMIN', 'SUPERADMIN', 'SUPER_ADMIN'])) {
             $redirectUrl = '/admin/dashboard';
-        } else if (in_array($role, ['BURSARY', 'BURSAR'])) {
+        } elseif (in_array($role, ['BURSARY', 'BURSAR'])) {
             $redirectUrl = '/bursary/dashboard';
-        } else if (in_array($role, ['LECTURER', 'HOD', 'DEAN', 'REGISTRAR', 'STAFF'])) {
+        } elseif (in_array($role, ['LECTURER', 'HOD', 'DEAN', 'REGISTRAR', 'STAFF'])) {
             $redirectUrl = '/staff';
-            // After successful authentication, create a secure server‑side session
-            $sessionToken = create_session((int)$matchedUser['id'], $matchedUser['role']);
-            // No client‑side JSON session is stored; CSRF token is set by create_session()
         }
 
         echo json_encode([
-            'success' => true,
-            'message' => 'Authentication successful.',
-            'token' => $token,
-            'redirect' => $redirectUrl,
+            'success'     => true,
+            'message'     => 'Authentication successful.',
+            'token'       => $sessionToken,
+            'redirect'    => $redirectUrl,
             'redirectUrl' => $redirectUrl,
-            'user' => $matchedUser
+            'user'        => $matchedUser
         ]);
         exit();
     }

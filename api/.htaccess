@@ -3,5 +3,10 @@
     Require all denied
 </FilesMatch>
 
+## Block direct access to the config file (contains DB credentials)
+<FilesMatch "^config\.php$">
+    Require all denied
+</FilesMatch>
+
 # Ensure cookies are sent only over HTTPS (if using HTTPS)
 Header always edit Set-Cookie ^(.*)$ $1;Secure;HttpOnly;SameSite=Lax
