@@ -1,10 +1,16 @@
 DirectoryIndex index.html index.php
 
+<IfModule mod_mime.c>
+    AddType application/javascript .js
+    AddType text/css .css
+    AddType font/woff2 .woff2
+</IfModule>
+
 <IfModule mod_rewrite.c>
   RewriteEngine On
   RewriteBase /
 
-  # 1. Serve existing files directly (images, js, css, php)
+  # 1. Serve existing files directly (images, js, css, php, _next assets)
   RewriteCond %{REQUEST_FILENAME} -f
   RewriteRule ^ - [L]
 
