@@ -12,10 +12,15 @@
  */
 
 // ── MySQL credentials ─────────────────────────────────────────────────────
-define('DB_CONFIG_HOST', 'localhost');           // Almost always 'localhost' on shared hosting
-define('DB_CONFIG_NAME', 'YOUR_DB_NAME_HERE');   // e.g. cpanelusername_crestoak
-define('DB_CONFIG_USER', 'YOUR_DB_USER_HERE');   // e.g. cpanelusername_user
-define('DB_CONFIG_PASS', 'YOUR_DB_PASS_HERE');   // The password you set in DirectAdmin
+if (!defined('DB_HOST')) define('DB_HOST', 'localhost');           // Almost always 'localhost' on shared hosting
+if (!defined('DB_NAME')) define('DB_NAME', 'YOUR_DB_NAME_HERE');   // e.g. crestoa2_crestoak_db
+if (!defined('DB_USER')) define('DB_USER', 'YOUR_DB_USER_HERE');   // e.g. crestoa2_crestoak_db
+if (!defined('DB_PASS')) define('DB_PASS', 'YOUR_DB_PASS_HERE');   // The password set in DirectAdmin
+
+if (!defined('DB_CONFIG_HOST')) define('DB_CONFIG_HOST', DB_HOST);
+if (!defined('DB_CONFIG_NAME')) define('DB_CONFIG_NAME', DB_NAME);
+if (!defined('DB_CONFIG_USER')) define('DB_CONFIG_USER', DB_USER);
+if (!defined('DB_CONFIG_PASS')) define('DB_CONFIG_PASS', DB_PASS);
 
 // ── SMTP credentials ──────────────────────────────────────────────────────
 define('SMTP_CONFIG_HOST', 'da34.host-ww.net');

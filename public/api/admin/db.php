@@ -39,10 +39,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
 }
 
 function getDbConnection() {
-    $dbHost = getenv('DB_HOST') ?: (defined('DB_CONFIG_HOST') ? DB_CONFIG_HOST : '127.0.0.1');
-    $dbName = getenv('DB_NAME') ?: (defined('DB_CONFIG_NAME') ? DB_CONFIG_NAME : null);
-    $dbUser = getenv('DB_USER') ?: (defined('DB_CONFIG_USER') ? DB_CONFIG_USER : null);
-    $dbPass = getenv('DB_PASS') ?: (defined('DB_CONFIG_PASS') ? DB_CONFIG_PASS : null);
+    $dbHost = getenv('DB_HOST') ?: (defined('DB_HOST') ? DB_HOST : (defined('DB_CONFIG_HOST') ? DB_CONFIG_HOST : '127.0.0.1'));
+    $dbName = getenv('DB_NAME') ?: (defined('DB_NAME') ? DB_NAME : (defined('DB_CONFIG_NAME') ? DB_CONFIG_NAME : null));
+    $dbUser = getenv('DB_USER') ?: (defined('DB_USER') ? DB_USER : (defined('DB_CONFIG_USER') ? DB_CONFIG_USER : null));
+    $dbPass = getenv('DB_PASS') ?: (defined('DB_PASS') ? DB_PASS : (defined('DB_CONFIG_PASS') ? DB_CONFIG_PASS : null));
 
     if (!$dbName || !$dbUser || $dbPass === null || $dbName === 'YOUR_DB_NAME_HERE') {
         error_log('Database configuration error: Missing DB credentials in config.php or environment variables.');
