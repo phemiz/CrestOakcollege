@@ -1,10 +1,9 @@
 "use client";
 
 import { useEffect } from "react";
-import { useRouter, usePathname } from "next/navigation";
+import { usePathname } from "next/navigation";
 
 export function SubdomainRedirectGate() {
-  const router = useRouter();
   const pathname = usePathname();
 
   useEffect(() => {
@@ -35,11 +34,11 @@ export function SubdomainRedirectGate() {
     if (hostname.startsWith("admin.") || hostname.startsWith("superadmin.") || hostname.includes("admin.")) {
       if (!isAuthenticated || !isAdminRole) {
         if (!isLoginPage && !pathname.startsWith("/admin")) {
-          router.replace("/admin/login/");
+          window.location.replace("/admin/login/");
         }
       } else {
         if (pathname === "/" || isLoginPage) {
-          router.replace("/admin/dashboard/");
+          window.location.replace("/admin/dashboard/");
         }
       }
       return;
@@ -49,11 +48,11 @@ export function SubdomainRedirectGate() {
     if (hostname.startsWith("pay.") || hostname.startsWith("bursary.") || hostname.includes("bursary.") || hostname.includes("pay.")) {
       if (!isAuthenticated || !isBursaryRole) {
         if (!isLoginPage && !pathname.startsWith("/bursary")) {
-          router.replace("/bursary/login/");
+          window.location.replace("/bursary/login/");
         }
       } else {
         if (pathname === "/" || isLoginPage) {
-          router.replace("/bursary/dashboard/");
+          window.location.replace("/bursary/dashboard/");
         }
       }
       return;
@@ -63,11 +62,11 @@ export function SubdomainRedirectGate() {
     if (hostname.startsWith("staff.") || hostname.includes("staff.")) {
       if (!isAuthenticated || !isStaffRole) {
         if (!isLoginPage && !pathname.startsWith("/staff")) {
-          router.replace("/staff/login/");
+          window.location.replace("/staff/login/");
         }
       } else {
         if (pathname === "/" || isLoginPage) {
-          router.replace("/staff/dashboard/");
+          window.location.replace("/staff/dashboard/");
         }
       }
       return;
@@ -77,18 +76,19 @@ export function SubdomainRedirectGate() {
     if (hostname.startsWith("portal.") || hostname.includes("portal.")) {
       if (!isAuthenticated || !isStudentRole) {
         if (!isLoginPage && !pathname.startsWith("/portal")) {
-          router.replace("/portal/login/");
+          window.location.replace("/portal/login/");
         }
       } else {
         if (pathname === "/" || isLoginPage) {
-          router.replace("/portal/dashboard/");
+          window.location.replace("/portal/dashboard/");
         }
       }
       return;
     }
-  }, [pathname, router]);
+  }, [pathname]);
 
   return null;
 }
 
 export default SubdomainRedirectGate;
+

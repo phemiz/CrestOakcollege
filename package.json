@@ -5,6 +5,7 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
+    "serve": "npx serve out -l 3000",
     "start": "next start",
     "lint": "eslint"
   },
@@ -23,9 +24,11 @@
     "dotenv": "^17.4.2",
     "eslint": "^9",
     "eslint-config-next": "16.2.7",
+    "serve": "^14.2.4",
     "sharp": "^0.35.3",
     "tailwindcss": "^4",
     "ts-node": "^10.9.2",
     "typescript": "^5"
   }
 }
+

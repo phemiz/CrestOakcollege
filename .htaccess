@@ -2,16 +2,20 @@
   RewriteEngine On
   RewriteBase /
 
-  # Serve existing files or directories directly
+  # 1. Direct match for _next static assets
+  RewriteCond %{DOCUMENT_ROOT}/_next/$1 -f
+  RewriteRule ^_next/(.*)$ /_next/$1 [L]
+
+  # 2. Serve existing files or directories directly
   RewriteCond %{REQUEST_FILENAME} -f [OR]
   RewriteCond %{REQUEST_FILENAME} -d
   RewriteRule ^ - [L]
 
-  # Try adding .html extension if file exists
+  # 3. Try adding .html extension if file exists
   RewriteCond %{DOCUMENT_ROOT}/$1.html -f
   RewriteRule ^(.*)$ $1.html [L]
 
-  # Load folder index.html if accessing subpath directly
+  # 4. Load folder index.html if accessing subpath directly
   RewriteCond %{DOCUMENT_ROOT}/$1/index.html -f
   RewriteRule ^(.*)/$ $1/index.html [L]
 </IfModule>
@@ -24,13 +28,15 @@
         Header set Expires 0
     </FilesMatch>
 
-    # Cache static JS/CSS chunks with revalidation
+    # Cache static JS/CSS chunks with revalidation and allow cross-subdomain access
     <FilesMatch "\.(js|css)$">
-        Header set Cache-Control "max-age=0, must-revalidate"
+        Header set Access-Control-Allow-Origin "*"
+        Header set Cache-Control "max-age=31536000, public"
     </FilesMatch>
 
-    <FilesMatch "\.(ttf|ttc|otf|eot|woff|woff2|font.css|css|png|jpg|jpeg|svg|webp|ico)$">
+    <FilesMatch "\.(ttf|ttc|otf|eot|woff|woff2|font.css|css|png|jpg|jpeg|svg|webp|ico|js)$">
         Header set Access-Control-Allow-Origin "*"
         Header set Cache-Control "max-age=31536000, public"
     </FilesMatch>
 </IfModule>
+
