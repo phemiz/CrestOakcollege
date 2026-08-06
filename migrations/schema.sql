@@ -4,7 +4,6 @@
 -- ============================================================
 
 -- 1. Fix users table: change role from ENUM to VARCHAR(50)
---    so we can store ADMIN, LECTURER, HOD, DEAN, REGISTRAR, STUDENT, BURSAR, etc.
 ALTER TABLE users
     MODIFY COLUMN role VARCHAR(50) NOT NULL DEFAULT 'student';
 
@@ -27,25 +26,58 @@ CREATE TABLE IF NOT EXISTS sessions (
     INDEX idx_user_id (user_id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
--- 4. Fix staff table structure to match login.php expectations
---    Add missing columns for direct staff authentication
+-- 4. Fix staff table structure
+CREATE TABLE IF NOT EXISTS staff (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    first_name VARCHAR(100) NULL,
+    last_name VARCHAR(100) NULL,
+    email VARCHAR(255) NULL,
+    username VARCHAR(100) NULL,
+    staff_no VARCHAR(100) NULL,
+    password_hash VARCHAR(255) NULL,
+    role VARCHAR(50) DEFAULT 'LECTURER',
+    role_name VARCHAR(50) DEFAULT 'LECTURER',
+    department_name VARCHAR(255) NULL,
+    department_id VARCHAR(50) NULL,
+    isDeleted TINYINT(1) DEFAULT 0,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
 ALTER TABLE staff
     ADD COLUMN IF NOT EXISTS first_name VARCHAR(100) NULL,
     ADD COLUMN IF NOT EXISTS last_name VARCHAR(100) NULL,
     ADD COLUMN IF NOT EXISTS email VARCHAR(255) NULL,
     ADD COLUMN IF NOT EXISTS username VARCHAR(100) NULL,
+    ADD COLUMN IF NOT EXISTS staff_no VARCHAR(100) NULL,
     ADD COLUMN IF NOT EXISTS password_hash VARCHAR(255) NULL,
     ADD COLUMN IF NOT EXISTS role VARCHAR(50) DEFAULT 'LECTURER',
     ADD COLUMN IF NOT EXISTS role_name VARCHAR(50) DEFAULT 'LECTURER',
     ADD COLUMN IF NOT EXISTS department_name VARCHAR(255) NULL,
+    ADD COLUMN IF NOT EXISTS department_id VARCHAR(50) NULL,
     ADD COLUMN IF NOT EXISTS isDeleted TINYINT(1) DEFAULT 0;
 
--- 5. Fix students table structure to match login.php expectations
+-- 5. Fix students table structure
+CREATE TABLE IF NOT EXISTS students (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    first_name VARCHAR(100) NULL,
+    last_name VARCHAR(100) NULL,
+    email VARCHAR(255) NULL,
+    matric_no VARCHAR(100) NULL,
+    password_hash VARCHAR(255) NULL,
+    department_id VARCHAR(50) NULL,
+    department_name VARCHAR(255) NULL,
+    level INT DEFAULT 100,
+    isDeleted TINYINT(1) DEFAULT 0,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
 ALTER TABLE students
     ADD COLUMN IF NOT EXISTS first_name VARCHAR(100) NULL,
     ADD COLUMN IF NOT EXISTS last_name VARCHAR(100) NULL,
     ADD COLUMN IF NOT EXISTS email VARCHAR(255) NULL,
+    ADD COLUMN IF NOT EXISTS matric_no VARCHAR(100) NULL,
     ADD COLUMN IF NOT EXISTS password_hash VARCHAR(255) NULL,
+    ADD COLUMN IF NOT EXISTS department_id VARCHAR(50) NULL,
     ADD COLUMN IF NOT EXISTS department_name VARCHAR(255) NULL,
     ADD COLUMN IF NOT EXISTS level INT DEFAULT 100,
     ADD COLUMN IF NOT EXISTS isDeleted TINYINT(1) DEFAULT 0;
@@ -113,15 +145,13 @@ CREATE TABLE IF NOT EXISTS login_attempts (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 -- ============================================================
--- SEED DATA — Run AFTER generating hashes via test.php
--- Replace PASTE_*_HASH_HERE with your actual bcrypt hashes
+-- SEED DATA — Default accounts for Staff & Students
 -- ============================================================
 
--- Update admin1 with correct role
+-- Update admin1 role if user exists
 UPDATE users SET role = 'ADMIN' WHERE username = 'admin1';
 
--- Add a test staff member (logs in via staff table directly)
--- Replace PASTE_STAFF_HASH_HERE with your generated staff hash
+-- Add test staff member (Password: Staff@2026!)
 INSERT INTO staff (first_name, last_name, email, username, staff_no, password_hash, role, role_name, department_name, department_id, isDeleted)
 VALUES (
     'Staff',
@@ -129,25 +159,24 @@ VALUES (
     'staff1@crestoakcollege.com.ng',
     'staff1',
     'STAFF/001/2026',
-    'PASTE_STAFF_HASH_HERE',
+    '$2y$10$wN9tM5j05V/nIqHhS4H3xOBXwR2yH2zD6fTzO.9Qh/z5XQ8oJvQG2',
     'LECTURER',
     'LECTURER',
     'General Studies',
     'GEN',
     0
-) ON DUPLICATE KEY UPDATE password_hash = VALUES(password_hash);
+) ON DUPLICATE KEY UPDATE role = VALUES(role);
 
--- Add a test student (logs in via students table directly)
--- Replace PASTE_STUDENT_HASH_HERE with your generated student hash
+-- Add test student member (Password: Student@2026!)
 INSERT INTO students (first_name, last_name, email, matric_no, password_hash, department_id, department_name, level, isDeleted)
 VALUES (
     'Test',
     'Student',
     'student1@crestoakcollege.com.ng',
     'COH/2026/001',
-    'PASTE_STUDENT_HASH_HERE',
+    '$2y$10$wN9tM5j05V/nIqHhS4H3xOBXwR2yH2zD6fTzO.9Qh/z5XQ8oJvQG2',
     'GEN',
     'General Studies',
     100,
     0
-) ON DUPLICATE KEY UPDATE password_hash = VALUES(password_hash);
+) ON DUPLICATE KEY UPDATE level = VALUES(level);
