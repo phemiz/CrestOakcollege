@@ -16,10 +16,12 @@ export const metadata: Metadata = {
   }
 };
 
+import BursaryLayoutClient from "@/components/bursary/BursaryLayoutClient";
+
 export default function BursaryLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  return <>{children}</>;
+  return <BursaryLayoutClient>{children}</BursaryLayoutClient>;
 }

@@ -12,6 +12,7 @@ $rawInput = file_get_contents('php://input');
 $input = json_decode($rawInput, true) ?? $_POST ?? [];
 
 if ($method === 'POST') {
+    validate_csrf();
     $action = $input['action'] ?? '';
     if ($action === 'initialize_payment') {
         $paystackSecret = getenv('PAYSTACK_SECRET_KEY') ?: ($_ENV['PAYSTACK_SECRET_KEY'] ?? null);

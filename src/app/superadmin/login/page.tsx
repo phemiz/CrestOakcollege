@@ -19,9 +19,7 @@ export default function SuperAdminLoginPage() {
       const isSuperAdmin = roleUpper.includes("SUPER");
 
       if (auth && isSuperAdmin) {
-        if (!window.location.pathname.startsWith("/superadmin") && !window.location.pathname.startsWith("/admin")) {
-          window.location.replace("/admin/");
-        }
+        window.location.replace("/admin/dashboard/");
       } else {
         window.location.replace("/login/?gateway=superadmin");
       }

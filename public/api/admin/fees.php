@@ -1,45 +1,11 @@
 <?php
 require_once __DIR__ . '/db.php';
+require_once __DIR__ . '/../auth/session.php';
+
+$session = require_session(['ADMIN', 'SUPERADMIN', 'BURSARY']);
 
 $method = $_SERVER['REQUEST_METHOD'];
-$input = json_decode(file_get_contents('php://input'), true) ?? $_POST;
-
 $conn = getDbConnection();
-
-$defaultInvoices = [
-    [
-        "id" => "inv-001",
-        "invoiceNo" => "INV-2026-ACC-819",
-        "amount" => 50000,
-        "description" => "Admissions Acceptance Fee - 2026/2027",
-        "feeType" => "ACCEPTANCE",
-        "status" => "PAID",
-        "dueDate" => "2026-08-01",
-        "createdAt" => "2026-07-21T09:00:00Z",
-        "user" => [
-            "id" => "user-app-102",
-            "firstName" => "Bisi",
-            "lastName" => "Akindele",
-            "email" => "bisi.akindele@yahoo.com"
-        ]
-    ],
-    [
-        "id" => "inv-002",
-        "invoiceNo" => "INV-2026-TUI-902",
-        "amount" => 350000,
-        "description" => "School Tuition Fee - Year 1 First Semester",
-        "feeType" => "TUITION",
-        "status" => "UNPAID",
-        "dueDate" => "2026-09-15",
-        "createdAt" => "2026-07-22T11:00:00Z",
-        "user" => [
-            "id" => "user-app-102",
-            "firstName" => "Bisi",
-            "lastName" => "Akindele",
-            "email" => "bisi.akindele@yahoo.com"
-        ]
-    ]
-];
 
 $defaultFeeSchedules = [
     ["faculty" => "Health Sciences", "tuition" => 350000, "acceptance" => 50000, "hostel" => 120000],
@@ -48,37 +14,77 @@ $defaultFeeSchedules = [
 ];
 
 if ($method === 'GET') {
+    $invoices = [];
+    if ($conn) {
+        $res = $conn->query("SELECT f.*, s.first_name, s.last_name, s.email, s.matric_no FROM fees f LEFT JOIN students s ON f.student_id = s.id ORDER BY f.id DESC");
+        if ($res) {
+            while ($row = $res->fetch_assoc()) {
+                $invoices[] = [
+                    "id" => (string)$row['id'],
+                    "invoiceNo" => "INV-2026-FEE-" . $row['id'],
+                    "amount" => (float)$row['amount'],
+                    "description" => "Academic Tuition & Fees",
+                    "feeType" => "TUITION",
+                    "status" => $row['status'],
+                    "dueDate" => $row['due_date'] ?? date('Y-m-d'),
+                    "createdAt" => $row['created_at'] ?? date('c'),
+                    "user" => [
+                        "id" => (string)($row['student_id'] ?? 0),
+                        "firstName" => $row['first_name'] ?? 'Student',
+                        "lastName" => $row['last_name'] ?? '',
+                        "email" => $row['email'] ?? ''
+                    ]
+                ];
+            }
+        }
+        $conn->close();
+    }
     echo json_encode([
         "success" => true,
-        "invoices" => $defaultInvoices,
+        "invoices" => $invoices,
         "feeSchedules" => $defaultFeeSchedules
-    ]);
+    ], JSON_UNESCAPED_SLASHES);
     exit();
 }
 
 if ($method === 'POST') {
-    $invNo = "INV-2026-CUST-" . rand(1000, 9999);
+    validate_csrf();
+    $rawInput = file_get_contents('php://input');
+    $input = json_decode($rawInput, true) ?? $_POST ?? [];
+
+    $studentId = (int)($input['studentId'] ?? $input['userId'] ?? 0);
+    $amount = (float)($input['amount'] ?? 50000);
+    $dueDate = $input['dueDate'] ?? date('Y-m-d', strtotime('+30 days'));
+    $status = strtoupper($input['status'] ?? 'PENDING');
+
+    if ($conn && $studentId > 0) {
+        $stmt = $conn->prepare("INSERT INTO fees (student_id, amount, status, due_date) VALUES (?, ?, ?, ?)");
+        if ($stmt) {
+            $stmt->bind_param("idss", $studentId, $amount, $status, $dueDate);
+            $stmt->execute();
+            $newId = $stmt->insert_id;
+            $stmt->close();
+        }
+        $conn->close();
+    }
+
     echo json_encode([
         "success" => true,
         "message" => "Invoice generated successfully.",
         "invoice" => [
-            "id" => "inv-" . rand(1000, 9999),
-            "invoiceNo" => $invNo,
-            "amount" => floatval($input['amount'] ?? 50000),
+            "id" => (string)($newId ?? rand(1000, 9999)),
+            "invoiceNo" => "INV-2026-CUST-" . rand(1000, 9999),
+            "amount" => $amount,
             "description" => $input['description'] ?? 'Custom Fee Charge',
             "feeType" => $input['feeType'] ?? 'TUITION',
-            "status" => "UNPAID",
-            "dueDate" => $input['dueDate'] ?? date('Y-m-d', strtotime('+30 days')),
-            "createdAt" => date('c'),
-            "user" => [
-                "id" => $input['userId'] ?? "user-001",
-                "firstName" => "Student",
-                "lastName" => "Recipient",
-                "email" => "student@crestoakcollege.com.ng"
-            ]
+            "status" => $status,
+            "dueDate" => $dueDate,
+            "createdAt" => date('c')
         ]
-    ]);
+    ], JSON_UNESCAPED_SLASHES);
     exit();
 }
 
+http_response_code(405);
 echo json_encode(["success" => false, "message" => "Invalid request method."]);
+exit();

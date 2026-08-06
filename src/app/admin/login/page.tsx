@@ -19,9 +19,7 @@ export default function AdminLoginPage() {
       const isAdmin = roleUpper.includes("ADMIN") || roleUpper.includes("SUPER");
 
       if (auth && isAdmin) {
-        if (!window.location.pathname.startsWith("/admin")) {
-          window.location.replace("/admin/");
-        }
+        window.location.replace("/admin/dashboard/");
       } else {
         window.location.replace("/login/?gateway=admin");
       }

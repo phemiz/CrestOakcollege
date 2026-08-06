@@ -22,6 +22,8 @@ import {
   Loader2
 } from "lucide-react";
 
+import { useRequireAuth } from "@/hooks/useRequireAuth";
+
 interface AdminLayoutClientProps {
   children: React.ReactNode;
   user: {
@@ -34,19 +36,7 @@ interface AdminLayoutClientProps {
 export default function AdminLayoutClient({ children, user }: AdminLayoutClientProps) {
   const pathname = usePathname();
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
-  const [isAuthorized, setIsAuthorized] = useState(false);
-
-  // Enforce Login Gateway Guard
-  useEffect(() => {
-    if (typeof window !== "undefined") {
-      const isAuth = localStorage.getItem("isAuthenticated");
-      if (!isAuth || isAuth !== "true") {
-        window.location.replace("/login/?gateway=admin");
-      } else {
-        setIsAuthorized(true);
-      }
-    }
-  }, []);
+  const { isAuthorized, isChecking } = useRequireAuth({ allowedRoles: ["ADMIN", "SUPERADMIN"], gateway: "admin" });
 
   const navigation = [
     { name: "Dashboard", href: "/admin", icon: LayoutDashboard, roles: ["Super Admin", "Admin", "Bursary", "Staff"] },
@@ -106,7 +96,7 @@ export default function AdminLayoutClient({ children, user }: AdminLayoutClientP
   };
 
   // Auth Guard Loader Screen
-  if (!isAuthorized) {
+  if (isChecking || !isAuthorized) {
     return (
       <div className="min-h-screen bg-slate-50 flex items-center justify-center p-4">
         <div className="bg-white border border-slate-200 p-8 rounded-3xl shadow-xl max-w-sm w-full text-center space-y-4">

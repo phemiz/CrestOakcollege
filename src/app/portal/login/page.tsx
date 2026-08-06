@@ -22,9 +22,7 @@ export default function PortalLoginPage() {
       const isStudent = roleUpper.includes("STUDENT") || (!roleUpper && auth);
 
       if (auth && isStudent) {
-        if (!window.location.pathname.startsWith("/portal")) {
-          window.location.replace("/portal/");
-        }
+        window.location.replace("/portal/dashboard/");
       } else {
         window.location.replace("/login/?gateway=portal");
       }

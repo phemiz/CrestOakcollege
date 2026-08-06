@@ -19,9 +19,7 @@ export default function StaffLoginPage() {
       const isStaff = roleUpper.includes("STAFF") || roleUpper.includes("LECTURER") || roleUpper.includes("ADMIN") || roleUpper.includes("SUPER");
 
       if (auth && isStaff) {
-        if (!window.location.pathname.startsWith("/staff")) {
-          window.location.replace("/staff/");
-        }
+        window.location.replace("/staff/dashboard/");
       } else {
         window.location.replace("/login/?gateway=staff");
       }

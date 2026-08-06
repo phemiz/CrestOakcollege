@@ -1,93 +1,110 @@
 <?php
-// Mirror — delegate to main api/admin/staff.php
-$target = realpath(__DIR__ . '/../../api/admin/staff.php');
-if ($target && file_exists($target)) {
-    require_once $target;
+require_once __DIR__ . '/db.php';
+require_once __DIR__ . '/../auth/session.php';
+
+$session = require_session(['ADMIN', 'SUPERADMIN']);
+
+$conn = getDbConnection();
+if (!$conn) {
+    echo json_encode(['success' => false, 'message' => 'Database connection failed.']);
     exit();
 }
 
-// Fallback logic
-ini_set('display_errors', 0);
-error_reporting(0);
+$method = $_SERVER['REQUEST_METHOD'];
 
-if (session_status() === PHP_SESSION_NONE) {
-    session_start();
-}
-
-$allowedOrigins = [
-    'https://admin.crestoakcollege.com.ng',
-    'https://portal.crestoakcollege.com.ng',
-    'https://crestoakcollege.com.ng',
-    'http://localhost:3000',
-    'http://localhost:3001',
-    'http://127.0.0.1:3000'
-];
-
-$origin = $_SERVER['HTTP_ORIGIN'] ?? '';
-if (!empty($origin) && in_array($origin, $allowedOrigins, true)) {
-    header("Access-Control-Allow-Origin: $origin");
-    header("Access-Control-Allow-Credentials: true");
-}
-
-header('Content-Type: application/json; charset=utf-8');
-header('Access-Control-Allow-Headers: Content-Type, Authorization, X-Requested-With, X-CSRF-Token');
-header('Access-Control-Allow-Methods: GET, POST, PUT, DELETE, OPTIONS');
-
-if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
-    http_response_code(200);
-    exit();
-}
-
-$isAuthenticated = !empty($_SESSION['admin_user']) 
-    || !empty($_SERVER['HTTP_AUTHORIZATION']) 
-    || !empty($_COOKIE['admin_session']) 
-    || !empty($_COOKIE['next-auth.session-token']) 
-    || !empty($_SERVER['HTTP_X_CSRF_TOKEN'])
-    || !empty($_SERVER['HTTP_X_ADMIN_AUTH']);
-
-if (!$isAuthenticated) {
-    http_response_code(401);
-    echo json_encode(["success" => false, "message" => "Unauthorized access. Valid session required."]);
-    exit();
-}
-
-function getCanonicalDeptId($dept) {
-    $str = is_array($dept) ? ($dept['id'] ?? $dept['name'] ?? '') : (string)$dept;
-    $clean = strtolower(trim($str));
-
-    if (strpos($clean, 'computer') !== false || strpos($clean, 'csc') !== false || $clean === 'dept-csc' || $clean === 'dept-tech-001') return 'dept-csc';
-    if (strpos($clean, 'nursing') !== false || strpos($clean, 'nur') !== false || $clean === 'dept-nur' || $clean === 'dept-health-001') return 'dept-nur';
-    if (strpos($clean, 'laboratory') !== false || strpos($clean, 'mls') !== false || $clean === 'dept-mls' || $clean === 'dept-health-002') return 'dept-mls';
-    if (strpos($clean, 'community') !== false || strpos($clean, 'chew') !== false || $clean === 'dept-chew' || $clean === 'dept-health-003') return 'dept-chew';
-    if (strpos($clean, 'business') !== false || strpos($clean, 'bus') !== false || $clean === 'dept-bus' || $clean === 'dept-mgmt-001') return 'dept-bus';
-
-    return 'dept-csc';
-}
-
-function getDeptNameFromId($deptId) {
-    switch ($deptId) {
-        case 'dept-nur': return 'Department of Nursing Sciences';
-        case 'dept-mls': return 'Department of Medical Laboratory Science';
-        case 'dept-chew': return 'Department of Community Health Sciences';
-        case 'dept-csc': return 'Department of Computer Science & IT';
-        case 'dept-bus': return 'Department of Business Administration';
-        default: return 'Department of Computer Science & IT';
+if ($method === 'GET') {
+    $staffList = [];
+    $res = $conn->query("SELECT * FROM staff WHERE isDeleted = 0 OR isDeleted IS NULL ORDER BY id DESC");
+    if ($res) {
+        while ($row = $res->fetch_assoc()) {
+            $fullName = trim(($row['first_name'] ?? '') . ' ' . ($row['last_name'] ?? '')) ?: ($row['username'] ?? 'Staff Member');
+            $staffList[] = [
+                'id' => (string)$row['id'],
+                'staffId' => $row['staff_no'] ?? (string)$row['id'],
+                'staffNo' => $row['staff_no'] ?? (string)$row['id'],
+                'sin' => $row['staff_no'] ?? (string)$row['id'],
+                'name' => $fullName,
+                'firstName' => $row['first_name'] ?? '',
+                'lastName' => $row['last_name'] ?? '',
+                'email' => $row['email'] ?? '',
+                'username' => $row['username'] ?? '',
+                'role' => strtoupper($row['role_name'] ?? $row['role'] ?? 'LECTURER'),
+                'department' => $row['department_name'] ?? 'General Studies'
+            ];
+        }
     }
+    $conn->close();
+
+    $departments = [
+        ['id' => 'dept-health-001', 'name' => 'Department of Nursing Sciences', 'code' => 'NUR'],
+        ['id' => 'dept-health-002', 'name' => 'Department of Medical Laboratory Science', 'code' => 'MLS'],
+        ['id' => 'dept-health-003', 'name' => 'Department of Community Health Sciences', 'code' => 'CHEW'],
+        ['id' => 'dept-mgmt-001', 'name' => 'Department of Business Administration', 'code' => 'BUS'],
+        ['id' => 'dept-tech-001', 'name' => 'Department of Computer Science & IT', 'code' => 'CSC'],
+    ];
+
+    echo json_encode([
+        'success' => true,
+        'staff' => $staffList,
+        'staffList' => $staffList,
+        'departments' => $departments
+    ], JSON_UNESCAPED_SLASHES);
+    exit();
 }
 
-$storeFile = __DIR__ . '/staff_store.json';
-if (!file_exists($storeFile) && file_exists(__DIR__ . '/../../api/admin/staff_store.json')) {
-    $storeFile = __DIR__ . '/../../api/admin/staff_store.json';
+if ($method === 'POST' || $method === 'PUT') {
+    validate_csrf();
+    $rawInput = file_get_contents('php://input');
+    $input = json_decode($rawInput, true) ?? $_POST ?? [];
+
+    $firstName = trim($input['firstName'] ?? $input['name'] ?? '');
+    $lastName = trim($input['lastName'] ?? '');
+    $email = trim($input['email'] ?? '');
+    $username = trim($input['username'] ?? $input['staffNo'] ?? $email);
+    $staffNo = trim($input['staffNo'] ?? $input['staffId'] ?? 'STAFF/' . rand(100, 999) . '/' . date('Y'));
+    $role = strtoupper(trim($input['role'] ?? 'LECTURER'));
+    $department = trim($input['department'] ?? 'General Studies');
+    $password = trim($input['password'] ?? 'Staff@2026');
+    $passwordHash = password_hash($password, PASSWORD_BCRYPT);
+
+    $stmt = $conn->prepare("INSERT INTO staff (first_name, last_name, email, username, staff_no, password_hash, role, role_name, department_name, isDeleted) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 0)");
+    if ($stmt) {
+        $stmt->bind_param("sssssssss", $firstName, $lastName, $email, $username, $staffNo, $passwordHash, $role, $role, $department);
+        $stmt->execute();
+        $newId = $stmt->insert_id;
+        $stmt->close();
+    }
+    $conn->close();
+
+    echo json_encode([
+        'success' => true,
+        'message' => 'Staff record saved successfully.',
+        'id' => (string)($newId ?? rand(100, 999))
+    ], JSON_UNESCAPED_SLASHES);
+    exit();
 }
 
-$content = file_exists($storeFile) ? file_get_contents($storeFile) : '[]';
-$store = json_decode($content, true) ?: [];
+if ($method === 'DELETE') {
+    validate_csrf();
+    $rawInput = file_get_contents('php://input');
+    $input = json_decode($rawInput, true) ?? $_GET ?? [];
+    $staffId = (int)($input['id'] ?? 0);
 
-$sanitized = array_map(function($staff) {
-    $cDeptId = getCanonicalDeptId($staff['department'] ?? $staff['departmentId'] ?? '');
-    $staff['departmentId'] = $cDeptId;
-    $staff['department'] = ["id" => $cDeptId, "name" => getDeptNameFromId($cDeptId)];
-    return $staff;
-}, $store);
+    if ($staffId > 0) {
+        $stmt = $conn->prepare("UPDATE staff SET isDeleted = 1 WHERE id = ?");
+        if ($stmt) {
+            $stmt->bind_param("i", $staffId);
+            $stmt->execute();
+            $stmt->close();
+        }
+    }
+    $conn->close();
 
-echo json_encode(["success" => true, "staff" => array_values($sanitized)]);
+    echo json_encode(['success' => true, 'message' => 'Staff record removed.'], JSON_UNESCAPED_SLASHES);
+    exit();
+}
+
+$conn->close();
+http_response_code(405);
+echo json_encode(['success' => false, 'message' => 'Method not allowed.']);
+exit();

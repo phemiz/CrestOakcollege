@@ -1,5 +1,8 @@
 <?php
 require_once __DIR__ . '/db.php';
+require_once __DIR__ . '/../auth/session.php';
+
+$session = require_session(['ADMIN', 'SUPERADMIN', 'STAFF', 'LECTURER']);
 
 $defaultFaculties = [
     [
@@ -43,4 +46,4 @@ echo json_encode([
     "success" => true,
     "faculties" => $defaultFaculties,
     "lecturers" => $defaultLecturers
-]);
+], JSON_UNESCAPED_SLASHES);

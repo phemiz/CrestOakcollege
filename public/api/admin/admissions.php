@@ -1,40 +1,78 @@
 <?php
-// Mirror — delegate to main api/admin/admissions.php
-$target = realpath(__DIR__ . '/../../api/admin/admissions.php');
-if ($target && file_exists($target)) { require_once $target; exit; }
+require_once __DIR__ . '/db.php';
+require_once __DIR__ . '/../auth/session.php';
 
-// Inline fallback: return live admissions_store data, no hardcoded records
-header('Content-Type: application/json; charset=utf-8');
-ini_set('display_errors', 0); error_reporting(0);
-header('Access-Control-Allow-Origin: *');
-header('Access-Control-Allow-Methods: GET, POST, PUT, DELETE, OPTIONS');
-if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') { http_response_code(200); exit; }
+$session = require_session(['ADMIN', 'SUPERADMIN']);
 
-$dir       = realpath(__DIR__ . '/../../api/admin') ?: __DIR__;
-$storePath = $dir . '/admissions_store.json';
-
-function readA($p) {
-    if (!file_exists($p)) { @file_put_contents($p,'[]'); return []; }
-    $d = @json_decode(@file_get_contents($p), true);
-    return is_array($d) ? $d : [];
-}
-function writeA($p, $d) {
-    $ok = @file_put_contents($p, json_encode($d, JSON_PRETTY_PRINT)) !== false;
-    if ($ok) @chmod($p, 0644); return $ok;
+$conn = getDbConnection();
+if (!$conn) {
+    echo json_encode(['success' => false, 'message' => 'Database connection unavailable.']);
+    exit();
 }
 
 $method = $_SERVER['REQUEST_METHOD'];
-$input  = @json_decode(@file_get_contents('php://input'), true) ?: [];
 
 if ($method === 'GET') {
-    echo json_encode(['success'=>true,'applications'=>readA($storePath),'total'=>count(readA($storePath))],JSON_UNESCAPED_SLASHES); exit;
+    $apps = [];
+    $res = $conn->query("SELECT * FROM admissions ORDER BY id DESC");
+    if ($res) {
+        while ($row = $res->fetch_assoc()) {
+            $apps[] = [
+                'id' => (string)$row['id'],
+                'applicationId' => (string)$row['id'],
+                'applicant_name' => $row['applicant_name'] ?? '',
+                'fullName' => $row['applicant_name'] ?? '',
+                'email' => $row['email'] ?? '',
+                'phone' => $row['phone'] ?? '',
+                'program_applied' => $row['program_applied'] ?? '',
+                'programme' => $row['program_applied'] ?? '',
+                'status' => $row['status'] ?? 'PENDING',
+                'created_at' => $row['created_at'] ?? ''
+            ];
+        }
+    }
+    $conn->close();
+    echo json_encode([
+        'success' => true,
+        'applications' => $apps,
+        'total' => count($apps)
+    ], JSON_UNESCAPED_SLASHES);
+    exit();
 }
-if ($method === 'POST') {
-    $apps    = readA($storePath);
-    $appId   = $input['applicationId'] ?? $input['id'] ?? '';
-    $status  = strtoupper($input['decision'] ?? $input['status'] ?? 'APPROVED');
-    foreach ($apps as &$a) { if (($a['id']??'') === $appId) { $a['status'] = $status; $a['updatedAt'] = date('c'); break; } }
-    writeA($storePath, $apps);
-    echo json_encode(['success'=>true,'message'=>'Status updated to '.$status.'.','applicationId'=>$appId,'status'=>$status],JSON_UNESCAPED_SLASHES); exit;
+
+if ($method === 'POST' || $method === 'PUT') {
+    validate_csrf();
+    $rawInput = file_get_contents('php://input');
+    $input = json_decode($rawInput, true) ?? $_POST ?? [];
+
+    $appId = (int)($input['applicationId'] ?? $input['id'] ?? 0);
+    $status = strtoupper($input['decision'] ?? $input['status'] ?? 'ACCEPTED');
+
+    if ($appId <= 0) {
+        $conn->close();
+        http_response_code(400);
+        echo json_encode(['success' => false, 'message' => 'Invalid application ID.']);
+        exit();
+    }
+
+    $stmt = $conn->prepare("UPDATE admissions SET status = ? WHERE id = ?");
+    if ($stmt) {
+        $stmt->bind_param("si", $status, $appId);
+        $stmt->execute();
+        $stmt->close();
+    }
+    $conn->close();
+
+    echo json_encode([
+        'success' => true,
+        'message' => 'Application status updated to ' . $status,
+        'applicationId' => (string)$appId,
+        'status' => $status
+    ], JSON_UNESCAPED_SLASHES);
+    exit();
 }
-echo json_encode(['success'=>false,'message'=>'Invalid method.']);
+
+$conn->close();
+http_response_code(405);
+echo json_encode(['success' => false, 'message' => 'Method not allowed.']);
+exit();

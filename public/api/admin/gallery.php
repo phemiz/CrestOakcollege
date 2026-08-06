@@ -1,8 +1,10 @@
 <?php
 require_once __DIR__ . '/db.php';
+require_once __DIR__ . '/../auth/session.php';
+
+$session = require_session(['ADMIN', 'SUPERADMIN']);
 
 $method = $_SERVER['REQUEST_METHOD'];
-$input = json_decode(file_get_contents('php://input'), true) ?? $_POST;
 
 $defaultGallery = [
     [
@@ -22,18 +24,16 @@ $defaultGallery = [
 ];
 
 if ($method === 'GET') {
-    echo json_encode(["success" => true, "galleryItems" => $defaultGallery]);
+    echo json_encode(["success" => true, "galleryItems" => $defaultGallery], JSON_UNESCAPED_SLASHES);
     exit();
 }
 
-if ($method === 'POST' || $method === 'PUT') {
-    echo json_encode(["success" => true, "message" => "Gallery item saved successfully."]);
+if (in_array($method, ['POST', 'PUT', 'DELETE'], true)) {
+    validate_csrf();
+    echo json_encode(["success" => true, "message" => "Gallery operation executed successfully."], JSON_UNESCAPED_SLASHES);
     exit();
 }
 
-if ($method === 'DELETE') {
-    echo json_encode(["success" => true, "message" => "Gallery item deleted successfully."]);
-    exit();
-}
-
+http_response_code(405);
 echo json_encode(["success" => false, "message" => "Invalid request method."]);
+exit();

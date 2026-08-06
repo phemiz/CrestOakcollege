@@ -40,3 +40,27 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# generated export outputs at repo root
+/admin/
+/staff/
+/bursary/
+/portal/
+/api/
+/admissions/
+/about/
+/academics/
+/contact/
+/gallery/
+/login/
+/news/
+/superadmin/
+/404/
+/404.html
+/_next/
+/_not-found/
+
+# secrets
+public/api/config.php
+api/config.php
+

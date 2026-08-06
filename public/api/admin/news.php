@@ -1,8 +1,10 @@
 <?php
 require_once __DIR__ . '/db.php';
+require_once __DIR__ . '/../auth/session.php';
+
+$session = require_session(['ADMIN', 'SUPERADMIN', 'STAFF']);
 
 $method = $_SERVER['REQUEST_METHOD'];
-$input = json_decode(file_get_contents('php://input'), true) ?? $_POST;
 
 $defaultNews = [
     [
@@ -26,18 +28,16 @@ $defaultNews = [
 ];
 
 if ($method === 'GET') {
-    echo json_encode(["success" => true, "newsList" => $defaultNews]);
+    echo json_encode(["success" => true, "newsList" => $defaultNews], JSON_UNESCAPED_SLASHES);
     exit();
 }
 
-if ($method === 'POST' || $method === 'PUT') {
-    echo json_encode(["success" => true, "message" => "News article saved successfully."]);
+if (in_array($method, ['POST', 'PUT', 'DELETE'], true)) {
+    validate_csrf();
+    echo json_encode(["success" => true, "message" => "News operation completed."], JSON_UNESCAPED_SLASHES);
     exit();
 }
 
-if ($method === 'DELETE') {
-    echo json_encode(["success" => true, "message" => "News article deleted successfully."]);
-    exit();
-}
-
+http_response_code(405);
 echo json_encode(["success" => false, "message" => "Invalid request method."]);
+exit();

@@ -48,40 +48,58 @@ export function SessionProvider({ children }: { children: React.ReactNode }) {
 
   const updateSession = useCallback(async () => {
     try {
-      // First check client-side cookie
-      const sessionCookie = getCookie("cchsmt_user_session") || getCookie("user");
-      if (sessionCookie) {
-        try {
-          const parsed = JSON.parse(decodeURIComponent(sessionCookie));
-          if (parsed && (parsed.id || parsed.email || parsed.role)) {
-            setUser(parsed);
-            setStatus("authenticated");
-            return;
-          }
-        } catch {
-          // Fall back to API fetch below
+      // 1. Initial local state check for instant UI response
+      let localUser: AuthUser | null = null;
+      if (typeof window !== "undefined") {
+        const storedUser = localStorage.getItem("user") || localStorage.getItem("cchsmt_user_session");
+        const isAuth = localStorage.getItem("isAuthenticated") === "true";
+        if (storedUser && isAuth) {
+          try {
+            localUser = JSON.parse(storedUser);
+            if (localUser && (localUser.id || localUser.email || localUser.role)) {
+              setUser(localUser);
+              setStatus("authenticated");
+            }
+          } catch {}
         }
       }
 
-      // Check session.php endpoint
+      // 2. Authoritative server session verification
       const res = await fetch("/api/session.php", {
         method: "GET",
-        headers: { "Content-Type": "application/json" }
+        headers: { "Content-Type": "application/json" },
+        credentials: "include"
       });
+
       if (res.ok) {
         const json = await res.json();
         if (json.authenticated && json.user) {
-          setUser(json.user);
+          const authUser: AuthUser = {
+            id: String(json.user.user_id || json.user.id || ""),
+            name: json.user.name || "User",
+            email: json.user.email || "",
+            role: json.user.role || "STUDENT"
+          };
+          setUser(authUser);
           setStatus("authenticated");
+
+          if (typeof window !== "undefined") {
+            localStorage.setItem("user", JSON.stringify(authUser));
+            localStorage.setItem("isAuthenticated", "true");
+            localStorage.setItem("userRole", authUser.role);
+          }
           return;
         }
       }
 
-      setUser(null);
-      setStatus("unauthenticated");
-    } catch {
-      setUser(null);
-      setStatus("unauthenticated");
+      // If server session is invalid but local user exists without active server session, keep local if offline or reset
+      if (!localUser) {
+        setUser(null);
+        setStatus("unauthenticated");
+      }
+    } catch (err) {
+      console.warn("Session check error:", err);
+      // Keep existing local user state if network fetch fails temporarily
     }
   }, []);
 
@@ -89,9 +107,26 @@ export function SessionProvider({ children }: { children: React.ReactNode }) {
     updateSession();
   }, [updateSession]);
 
-  const logout = useCallback(() => {
+  const logout = useCallback(async () => {
+    try {
+      await fetch("/api/auth/logout.php", {
+        method: "POST",
+        credentials: "include"
+      });
+    } catch {}
+
+    if (typeof window !== "undefined") {
+      localStorage.removeItem("user");
+      localStorage.removeItem("isAuthenticated");
+      localStorage.removeItem("userRole");
+      localStorage.removeItem("cchsmt_user_session");
+      localStorage.removeItem("crestoak_session");
+    }
+
     document.cookie = "cchsmt_user_session=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT";
+    document.cookie = "cchsmt_csrf_token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT";
     document.cookie = "user=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT";
+
     setUser(null);
     setStatus("unauthenticated");
     window.location.href = "/login";

@@ -1,36 +1,43 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# CrestOak College (CCHSMT) Web Application
 
-## Getting Started
+A Next.js 16 application configured for fully static export (`output: "export"`) paired with a PHP/MySQL backend in `public/api/`.
 
-First, run the development server:
+## Development
+
+Run the local development server:
 
 ```bash
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open [http://localhost:3000](http://localhost:3000) in your browser.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Build & Production Deployment
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+### 1. Build Static Output
 
-## Learn More
+```bash
+npm run build
+```
 
-To learn more about Next.js, take a look at the following resources:
+This compiles the static pages and includes the PHP backend from `public/api/` directly into the `out/` folder.
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+### 2. Deployment Instructions
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+- **Do NOT copy `out/` into your git-tracked root directory.**
+- Upload the contents of the generated `out/` folder directly to your hosting provider's web document root (e.g. `public_html/` on DirectAdmin / cPanel / Apache).
 
-## Deploy on Vercel
+## Environment Variables & Configuration
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+### Database Credentials
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+`public/api/admin/db.php` checks for database credentials in the following order:
+
+1. **Environment Variables (Preferred)**:
+   - `DB_HOST` (e.g. `localhost` or `127.0.0.1`)
+   - `DB_NAME` (e.g. `crestoa2_crestoak_db`)
+   - `DB_USER` (e.g. `crestoa2_dbuser`)
+   - `DB_PASS` (Database password)
+
+2. **PHP Config File (Fallback)**:
+   - If server environment variables are unavailable, copy `public/api/config.example.php` to `public/api/config.php` on the hosting server and edit the credentials. `public/api/config.php` is added to `.gitignore` and must never be committed to git.

@@ -19,9 +19,7 @@ export default function BursaryLoginPage() {
       const isBursar = roleUpper.includes("BURSAR") || roleUpper.includes("FINANCE") || roleUpper.includes("ADMIN") || roleUpper.includes("SUPER");
 
       if (auth && isBursar) {
-        if (!window.location.pathname.startsWith("/bursary")) {
-          window.location.replace("/bursary/");
-        }
+        window.location.replace("/bursary/dashboard/");
       } else {
         window.location.replace("/login/?gateway=bursary");
       }

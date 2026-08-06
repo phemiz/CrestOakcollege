@@ -2,40 +2,16 @@
   RewriteEngine On
   RewriteBase /
 
-  # 1. Allow existing files or directories to be served directly
+  # Serve existing files or directories directly
   RewriteCond %{REQUEST_FILENAME} -f [OR]
   RewriteCond %{REQUEST_FILENAME} -d
   RewriteRule ^ - [L]
 
-  # 2. Subdomain specific rewrites (when subdomains share the main document root)
-  RewriteCond %{HTTP_HOST} ^admin\.crestoakcollege\.com\.ng$ [NC]
-  RewriteCond %{REQUEST_URI} ^/$
-  RewriteRule ^$ /login/?gateway=admin [L,R=302]
-
-  RewriteCond %{HTTP_HOST} ^staff\.crestoakcollege\.com\.ng$ [NC]
-  RewriteCond %{REQUEST_URI} ^/$
-  RewriteRule ^$ /login/?gateway=staff [L,R=302]
-
-  RewriteCond %{HTTP_HOST} ^portal\.crestoakcollege\.com\.ng$ [NC]
-  RewriteCond %{REQUEST_URI} ^/$
-  RewriteRule ^$ /login/?gateway=portal [L,R=302]
-
-  RewriteCond %{HTTP_HOST} ^pay\.crestoakcollege\.com\.ng$ [NC]
-  RewriteCond %{REQUEST_URI} ^/$
-  RewriteRule ^$ /login/?gateway=pay [L,R=302]
-
-  RewriteCond %{HTTP_HOST} ^admissions\.crestoakcollege\.com\.ng$ [NC]
-  RewriteCond %{REQUEST_URI} ^/$
-  RewriteRule ^$ /admissions [L,R=302]
-
-  RewriteCond %{HTTP_HOST} ^register\.crestoakcollege\.com\.ng$ [NC]
-  RewriteCond %{REQUEST_URI} ^/$
-  RewriteRule ^$ /admissions/register [L,R=302]
-
-  # 3. Next.js Static Export Route Resolution (.html extension or directory index.html)
+  # Try adding .html extension if file exists
   RewriteCond %{DOCUMENT_ROOT}/$1.html -f
   RewriteRule ^(.*)$ $1.html [L]
 
+  # Load folder index.html if accessing subpath directly
   RewriteCond %{DOCUMENT_ROOT}/$1/index.html -f
   RewriteRule ^(.*)/$ $1/index.html [L]
 </IfModule>
