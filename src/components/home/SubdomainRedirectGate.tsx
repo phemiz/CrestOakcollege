@@ -29,21 +29,17 @@ export function SubdomainRedirectGate() {
     const isStaffRole = roleUpper.includes("STAFF") || roleUpper.includes("LECTURER") || isAdminRole;
     const isStudentRole = roleUpper.includes("STUDENT") || (!roleUpper && isAuthenticated);
 
+    const isLoginPage = pathname.includes("/login");
+
     // 1. ADMIN / SUPERADMIN SUBDOMAIN GATEWAY
     if (hostname.startsWith("admin.") || hostname.startsWith("superadmin.") || hostname.includes("admin.")) {
       if (!isAuthenticated || !isAdminRole) {
-        if (pathname === "/" || pathname === "/login" || pathname === "/login/") {
-          const params = new URLSearchParams(window.location.search);
-          if (params.get("gateway") !== "admin") {
-            window.location.replace("/login/?gateway=admin");
-          }
-        } else if (!pathname.startsWith("/admin")) {
-          window.location.replace("/login/?gateway=admin");
+        if (!isLoginPage && !pathname.startsWith("/admin")) {
+          router.replace("/admin/login/");
         }
       } else {
-        // Authenticated Admin visiting root "/" or "/login" -> send to /admin/dashboard/
-        if (pathname === "/" || pathname === "/login" || pathname === "/login/") {
-          window.location.replace("/admin/dashboard/");
+        if (pathname === "/" || isLoginPage) {
+          router.replace("/admin/dashboard/");
         }
       }
       return;
@@ -52,18 +48,12 @@ export function SubdomainRedirectGate() {
     // 2. BURSARY / PAY SUBDOMAIN GATEWAY
     if (hostname.startsWith("pay.") || hostname.startsWith("bursary.") || hostname.includes("bursary.") || hostname.includes("pay.")) {
       if (!isAuthenticated || !isBursaryRole) {
-        if (pathname === "/" || pathname === "/login" || pathname === "/login/") {
-          const params = new URLSearchParams(window.location.search);
-          if (params.get("gateway") !== "bursary") {
-            window.location.replace("/login/?gateway=bursary");
-          }
-        } else if (!pathname.startsWith("/bursary")) {
-          window.location.replace("/login/?gateway=bursary");
+        if (!isLoginPage && !pathname.startsWith("/bursary")) {
+          router.replace("/bursary/login/");
         }
       } else {
-        // Authenticated Bursar visiting root "/" or "/login" -> send to /bursary/
-        if (pathname === "/" || pathname === "/login" || pathname === "/login/") {
-          window.location.replace("/bursary/");
+        if (pathname === "/" || isLoginPage) {
+          router.replace("/bursary/dashboard/");
         }
       }
       return;
@@ -72,18 +62,12 @@ export function SubdomainRedirectGate() {
     // 3. STAFF SUBDOMAIN GATEWAY
     if (hostname.startsWith("staff.") || hostname.includes("staff.")) {
       if (!isAuthenticated || !isStaffRole) {
-        if (pathname === "/" || pathname === "/login" || pathname === "/login/") {
-          const params = new URLSearchParams(window.location.search);
-          if (params.get("gateway") !== "staff") {
-            window.location.replace("/login/?gateway=staff");
-          }
-        } else if (!pathname.startsWith("/staff")) {
-          window.location.replace("/login/?gateway=staff");
+        if (!isLoginPage && !pathname.startsWith("/staff")) {
+          router.replace("/staff/login/");
         }
       } else {
-        // Authenticated Staff visiting root "/" or "/login" -> send to /staff/
-        if (pathname === "/" || pathname === "/login" || pathname === "/login/") {
-          window.location.replace("/staff/");
+        if (pathname === "/" || isLoginPage) {
+          router.replace("/staff/dashboard/");
         }
       }
       return;
@@ -92,18 +76,12 @@ export function SubdomainRedirectGate() {
     // 4. STUDENT PORTAL SUBDOMAIN GATEWAY
     if (hostname.startsWith("portal.") || hostname.includes("portal.")) {
       if (!isAuthenticated || !isStudentRole) {
-        if (pathname === "/" || pathname === "/login" || pathname === "/login/") {
-          const params = new URLSearchParams(window.location.search);
-          if (params.get("gateway") !== "portal") {
-            window.location.replace("/login/?gateway=portal");
-          }
-        } else if (!pathname.startsWith("/portal")) {
-          window.location.replace("/login/?gateway=portal");
+        if (!isLoginPage && !pathname.startsWith("/portal")) {
+          router.replace("/portal/login/");
         }
       } else {
-        // Authenticated Student visiting root "/" or "/login" -> send to /portal/
-        if (pathname === "/" || pathname === "/login" || pathname === "/login/") {
-          window.location.replace("/portal/");
+        if (pathname === "/" || isLoginPage) {
+          router.replace("/portal/dashboard/");
         }
       }
       return;
