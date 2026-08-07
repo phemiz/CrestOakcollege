@@ -193,22 +193,22 @@ function RegistrarLoginForm() {
   return (
     <>
       <Header />
-      <main className="min-h-screen bg-slate-950 text-slate-100 font-sans pb-24 flex flex-col justify-between relative overflow-hidden">
+      <main className="min-h-screen bg-slate-50 text-slate-900 font-sans pb-24 flex flex-col justify-between relative overflow-hidden">
         {/* Background ambient lighting */}
-        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full max-w-7xl h-96 bg-indigo-600/10 blur-[130px] pointer-events-none rounded-full" />
-        <div className="absolute bottom-10 left-10 w-80 h-80 bg-blue-600/10 blur-[100px] pointer-events-none rounded-full" />
+        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full max-w-7xl h-96 bg-blue-500/5 blur-[120px] pointer-events-none rounded-full" />
+        <div className="absolute bottom-10 left-10 w-80 h-80 bg-blue-600/5 blur-[100px] pointer-events-none rounded-full" />
 
         {/* HERO HEADER */}
-        <section className="bg-gradient-to-b from-indigo-950 via-slate-950 to-slate-950 border-b border-indigo-900/30 py-12 sm:py-16 relative z-10 text-center">
+        <section className="bg-gradient-to-b from-slate-50 via-white to-blue-50/30 border-b border-slate-200/80 py-12 sm:py-16 relative z-10 text-center">
           <div className="max-w-4xl mx-auto px-4 sm:px-6 space-y-3">
-            <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-indigo-500/10 border border-indigo-500/30 text-indigo-300 text-xs sm:text-sm font-bold uppercase tracking-wider shadow-inner">
-              <Sparkles className="w-4 h-4 text-indigo-400" />
+            <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-blue-50 border border-blue-200 text-blue-700 text-xs sm:text-sm font-semibold uppercase tracking-wider">
+              <Sparkles className="w-4 h-4 text-blue-600" />
               Official CrestOak Registrar Portal
             </div>
-            <h1 className="text-3xl sm:text-4xl md:text-5xl font-display font-extrabold text-white tracking-tight">
+            <h1 className="text-3xl sm:text-4xl md:text-5xl font-display font-extrabold text-[#0A192F] tracking-tight">
               University Registrar Portal
             </h1>
-            <p className="text-sm sm:text-base text-slate-300 max-w-2xl mx-auto font-medium leading-relaxed">
+            <p className="text-sm sm:text-base text-slate-600 max-w-2xl mx-auto font-medium leading-relaxed">
               Institutional portal for transcript approvals, academic record audits, course catalog management, degree clearances, and examination schedules.
             </p>
           </div>
@@ -216,21 +216,21 @@ function RegistrarLoginForm() {
 
         {/* LOGIN CONTAINER */}
         <div className="max-w-md sm:max-w-lg mx-auto px-4 sm:px-6 -mt-8 relative z-20 w-full">
-          <div className="bg-slate-900/90 border border-indigo-500/20 backdrop-blur-xl rounded-3xl p-6 sm:p-10 shadow-2xl shadow-indigo-950/80 space-y-6">
+          <div className="bg-white border border-slate-200 shadow-xl shadow-slate-200/50 rounded-2xl p-6 sm:p-8 space-y-6">
             
             {/* BRAND HEADER */}
-            <div className="flex items-center justify-between border-b border-slate-800 pb-5">
-              <Logo showText={true} lightText={true} size={42} />
-              <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-indigo-950 border border-indigo-500/30 text-indigo-300 text-xs font-bold">
-                <Building2 className="w-4 h-4 text-indigo-400" />
+            <div className="flex items-center justify-between border-b border-slate-100 pb-5">
+              <Logo showText={true} lightText={false} size={42} />
+              <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-blue-50 border border-blue-200 text-blue-700 text-xs font-semibold">
+                <Building2 className="w-4 h-4 text-blue-600" />
                 <span>Registrar Office</span>
               </div>
             </div>
 
             {/* ERROR ALERT */}
             {errorMsg && (
-              <div className="flex items-start gap-3 bg-red-950/60 border border-red-500/40 text-red-200 p-4 rounded-2xl text-xs sm:text-sm animate-in fade-in">
-                <AlertCircle className="w-5 h-5 shrink-0 mt-0.5 text-red-400" />
+              <div className="flex items-start gap-3 bg-red-50 border border-red-200 text-red-700 p-4 rounded-xl text-xs sm:text-sm animate-in fade-in">
+                <AlertCircle className="w-5 h-5 shrink-0 mt-0.5 text-red-600" />
                 <span className="font-medium">{errorMsg}</span>
               </div>
             )}
@@ -241,7 +241,7 @@ function RegistrarLoginForm() {
               <div>
                 <label
                   htmlFor="registrar-id"
-                  className="block text-xs sm:text-sm font-bold uppercase tracking-wider text-slate-300 mb-2"
+                  className="block text-xs sm:text-sm font-semibold uppercase tracking-wider text-slate-700 mb-2"
                 >
                   Registrar Staff ID / Username
                 </label>
@@ -257,7 +257,7 @@ function RegistrarLoginForm() {
                     placeholder="e.g. registrar or REG/2026/001"
                     value={username}
                     onChange={(e) => setUsername(e.target.value)}
-                    className="w-full pl-12 pr-4 py-3.5 bg-slate-950/80 border border-slate-700/80 rounded-2xl text-white placeholder-slate-500 focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 text-base font-medium transition-all"
+                    className="w-full pl-12 pr-4 py-3.5 bg-slate-50 border border-slate-300 rounded-xl text-slate-900 placeholder:text-slate-400 focus:outline-none focus:border-blue-600 focus:ring-2 focus:ring-blue-500/20 text-base font-medium transition-all"
                   />
                 </div>
               </div>
@@ -266,7 +266,7 @@ function RegistrarLoginForm() {
               <div>
                 <label
                   htmlFor="password"
-                  className="block text-xs sm:text-sm font-bold uppercase tracking-wider text-slate-300 mb-2"
+                  className="block text-xs sm:text-sm font-semibold uppercase tracking-wider text-slate-700 mb-2"
                 >
                   Password
                 </label>
@@ -282,12 +282,12 @@ function RegistrarLoginForm() {
                     placeholder="••••••••"
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
-                    className="w-full pl-12 pr-12 py-3.5 bg-slate-950/80 border border-slate-700/80 rounded-2xl text-white placeholder-slate-500 focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 text-base font-medium transition-all"
+                    className="w-full pl-12 pr-12 py-3.5 bg-slate-50 border border-slate-300 rounded-xl text-slate-900 placeholder:text-slate-400 focus:outline-none focus:border-blue-600 focus:ring-2 focus:ring-blue-500/20 text-base font-medium transition-all"
                   />
                   <button
                     type="button"
                     onClick={() => setShowPassword(!showPassword)}
-                    className="absolute inset-y-0 right-0 pr-4 flex items-center text-slate-400 hover:text-slate-200 transition-colors"
+                    className="absolute inset-y-0 right-0 pr-4 flex items-center text-slate-400 hover:text-slate-600 transition-colors"
                   >
                     {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
                   </button>
@@ -298,11 +298,11 @@ function RegistrarLoginForm() {
               <button
                 type="submit"
                 disabled={loading}
-                className="w-full py-4 px-6 bg-gradient-to-r from-indigo-600 via-indigo-700 to-blue-700 hover:from-indigo-500 hover:to-blue-600 text-white rounded-2xl font-extrabold transition-all shadow-xl shadow-indigo-950/80 disabled:opacity-50 flex items-center justify-center gap-2 text-base cursor-pointer border border-indigo-400/20 transform hover:-translate-y-0.5"
+                className="w-full py-3.5 px-6 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-semibold shadow-md shadow-blue-500/20 transition-all disabled:opacity-50 flex items-center justify-center gap-2 text-base cursor-pointer"
               >
                 {loading ? (
                   <>
-                    <Loader2 className="w-5 h-5 animate-spin text-indigo-200" />
+                    <Loader2 className="w-5 h-5 animate-spin text-white" />
                     <span>Authenticating Session...</span>
                   </>
                 ) : (
@@ -315,12 +315,12 @@ function RegistrarLoginForm() {
             </form>
 
             {/* FOOTER NOTICE */}
-            <div className="pt-4 border-t border-slate-800/80 flex items-center justify-between text-xs text-slate-400">
-              <span className="flex items-center gap-1.5 font-medium text-slate-300">
-                <ShieldCheck className="w-4 h-4 text-emerald-400" />
+            <div className="pt-4 border-t border-slate-100 flex items-center justify-between text-xs text-slate-500">
+              <span className="flex items-center gap-1.5 font-medium text-slate-600">
+                <ShieldCheck className="w-4 h-4 text-emerald-600" />
                 SSL 256-bit Encrypted Session
               </span>
-              <span className="font-mono text-[11px] text-slate-500">Role: REGISTRAR</span>
+              <span className="font-mono text-[11px] text-slate-400">Role: REGISTRAR</span>
             </div>
 
           </div>
@@ -337,8 +337,8 @@ export default function RegistrarLoginPage() {
   return (
     <Suspense
       fallback={
-        <div className="min-h-screen flex flex-col justify-center items-center bg-slate-950 text-white">
-          <Loader2 className="w-10 h-10 text-indigo-400 animate-spin" />
+        <div className="min-h-screen flex flex-col justify-center items-center bg-slate-50 text-slate-900">
+          <Loader2 className="w-10 h-10 text-blue-600 animate-spin" />
         </div>
       }
     >
