@@ -1,0 +1,6 @@
+1:"$Sreact.fragment"
+2:I[50549,["/_next/static/chunks/2zrkmddkpgiw-.js","/_next/static/chunks/3de3nv78x9pe2.js","/_next/static/chunks/2zyx7p89avm_m.js","/_next/static/chunks/2dif1cc4idl_x.js","/_next/static/chunks/1z59lk9h9q4c7.js"],"default"]
+3:I[95933,["/_next/static/chunks/2zrkmddkpgiw-.js","/_next/static/chunks/3de3nv78x9pe2.js","/_next/static/chunks/2zyx7p89avm_m.js"],"OutletBoundary"]
+4:"$Sreact.suspense"
+0:{"rsc":["$","$1","c",{"children":[["$","$L2",null,{"programmes":[{"id":"prog-1","name":"Community Health Extension (CHEW)","code":"CHEW","degreeAwarded":"Diploma in Community Health"},{"id":"prog-2","name":"Nursing Sciences","code":"NUR","degreeAwarded":"Registered Nurse (RN)"},{"id":"prog-3","name":"Medical Laboratory Technician","code":"MLT","degreeAwarded":"Diploma in Medical Lab Tech"},{"id":"prog-4","name":"Computer Science & Health Informatics","code":"CSC","degreeAwarded":"ND / HND Computer Science"},{"id":"prog-5","name":"Pharmacy Technician","code":"PHT","degreeAwarded":"Diploma in Pharmacy Tech"}],"draftApplication":null}],[["$","script","script-0",{"src":"/_next/static/chunks/1z59lk9h9q4c7.js","async":true}]],["$","$L3",null,{"children":["$","$4",null,{"name":"Next.MetadataOutlet","children":"$@5"}]}]]}],"isPartial":false,"staleTime":300,"varyParams":null,"buildId":"LVqH7HiJ5-EJorYX5VXV3"}
+5:null

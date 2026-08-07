@@ -1,0 +1,6 @@
+1:"$Sreact.fragment"
+2:I[67637,["/_next/static/chunks/2zrkmddkpgiw-.js","/_next/static/chunks/3de3nv78x9pe2.js","/_next/static/chunks/2zyx7p89avm_m.js","/_next/static/chunks/2dif1cc4idl_x.js","/_next/static/chunks/2fh7ie-fpxgvt.js"],"default"]
+3:I[95933,["/_next/static/chunks/2zrkmddkpgiw-.js","/_next/static/chunks/3de3nv78x9pe2.js","/_next/static/chunks/2zyx7p89avm_m.js"],"OutletBoundary"]
+4:"$Sreact.suspense"
+0:{"rsc":["$","$1","c",{"children":[["$","$L2",null,{"application":{"id":"app-1","applicationNo":"APP-2026-0001","status":"APPROVED","paymentStatus":"PAID","programme":{"name":"Computer Science & Health Informatics","code":"CSC","degreeAwarded":"ND / HND"},"screening":{"screeningDate":"$D2026-08-15T09:00:00.000Z","venue":"Main Auditorium, CrestOak College","status":"PASSED","notes":"Screening completed successfully."},"admission":{"status":"ADMITTED","admittedAt":"$D2026-07-01T10:00:00.000Z"}},"notificationLogs":[]}],[["$","script","script-0",{"src":"/_next/static/chunks/2fh7ie-fpxgvt.js","async":true}]],["$","$L3",null,{"children":["$","$4",null,{"name":"Next.MetadataOutlet","children":"$@5"}]}]]}],"isPartial":false,"staleTime":300,"varyParams":null,"buildId":"LVqH7HiJ5-EJorYX5VXV3"}
+5:null
