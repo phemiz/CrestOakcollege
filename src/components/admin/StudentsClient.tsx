@@ -296,18 +296,26 @@ export default function StudentsClient({
         const response = await fetch('/api/admin/students.php?t=' + Date.now());
         const data = await response.json();
 
-        if (data.success && Array.isArray(data.students)) {
-          const normalizedStudents = data.students.map(normalizeStudent);
+        const rawList = Array.isArray(data)
+          ? data
+          : (data?.students || data?.data || data?.records || data?.items || data?.list || null);
 
+        if (Array.isArray(rawList) && rawList.length > 0) {
+          const normalizedStudents = rawList.map(normalizeStudent);
           setStudents(normalizedStudents);
-          if (data.departments && Array.isArray(data.departments)) {
-            setDepartmentsList(data.departments);
-          }
-          if (data.programmes && Array.isArray(data.programmes)) {
-            setProgrammesList(data.programmes);
-          }
+        } else if (data?.success && Array.isArray(data?.students) && data.students.length === 0) {
+          // Keep initial or fallback students if state is empty
+          setStudents((prev) => (prev.length > 0 ? prev : (initialStudents || []).map(normalizeStudent)));
         } else {
-          console.error('Unexpected payload format:', data);
+          console.warn('Student API payload structure notice:', data);
+          setStudents((prev) => (prev.length > 0 ? prev : (initialStudents || []).map(normalizeStudent)));
+        }
+
+        if (data?.departments && Array.isArray(data.departments)) {
+          setDepartmentsList(data.departments);
+        }
+        if (data?.programmes && Array.isArray(data.programmes)) {
+          setProgrammesList(data.programmes);
         }
       } catch (err) {
         console.error('Error fetching student registry:', err);

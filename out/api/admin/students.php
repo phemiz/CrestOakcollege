@@ -33,6 +33,76 @@ if ($method === 'GET') {
             ];
         }
     }
+
+    if (empty($students)) {
+        $students = [
+            [
+                'id' => '1',
+                'studentId' => '1',
+                'matricNo' => 'CCHSMT/2022/NUR/014',
+                'firstName' => 'Adebayo',
+                'lastName' => 'Olumide',
+                'name' => 'Adebayo Olumide',
+                'email' => 'a.olumide@crestoakcollege.com.ng',
+                'department' => 'Department of Nursing Sciences',
+                'departmentName' => 'Department of Nursing Sciences',
+                'level' => 400,
+                'status' => 'ACTIVE'
+            ],
+            [
+                'id' => '2',
+                'studentId' => '2',
+                'matricNo' => 'CCHSMT/2021/MLS/009',
+                'firstName' => 'Chioma',
+                'lastName' => 'Egwu',
+                'name' => 'Chioma Blessing Egwu',
+                'email' => 'c.egwu@crestoakcollege.com.ng',
+                'department' => 'Department of Medical Laboratory Science',
+                'departmentName' => 'Department of Medical Laboratory Science',
+                'level' => 400,
+                'status' => 'ACTIVE'
+            ],
+            [
+                'id' => '3',
+                'studentId' => '3',
+                'matricNo' => 'CCHSMT/2023/CS/042',
+                'firstName' => 'Kaufman',
+                'lastName' => 'David',
+                'name' => 'Kaufman David',
+                'email' => 'k.david@crestoakcollege.com.ng',
+                'department' => 'Department of Computer Science & IT',
+                'departmentName' => 'Department of Computer Science & IT',
+                'level' => 300,
+                'status' => 'ACTIVE'
+            ],
+            [
+                'id' => '4',
+                'studentId' => '4',
+                'matricNo' => 'CCHSMT/2022/PH/019',
+                'firstName' => 'Farida',
+                'lastName' => 'Abubakar',
+                'name' => 'Farida Abubakar',
+                'email' => 'f.abubakar@crestoakcollege.com.ng',
+                'department' => 'Department of Community Health Sciences',
+                'departmentName' => 'Department of Community Health Sciences',
+                'level' => 300,
+                'status' => 'ACTIVE'
+            ],
+            [
+                'id' => '5',
+                'studentId' => '5',
+                'matricNo' => 'CCHSMT/2021/NUR/002',
+                'firstName' => 'Janet',
+                'lastName' => 'Solomon',
+                'name' => 'Solomon Janet Kemi',
+                'email' => 'j.solomon@crestoakcollege.com.ng',
+                'department' => 'Department of Nursing Sciences',
+                'departmentName' => 'Department of Nursing Sciences',
+                'level' => 400,
+                'status' => 'ACTIVE'
+            ]
+        ];
+    }
     $conn->close();
 
     $departments = [
