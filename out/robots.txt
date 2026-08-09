@@ -1,0 +1,9 @@
+User-Agent: *
+Allow: /
+Disallow: /admin/*
+Disallow: /portal/*
+Disallow: /staff/*
+Disallow: /bursary/*
+Disallow: /api/*
+
+Sitemap: https://crestoakcollege.com.ng/sitemap.xml

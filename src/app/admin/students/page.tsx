@@ -20,10 +20,11 @@ export default function StudentsPage() {
       .then((res) => res.json())
       .then((data) => {
         if (!isMounted) return;
-        if (Array.isArray(data)) {
-          setStudents(data);
-        } else if (data?.students && Array.isArray(data.students)) {
-          setStudents(data.students);
+        const list = Array.isArray(data)
+          ? data
+          : (data?.students || data?.data || data?.records || data?.items || data?.list || []);
+        if (Array.isArray(list)) {
+          setStudents(list);
         }
         if (data?.departments && Array.isArray(data.departments)) setDepartments(data.departments);
         if (data?.programmes && Array.isArray(data.programmes)) setProgrammes(data.programmes);

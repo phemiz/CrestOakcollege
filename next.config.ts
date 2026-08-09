@@ -6,7 +6,9 @@ const nextConfig: NextConfig = {
   images: {
     unoptimized: true,
   },
-  turbopack: {},
+  turbopack: {
+    root: __dirname,
+  },
   experimental: {
     cpus: 1,
     workerThreads: false,
