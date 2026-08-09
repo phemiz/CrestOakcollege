@@ -1,0 +1,21 @@
+[
+    {
+        "id": "178622480920",
+        "studentId": "STU-0001",
+        "session": "2025\/2026",
+        "semester": "First Semester",
+        "courses": [
+            {
+                "code": "NUR101",
+                "title": "Foundations of Nursing",
+                "units": 3
+            },
+            {
+                "code": "CHE102",
+                "title": "Community Health Care",
+                "units": 2
+            }
+        ],
+        "registeredAt": "2026-08-08 23:33:29"
+    }
+]

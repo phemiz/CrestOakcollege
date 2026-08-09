@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Montserrat, Inter } from "next/font/google";
 import dynamic from "next/dynamic";
 import { SessionProvider } from "@/components/providers/session-provider";
+import { ChunkErrorRecovery } from "@/components/providers/ChunkErrorRecovery";
 import { JsonLd } from "@/components/JsonLd";
 import { Analytics } from "@/components/Analytics";
 import "./globals.css";
@@ -101,6 +102,7 @@ export default function RootLayout({
         <link rel="apple-touch-icon" href="/apple-icon.png" sizes="180x180" />
       </head>
       <body className="min-h-full flex flex-col font-sans bg-white text-slate-900">
+        <ChunkErrorRecovery />
         <JsonLd />
         <Analytics />
         <SessionProvider>
@@ -111,3 +113,4 @@ export default function RootLayout({
     </html>
   );
 }
+

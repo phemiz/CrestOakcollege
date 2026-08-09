@@ -1,0 +1,79 @@
+[
+    {
+        "id": 8181,
+        "studentId": "STU-6863",
+        "matricNo": "CCHMS\/2026\/NUR\/6863",
+        "firstName": "Kemi",
+        "lastName": "Adeleke",
+        "email": "k.adeleke@student.crestoakcollege.com.ng",
+        "department": "Department of Nursing Sciences",
+        "level": 100,
+        "cgpa": 0,
+        "status": "ACTIVE"
+    },
+    {
+        "id": 5,
+        "studentId": "STU-0005",
+        "matricNo": "CCHMS\/2026\/SCS\/0545",
+        "firstName": "Michael",
+        "lastName": "Taz",
+        "email": "get2phemi96@gmail.com",
+        "department": "Health Sciences",
+        "level": 300,
+        "cgpa": 0,
+        "status": "ACTIVE",
+        "createdAt": "2026-08-08 16:44:20"
+    },
+    {
+        "id": 1,
+        "studentId": "STU-0001",
+        "matricNo": "CCHSMT\/2026\/001",
+        "firstName": "Adebayo",
+        "lastName": "Okonkwo",
+        "email": "a.okonkwo@student.crestoakcollege.com.ng",
+        "department": "Community Health (CHEW)",
+        "level": 200,
+        "cgpa": 3.65,
+        "status": "ACTIVE",
+        "createdAt": "2026-01-15 09:30:00"
+    },
+    {
+        "id": 2,
+        "studentId": "STU-0002",
+        "matricNo": "CCHSMT\/2026\/002",
+        "firstName": "Fatima",
+        "lastName": "Bello",
+        "email": "f.bello@student.crestoakcollege.com.ng",
+        "department": "Computer Science",
+        "level": 100,
+        "cgpa": 3.8,
+        "status": "ACTIVE",
+        "createdAt": "2026-02-10 11:20:00"
+    },
+    {
+        "id": 3,
+        "studentId": "STU-0003",
+        "matricNo": "CCHSMT\/2026\/003",
+        "firstName": "Chinedu",
+        "lastName": "Eze",
+        "email": "c.eze@student.crestoakcollege.com.ng",
+        "department": "Medical Laboratory Science",
+        "level": 300,
+        "cgpa": 3.42,
+        "status": "ACTIVE",
+        "createdAt": "2026-03-01 14:45:00"
+    },
+    {
+        "id": 4,
+        "studentId": "STU-0004",
+        "matricNo": "CCHSMT\/2026\/004",
+        "firstName": "Blessing",
+        "lastName": "Adeyemi",
+        "email": "b.adeyemi@student.crestoakcollege.com.ng",
+        "department": "Business Administration",
+        "level": 100,
+        "cgpa": 3.55,
+        "status": "ACTIVE",
+        "createdAt": "2026-03-12 16:10:00"
+    }
+]

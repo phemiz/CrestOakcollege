@@ -194,7 +194,9 @@ try {
             $redirectUrl = '/admin/dashboard/';
         } elseif (in_array($role, ['BURSARY', 'BURSAR'])) {
             $redirectUrl = '/bursary/dashboard/';
-        } elseif (in_array($role, ['LECTURER', 'HOD', 'DEAN', 'REGISTRAR', 'STAFF'])) {
+        } elseif (in_array($role, ['REGISTRAR'])) {
+            $redirectUrl = '/registrar/dashboard';
+        } elseif (in_array($role, ['LECTURER', 'HOD', 'DEAN', 'STAFF'])) {
             $redirectUrl = '/staff/dashboard/';
         }
 

@@ -11,9 +11,30 @@ export default function Error({
   error: Error & { digest?: string };
   reset: () => void;
 }) {
+  const isChunkError =
+    error?.name === "ChunkLoadError" ||
+    error?.message?.includes("ChunkLoadError") ||
+    error?.message?.includes("Loading chunk") ||
+    error?.message?.includes("Failed to load chunk");
+
   useEffect(() => {
     console.error("Application error boundary caught:", error);
-  }, [error]);
+    if (isChunkError) {
+      const hasReloaded = sessionStorage.getItem("chunk_boundary_reload");
+      if (!hasReloaded) {
+        sessionStorage.setItem("chunk_boundary_reload", "true");
+        window.location.reload();
+      }
+    }
+  }, [error, isChunkError]);
+
+  const handleRetry = () => {
+    if (isChunkError) {
+      window.location.reload();
+    } else {
+      reset();
+    }
+  };
 
   return (
     <div className="min-h-screen flex flex-col items-center justify-center bg-slate-50 font-sans p-4">
@@ -23,18 +44,22 @@ export default function Error({
         </div>
         <div className="space-y-2">
           <span className="text-xs font-bold uppercase tracking-widest text-amber-600">Application Error</span>
-          <h1 className="text-2xl font-display font-extrabold text-slate-900">Something Went Wrong</h1>
+          <h1 className="text-2xl font-display font-extrabold text-slate-900">
+            {isChunkError ? "Updating Application Assets..." : "Something Went Wrong"}
+          </h1>
           <p className="text-xs text-slate-500 font-medium leading-relaxed">
-            An unexpected client-side error occurred. You can retry loading the component or return to the main dashboard.
+            {isChunkError
+              ? "A new version of the website is available. Click below to refresh your session."
+              : "An unexpected client-side error occurred. You can retry loading the component or return to the main dashboard."}
           </p>
         </div>
         <div className="pt-4 flex flex-col sm:flex-row gap-3 justify-center">
           <button
-            onClick={() => reset()}
+            onClick={handleRetry}
             className="inline-flex items-center justify-center gap-2 bg-brand-blue hover:bg-brand-blue-dark text-white font-bold px-5 py-3 rounded-xl text-xs transition-colors shadow-sm cursor-pointer"
           >
             <RefreshCw className="w-4 h-4" />
-            <span>Try Again</span>
+            <span>{isChunkError ? "Reload Page" : "Try Again"}</span>
           </button>
           <Link
             href="/"
@@ -48,3 +73,4 @@ export default function Error({
     </div>
   );
 }
+
