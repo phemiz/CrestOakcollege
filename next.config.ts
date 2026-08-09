@@ -7,6 +7,10 @@ const nextConfig: NextConfig = {
     unoptimized: true,
   },
   turbopack: {},
+  experimental: {
+    cpus: 1,
+    workerThreads: false,
+  },
   webpack: (config, { isServer }) => {
     if (!isServer) {
       config.resolve.fallback = {
