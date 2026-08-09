@@ -10,28 +10,24 @@ DirectoryIndex index.html index.php
   RewriteEngine On
   RewriteBase /
 
-  # 1. Direct match for _next static assets
-  RewriteCond %{DOCUMENT_ROOT}/_next/$1 -f
-  RewriteRule ^_next/(.*)$ /_next/$1 [L]
-
-  # 2. Serve existing files or directories directly
-  RewriteCond %{REQUEST_FILENAME} -f [OR]
-  RewriteCond %{REQUEST_FILENAME} -d
+  # 1. Serve existing files directly (images, js, css, php, _next assets)
+  RewriteCond %{REQUEST_FILENAME} -f
   RewriteRule ^ - [L]
 
-  # 3. Serve index.html for directory requests (trailing slash)
-  RewriteCond %{DOCUMENT_ROOT}/$1/index.html -f
-  RewriteRule ^(.*)/$ $1/index.html [L]
+  # 2. Serve index.html for directory requests (e.g. /login/, /admin/dashboard/)
+  RewriteCond %{REQUEST_FILENAME} -d
+  RewriteCond %{REQUEST_FILENAME}/index.html -f
+  RewriteRule ^(.*)$ $1/index.html [L]
 
-  # 4. Serve index.html for paths matching folder names (no trailing slash)
+  # 3. Serve index.html for paths matching folder names (e.g. /login -> /login/index.html)
   RewriteCond %{DOCUMENT_ROOT}/$1/index.html -f
   RewriteRule ^(.*)$ $1/index.html [L]
 
-  # 5. Try adding .html extension if file exists
+  # 4. Try adding .html extension if file exists
   RewriteCond %{DOCUMENT_ROOT}/$1.html -f
   RewriteRule ^(.*)$ $1.html [L]
 
-  # 6. Fallback to 404.html if file or directory does not exist
+  # 5. Fallback to 404.html if file or directory does not exist
   RewriteCond %{REQUEST_FILENAME} !-f
   RewriteCond %{REQUEST_FILENAME} !-d
   RewriteCond %{DOCUMENT_ROOT}/404.html -f
@@ -39,15 +35,16 @@ DirectoryIndex index.html index.php
 </IfModule>
 
 <IfModule mod_headers.c>
+  # Never cache HTML files or JSON endpoints
   <FilesMatch "\.(html|htm|json)$">
     Header set Cache-Control "no-cache, no-store, must-revalidate"
     Header set Pragma "no-cache"
     Header set Expires 0
   </FilesMatch>
 
+  # Cache static JS/CSS chunks with revalidation
   <FilesMatch "\.(js|css)$">
-    Header set Access-Control-Allow-Origin "*"
-    Header set Cache-Control "max-age=31536000, public"
+    Header set Cache-Control "max-age=0, must-revalidate"
   </FilesMatch>
 
   <FilesMatch "\.(ttf|ttc|otf|eot|woff|woff2|font.css|css|png|jpg|jpeg|svg|webp|ico)$">
