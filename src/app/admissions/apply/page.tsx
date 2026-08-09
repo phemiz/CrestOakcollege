@@ -76,7 +76,7 @@ export default function ApplyPage() {
     ] as SubjectGrade[],
 
     // Step 3: Course & Department Selection
-    programLevel: "National Diploma (ND)",
+    programLevel: "Bachelor of Science (B.Sc.)",
     faculty: "School of Community Health Sciences",
     course: "Community Health Extension Worker (CHEW)",
     studyMode: "Full-Time",
@@ -792,7 +792,8 @@ export default function ApplyPage() {
                           onChange={handleInputChange}
                           className="w-full px-4 py-3 bg-slate-50 border border-slate-300 rounded-xl text-slate-900 focus:bg-white focus:outline-none focus:border-brand-blue text-xs font-semibold"
                         >
-                          <option value="National Diploma (ND)">National Diploma (ND - 2 Years)</option>
+                          <option value="Bachelor of Science (B.Sc.)">Bachelor of Science (B.Sc. - 4 Years / Direct Entry)</option>
+<option value="National Diploma (ND)">National Diploma (ND - 2 Years)</option>
                           <option value="Higher National Diploma (HND)">Higher National Diploma (HND - 2 Years)</option>
                           <option value="Professional Diploma">Professional Diploma (3 Years)</option>
                           <option value="Certificate Course">Certificate Program (1 Year)</option>
