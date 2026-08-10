@@ -3,6 +3,9 @@
 import React, { useState } from "react";
 import Link from "next/link";
 import { Header } from "@/components/layout/header";
+import NaijaStates from "naija-state-local-government";
+
+
 import { Footer } from "@/components/layout/footer";
 import {
   User,
@@ -32,6 +35,44 @@ interface SubjectGrade {
   subject: string;
   grade: string;
 }
+
+const FACULTY_DEPARTMENTS: Record<string, string[]> = {
+  "Faculty of Allied Health Sciences": [
+    "Nursing Science",
+    "Medical Laboratory Science",
+    "Public Health",
+    "Physiology",
+  ],
+  "Faculty of Arts": ["English Language", "Theatre Arts"],
+  "Faculty of Law": ["Law"],
+  "Faculty of Social and Management Sciences": [
+    "Banking and Finance",
+    "Business Administration",
+    "Criminology and Security Studies",
+    "Entrepreneurship",
+    "Hospitality and Tourism Management",
+    "International Relations",
+    "Marketing",
+    "Political Science",
+    "Public Administration",
+    "Psychology",
+    "Sociology",
+    "Transport Management",
+    "Accounting",
+  ],
+  "Faculty of Agricultural Sciences": ["Agricultural Extension and Rural Development"],
+  "Faculty of Natural and Applied Sciences": [
+    "Biochemistry",
+    "Chemistry",
+    "Microbiology",
+    "Computer Science",
+    "Mathematics",
+    "Physics",
+    "Physics with Electronics",
+  ],
+  "Faculty of Education": ["Educational Management", "Library and Information Science"],
+};
+
 
 export default function ApplyPage() {
   const [currentStep, setCurrentStep] = useState<1 | 2 | 3 | 4>(1);
@@ -77,8 +118,8 @@ export default function ApplyPage() {
 
     // Step 3: Course & Department Selection
     programLevel: "Bachelor of Science (B.Sc.)",
-    faculty: "School of Community Health Sciences",
-    course: "Community Health Extension Worker (CHEW)",
+    faculty: "Faculty of Allied Health Sciences",
+    course: "Nursing Science",
     studyMode: "Full-Time",
 
     // Step 4: Declaration
@@ -95,6 +136,24 @@ export default function ApplyPage() {
     } else {
       setFormData((prev) => ({ ...prev, [name]: value }));
     }
+    setErrorMessage(null);
+  };
+
+  const handleStateChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const newState = e.target.value;
+    setFormData((prev) => ({ ...prev, stateOfOrigin: newState, lga: "" }));
+    setErrorMessage(null);
+  };
+
+
+  const handleFacultyChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const newFaculty = e.target.value;
+    const departments = FACULTY_DEPARTMENTS[newFaculty] || [];
+    setFormData((prev) => ({
+      ...prev,
+      faculty: newFaculty,
+      course: departments[0] || "",
+    }));
     setErrorMessage(null);
   };
 
@@ -569,29 +628,41 @@ export default function ApplyPage() {
                         <label className="text-[11px] uppercase font-bold text-slate-700 tracking-wider block mb-1.5">
                           State of Origin *
                         </label>
-                        <input
-                          type="text"
+                        <select
                           required
                           name="stateOfOrigin"
                           value={formData.stateOfOrigin}
-                          onChange={handleInputChange}
-                          placeholder="e.g. Oyo State"
-                          className="w-full px-4 py-3 bg-slate-50 border border-slate-300 rounded-xl text-slate-900 placeholder-slate-400 focus:bg-white focus:outline-none focus:border-brand-blue focus:ring-2 focus:ring-brand-blue/20 text-xs font-semibold"
-                        />
+                          onChange={handleStateChange}
+                          className="w-full px-4 py-3 bg-slate-50 border border-slate-300 rounded-xl text-slate-900 focus:bg-white focus:outline-none focus:border-brand-blue focus:ring-2 focus:ring-brand-blue/20 text-xs font-semibold"
+                        >
+                          <option value="">Select State</option>
+                          {NaijaStates.states().map((st: string) => (
+                            <option key={st} value={st}>{st}</option>
+                          ))}
+                        </select>
                       </div>
 
                       <div>
                         <label className="text-[11px] uppercase font-bold text-slate-700 tracking-wider block mb-1.5">
                           L.G.A of Origin
                         </label>
-                        <input
-                          type="text"
+                        <select
                           name="lga"
                           value={formData.lga}
                           onChange={handleInputChange}
-                          placeholder="e.g. Oyo West"
-                          className="w-full px-4 py-3 bg-slate-50 border border-slate-300 rounded-xl text-slate-900 placeholder-slate-400 focus:bg-white focus:outline-none focus:border-brand-blue focus:ring-2 focus:ring-brand-blue/20 text-xs font-semibold"
-                        />
+                          disabled={!formData.stateOfOrigin}
+                          className="w-full px-4 py-3 bg-slate-50 border border-slate-300 rounded-xl text-slate-900 focus:bg-white focus:outline-none focus:border-brand-blue focus:ring-2 focus:ring-brand-blue/20 text-xs font-semibold disabled:opacity-50"
+                        >
+                          <option value="">
+                            {formData.stateOfOrigin ? "Select L.G.A" : "Select State first"}
+                          </option>
+                          {(formData.stateOfOrigin
+                            ? (NaijaStates.lgas(formData.stateOfOrigin) as { lgas: string[] }).lgas || []
+                            : []
+                          ).map((l: string) => (
+                            <option key={l} value={l}>{l}</option>
+                          ))}
+                        </select>
                       </div>
                     </div>
 
@@ -822,27 +893,15 @@ export default function ApplyPage() {
                         School / Faculty *
                       </label>
                       <select
-                        name="faculty"
-                        value={formData.faculty}
-                        onChange={handleInputChange}
-                        className="w-full px-4 py-3 bg-slate-50 border border-slate-300 rounded-xl text-slate-900 focus:bg-white focus:outline-none focus:border-brand-blue text-xs font-semibold"
-                      >
-                        <option value="School of Community Health Sciences">
-                          School of Community Health Sciences
-                        </option>
-                        <option value="School of Medical Laboratory Science">
-                          School of Medical Laboratory Science
-                        </option>
-                        <option value="School of Pharmacy & Pharmaceutical Tech">
-                          School of Pharmacy & Pharmaceutical Tech
-                        </option>
-                        <option value="School of Health Information Management">
-                          School of Health Information Management
-                        </option>
-                        <option value="School of Environmental & Public Health">
-                          School of Environmental & Public Health
-                        </option>
-                      </select>
+                          name="faculty"
+                          value={formData.faculty}
+                          onChange={handleFacultyChange}
+                          className="w-full px-4 py-3 bg-slate-50 border border-slate-300 rounded-xl text-slate-900 focus:bg-white focus:outline-none focus:border-brand-blue text-xs font-semibold"
+                        >
+                          {Object.keys(FACULTY_DEPARTMENTS).map((fac) => (
+                            <option key={fac} value={fac}>{fac}</option>
+                          ))}
+                        </select>
                     </div>
 
                     <div>
@@ -850,29 +909,15 @@ export default function ApplyPage() {
                         Choice of Course / Department *
                       </label>
                       <select
-                        name="course"
-                        value={formData.course}
-                        onChange={handleInputChange}
-                        className="w-full px-4 py-3 bg-slate-50 border border-slate-300 rounded-xl text-brand-blue-dark focus:bg-white focus:outline-none focus:border-brand-blue text-xs font-bold"
-                      >
-                        <option value="Community Health Extension Worker (CHEW)">
-                          Community Health Extension Worker (CHEW)
-                        </option>
-                        <option value="Junior Community Health Extension Worker (JCHEW)">
-                          Junior Community Health Extension Worker (JCHEW)
-                        </option>
-                        <option value="Medical Laboratory Technician (MLT)">
-                          Medical Laboratory Technician (MLT)
-                        </option>
-                        <option value="Pharmacy Technician">Pharmacy Technician</option>
-                        <option value="Health Information Management (HIM)">
-                          Health Information Management (HIM)
-                        </option>
-                        <option value="Environmental Health Technology">
-                          Environmental Health Technology
-                        </option>
-                        <option value="Dental Surgery Technician">Dental Surgery Technician</option>
-                      </select>
+                          name="course"
+                          value={formData.course}
+                          onChange={handleInputChange}
+                          className="w-full px-4 py-3 bg-slate-50 border border-slate-300 rounded-xl text-brand-blue-dark focus:bg-white focus:outline-none focus:border-brand-blue text-xs font-bold"
+                        >
+                          {(FACULTY_DEPARTMENTS[formData.faculty] || []).map((dept) => (
+                            <option key={dept} value={dept}>{dept}</option>
+                          ))}
+                        </select>
                     </div>
                   </div>
                 )}
