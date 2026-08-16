@@ -486,7 +486,10 @@ export default function StudentsClient({
       };
       const res = await fetch("/api/admin/students.php", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          "X-CSRF-Token": "crestoak-admin-csrf"
+        },
         body: JSON.stringify(payload)
       });
       const data = await res.json();
