@@ -46,7 +46,6 @@ next-env.d.ts
 /staff/
 /bursary/
 /portal/
-/api/
 /admissions/
 /about/
 /academics/
@@ -65,3 +64,18 @@ public/api/config.php
 api/config.php
 
 config.php
+
+# backup/temp files (should not be version controlled)
+*.bak
+*.bak-*
+*.bak2-*
+*.bak3-*
+*.bak4-*
+*.save
+*.save.*
+*.old
+*.old-*
+*.before-*
+*.simple-version-*
+*_debug.log
+*.bak.*
