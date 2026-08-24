@@ -293,7 +293,11 @@ export default function StudentsClient({
   useEffect(() => {
     const fetchStudentsData = async () => {
       try {
-        const response = await fetch('/api/admin/students.php?t=' + Date.now());
+        const response = await fetch('/api/admin/students.php?t=' + Date.now(), {
+          headers: {
+            "Authorization": `Bearer ${localStorage.getItem("sessionToken")}`
+          }
+        });
         const data = await response.json();
 
         const rawList = Array.isArray(data)
@@ -488,7 +492,8 @@ export default function StudentsClient({
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          "X-CSRF-Token": "crestoak-admin-csrf"
+          "X-CSRF-Token": localStorage.getItem("csrfToken") || "",
+          "Authorization": `Bearer ${localStorage.getItem("sessionToken")}`
         },
         body: JSON.stringify(payload)
       });
@@ -497,7 +502,11 @@ export default function StudentsClient({
       if (data.success && data.persistenceSuccess !== false) {
         // Re-fetch the student list directly from the GET endpoint (/api/admin/students.php) upon successful creation to confirm database persistence
         try {
-          const getRes = await fetch("/api/admin/students.php?t=" + Date.now());
+          const getRes = await fetch("/api/admin/students.php?t=" + Date.now(), {
+            headers: {
+              "Authorization": `Bearer ${localStorage.getItem("sessionToken")}`
+            }
+          });
           const getData = await getRes.json();
           if (getData.students && Array.isArray(getData.students)) {
             setStudents(getData.students.map(normalizeStudent));
@@ -550,7 +559,10 @@ export default function StudentsClient({
     try {
       const res = await fetch("/api/admin/students.php", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${localStorage.getItem("sessionToken")}`
+        },
         body: JSON.stringify({
           action: "password_reset",
           id: resetPasswordStudent.id,
@@ -587,7 +599,10 @@ export default function StudentsClient({
     try {
       const res = await fetch("/api/admin/students.php", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${localStorage.getItem("sessionToken")}`
+        },
         body: JSON.stringify({
           action: "academic_override",
           id: overrideStudent.id,
@@ -632,7 +647,10 @@ export default function StudentsClient({
     try {
       const res = await fetch("/api/admin/students.php", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${localStorage.getItem("sessionToken")}`
+        },
         body: JSON.stringify({
           action: "toggle_hold",
           id: holdStudent.id,
@@ -678,7 +696,10 @@ export default function StudentsClient({
     try {
       const res = await fetch("/api/admin/students.php", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${localStorage.getItem("sessionToken")}`
+        },
         body: JSON.stringify({
           action: "password_reset",
           id: student.id,
@@ -705,7 +726,10 @@ export default function StudentsClient({
     try {
       const res = await fetch("/api/admin/students.php", {
         method: "DELETE",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${localStorage.getItem("sessionToken")}`
+        },
         body: JSON.stringify({ id })
       });
       const data = await res.json();
