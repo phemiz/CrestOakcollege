@@ -87,6 +87,9 @@ export function SessionProvider({ children }: { children: React.ReactNode }) {
             localStorage.setItem("user", JSON.stringify(authUser));
             localStorage.setItem("isAuthenticated", "true");
             localStorage.setItem("userRole", authUser.role);
+                if (json.user.csrf) {
+                    localStorage.setItem("csrfToken", json.user.csrf);
+                }
           }
           return;
         }
@@ -121,6 +124,7 @@ export function SessionProvider({ children }: { children: React.ReactNode }) {
       localStorage.removeItem("userRole");
       localStorage.removeItem("cchsmt_user_session");
       localStorage.removeItem("crestoak_session");
+      localStorage.removeItem("sessionToken");
     }
 
     document.cookie = "cchsmt_user_session=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT";

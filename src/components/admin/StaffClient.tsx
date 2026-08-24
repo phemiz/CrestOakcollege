@@ -193,8 +193,8 @@ export default function StaffClient({ staffList: initialStaff, departments: rawD
       try {
         const res = await fetch("/api/admin/staff.php?_t=" + Date.now(), {
           headers: {
-            "Authorization": "Bearer admin-session",
-            "X-CSRF-Token": "crestoak-admin-csrf"
+            "Authorization": `Bearer ${localStorage.getItem("sessionToken")}`,
+            "X-CSRF-Token": localStorage.getItem("csrfToken") || ""
           }
         });
         if (res.ok) {
@@ -431,8 +431,8 @@ export default function StaffClient({ staffList: initialStaff, departments: rawD
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          "Authorization": "Bearer admin-session",
-          "X-CSRF-Token": "crestoak-admin-csrf"
+          "Authorization": `Bearer ${localStorage.getItem("sessionToken")}`,
+          "X-CSRF-Token": localStorage.getItem("csrfToken") || ""
         },
         body: JSON.stringify(payload)
       });
@@ -472,8 +472,8 @@ export default function StaffClient({ staffList: initialStaff, departments: rawD
         try {
           const getRes = await fetch("/api/admin/staff.php?t=" + Date.now(), {
             headers: {
-              "Authorization": "Bearer admin-session",
-              "X-CSRF-Token": "crestoak-admin-csrf"
+              "Authorization": `Bearer ${localStorage.getItem("sessionToken")}`,
+              "X-CSRF-Token": localStorage.getItem("csrfToken") || ""
             }
           });
           const getData = await getRes.json();
@@ -527,8 +527,8 @@ export default function StaffClient({ staffList: initialStaff, departments: rawD
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          "Authorization": "Bearer admin-session",
-          "X-CSRF-Token": "crestoak-admin-csrf"
+          "Authorization": `Bearer ${localStorage.getItem("sessionToken")}`,
+          "X-CSRF-Token": localStorage.getItem("csrfToken") || ""
         },
         body: JSON.stringify({
           action: "password_reset",
@@ -579,8 +579,8 @@ export default function StaffClient({ staffList: initialStaff, departments: rawD
         method: "DELETE",
         headers: {
           "Content-Type": "application/json",
-          "Authorization": "Bearer admin-session",
-          "X-CSRF-Token": "crestoak-admin-csrf"
+          "Authorization": `Bearer ${localStorage.getItem("sessionToken")}`,
+          "X-CSRF-Token": localStorage.getItem("csrfToken") || ""
         },
         body: JSON.stringify({ id })
       });

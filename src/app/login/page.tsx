@@ -307,6 +307,9 @@ function LoginForm() {
           localStorage.setItem("userRole", data.user.role || roleContext);
           localStorage.setItem("cchsmt_user_session", JSON.stringify(data.user));
           localStorage.setItem("crestoak_session", JSON.stringify(data.user));
+          if (data.token) {
+            localStorage.setItem("sessionToken", data.token);
+          }
         }
 
         const targetUrl = data.redirectUrl || data.redirect || gatewayConfig.redirectUrl || "/portal/dashboard";

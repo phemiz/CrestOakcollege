@@ -127,6 +127,9 @@ function RegistrarLoginForm() {
           localStorage.setItem("userRole", "REGISTRAR");
           localStorage.setItem("cchsmt_user_session", JSON.stringify(userObj));
           localStorage.setItem("crestoak_session", JSON.stringify(userObj));
+          if (data.token) {
+            localStorage.setItem("sessionToken", data.token);
+          }
         }
 
         // Trigger context update if available

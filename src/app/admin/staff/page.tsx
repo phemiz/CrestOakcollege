@@ -13,8 +13,8 @@ export default function StaffPage() {
     let isMounted = true;
     fetch('/api/admin/staff.php', {
       headers: {
-        'Authorization': 'Bearer admin-session',
-        'X-CSRF-Token': 'crestoak-admin-csrf'
+        'Authorization': `Bearer ${localStorage.getItem('sessionToken') || ''}`,
+        'X-CSRF-Token': localStorage.getItem('csrfToken') || ''
       }
     })
       .then((res) => res.json())
