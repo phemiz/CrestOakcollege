@@ -1,4 +1,21 @@
 <?php
+error_reporting(E_ALL);
+ini_set('display_errors', 1);
+ini_set('log_errors', 1);
+ini_set('error_log', __DIR__ . '/students_debug.log');
+register_shutdown_function(function () {
+    $e = error_get_last();
+    if ($e !== null) {
+        file_put_contents(
+            __DIR__ . '/students_debug.log',
+            date('Y-m-d H:i:s') . ' FATAL: ' . print_r($e, true) . "\n",
+            FILE_APPEND
+        );
+    }
+});
+
+error_reporting(E_ALL);
+ini_set('display_errors', 1);
 require_once __DIR__ . '/db.php';
 require_once __DIR__ . '/../auth/session.php';
 
@@ -14,7 +31,7 @@ $method = $_SERVER['REQUEST_METHOD'];
 
 if ($method === 'GET') {
     $students = [];
-    $res = $conn->query("SELECT * FROM students WHERE isDeleted = 0 OR isDeleted IS NULL ORDER BY id DESC");
+    $res = $conn->query("SELECT *, middle_name AS middleName, phone_number AS phoneNumber, matric_no AS matricNo FROM students WHERE isDeleted = 0 OR isDeleted IS NULL ORDER BY id DESC");
     if ($res) {
         while ($row = $res->fetch_assoc()) {
             $fullName = trim(($row['first_name'] ?? '') . ' ' . ($row['last_name'] ?? '')) ?: ($row['matric_no'] ?? 'Student');
@@ -23,9 +40,11 @@ if ($method === 'GET') {
                 'studentId' => (string)$row['id'],
                 'matricNo' => $row['matric_no'] ?? '',
                 'firstName' => $row['first_name'] ?? '',
+                'middleName' => $row['middle_name'] ?? '',
                 'lastName' => $row['last_name'] ?? '',
                 'name' => $fullName,
                 'email' => $row['email'] ?? '',
+                'phoneNumber' => $row['phone_number'] ?? '',
                 'department' => $row['department_name'] ?? 'General Studies',
                 'departmentName' => $row['department_name'] ?? 'General Studies',
                 'level' => (int)($row['level'] ?? 100),
@@ -136,28 +155,101 @@ if ($method === 'POST' || $method === 'PUT') {
     $rawInput = file_get_contents('php://input');
     $input = json_decode($rawInput, true) ?? $_POST ?? [];
 
+    $studentId = (int)($input['id'] ?? 0);
     $firstName = trim($input['firstName'] ?? $input['name'] ?? '');
+    $middleName = trim($input['middleName'] ?? '');
     $lastName = trim($input['lastName'] ?? '');
     $email = trim($input['email'] ?? '');
+    $phoneNumber = trim($input['phoneNumber'] ?? '');
     $matricNo = trim($input['matricNo'] ?? 'COH/2026/' . rand(100, 999));
     $department = trim($input['department'] ?? $input['departmentName'] ?? 'General Studies');
-    $level = (int)($input['level'] ?? 100);
+    $level = trim($input['level'] ?? '100 Level');
+
+    if ($studentId > 0) {
+        if (!empty($input['password'])) {
+            $passwordHash = password_hash(trim($input['password']), PASSWORD_BCRYPT);
+            $stmt = $conn->prepare("UPDATE students SET first_name=?, middle_name=?, last_name=?, email=?, phone_number=?, matric_no=?, department_name=?, level=?, password_hash=? WHERE id=?");
+            if ($stmt) {
+                $stmt->bind_param("sssssssssi", $firstName, $middleName, $lastName, $email, $phoneNumber, $matricNo, $department, $level, $passwordHash, $studentId);
+                try {
+                    $stmt->execute();
+                } catch (mysqli_sql_exception $e) {
+                    $stmt->close();
+                    $conn->close();
+                    http_response_code($e->getCode() === 1062 ? 409 : 500);
+                    $msg = $e->getCode() === 1062
+                        ? 'A student with this email or matric number already exists.'
+                        : 'Failed to update student record.';
+                    error_log('students.php UPDATE error: ' . $e->getMessage());
+                    echo json_encode(['success' => false, 'message' => $msg], JSON_UNESCAPED_SLASHES);
+                    exit();
+                }
+                $stmt->close();
+            }
+        } else {
+            $stmt = $conn->prepare("UPDATE students SET first_name=?, middle_name=?, last_name=?, email=?, phone_number=?, matric_no=?, department_name=?, level=? WHERE id=?");
+            if ($stmt) {
+                $stmt->bind_param("ssssssssi", $firstName, $middleName, $lastName, $email, $phoneNumber, $matricNo, $department, $level, $studentId);
+                try {
+                    $stmt->execute();
+                } catch (mysqli_sql_exception $e) {
+                    $stmt->close();
+                    $conn->close();
+                    http_response_code($e->getCode() === 1062 ? 409 : 500);
+                    $msg = $e->getCode() === 1062
+                        ? 'A student with this email or matric number already exists.'
+                        : 'Failed to update student record.';
+                    error_log('students.php UPDATE error: ' . $e->getMessage());
+                    echo json_encode(['success' => false, 'message' => $msg], JSON_UNESCAPED_SLASHES);
+                    exit();
+                }
+                $stmt->close();
+            }
+        }
+        $conn->close();
+
+        echo json_encode([
+            'success' => true,
+            'message' => 'Student record updated successfully.',
+            'id' => (string)$studentId,
+            'matricNo' => $matricNo
+        ], JSON_UNESCAPED_SLASHES);
+        exit();
+    }
+
     $password = trim($input['password'] ?? 'Student@2026');
     $passwordHash = password_hash($password, PASSWORD_BCRYPT);
 
-    $stmt = $conn->prepare("INSERT INTO students (first_name, last_name, email, matric_no, password_hash, department_name, level, isDeleted) VALUES (?, ?, ?, ?, ?, ?, ?, 0)");
-    if ($stmt) {
-        $stmt->bind_param("ssssssi", $firstName, $lastName, $email, $matricNo, $passwordHash, $department, $level);
-        $stmt->execute();
-        $newId = $stmt->insert_id;
-        $stmt->close();
+    $stmt = $conn->prepare("INSERT INTO students (first_name, middle_name, last_name, email, phone_number, matric_no, password_hash, department_name, level, isDeleted) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 0)");
+    if (!$stmt) {
+        $conn->close();
+        http_response_code(500);
+        error_log('students.php INSERT prepare failed: ' . $conn->error);
+        echo json_encode(['success' => false, 'message' => 'Failed to prepare student record.'], JSON_UNESCAPED_SLASHES);
+        exit();
     }
+    $stmt->bind_param("sssssssss", $firstName, $middleName, $lastName, $email, $phoneNumber, $matricNo, $passwordHash, $department, $level);
+    try {
+        $stmt->execute();
+    } catch (mysqli_sql_exception $e) {
+        $stmt->close();
+        $conn->close();
+        http_response_code($e->getCode() === 1062 ? 409 : 500);
+        $msg = $e->getCode() === 1062
+            ? 'A student with this email or matric number already exists.'
+            : 'Failed to save student record.';
+        error_log('students.php INSERT error: ' . $e->getMessage());
+        echo json_encode(['success' => false, 'message' => $msg], JSON_UNESCAPED_SLASHES);
+        exit();
+    }
+    $newId = $stmt->insert_id;
+    $stmt->close();
     $conn->close();
 
     echo json_encode([
         'success' => true,
         'message' => 'Student record saved successfully.',
-        'id' => (string)($newId ?? rand(100, 999)),
+        'id' => (string)$newId,
         'matricNo' => $matricNo
     ], JSON_UNESCAPED_SLASHES);
     exit();
