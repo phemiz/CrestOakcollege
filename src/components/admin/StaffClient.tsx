@@ -271,8 +271,14 @@ export default function StaffClient({ staffList: initialStaff, departments: rawD
     const isAcademic = ["LECTURER", "HOD", "DEAN"].includes(roleName);
     const typePrefix = isAcademic ? "STF" : "ADM";
     const year = "2026";
-    const countInDept = staffList.filter((s) => s.department?.id === deptId || (s.staffNo && s.staffNo.includes(code))).length;
-    const nextIndex = String(countInDept + 1).padStart(3, "0");
+    const matchingStaffNos = staffList
+      .filter((s) => s.department?.id === deptId || (s.staffNo && s.staffNo.includes(code)))
+      .map((s) => {
+        const match = s.staffNo && s.staffNo.match(/(\d+)$/);
+        return match ? parseInt(match[1], 10) : 0;
+      });
+    const highestExisting = matchingStaffNos.length > 0 ? Math.max(...matchingStaffNos) : 0;
+    const nextIndex = String(highestExisting + 1).padStart(3, "0");
     return `${collegePrefix}/${typePrefix}/${year}/${code}/${nextIndex}`;
   };
 
