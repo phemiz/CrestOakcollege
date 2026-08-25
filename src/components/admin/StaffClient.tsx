@@ -1019,6 +1019,7 @@ export default function StaffClient({ staffList: initialStaff, departments: rawD
                 <div className="relative flex items-center">
                   <input
                     type={showPassword ? "text" : "password"}
+                    autoComplete="new-password"
                     required={!editingStaff}
                     value={formData.password}
                     onChange={(e) => setFormData({ ...formData, password: e.target.value })}
@@ -1213,6 +1214,7 @@ export default function StaffClient({ staffList: initialStaff, departments: rawD
               <div className="relative flex items-center">
                 <input
                   type={showResetPassword ? "text" : "password"}
+                  autoComplete="new-password"
                   required
                   value={resetPasswordValue}
                   onChange={(e) => setResetPasswordValue(e.target.value)}
