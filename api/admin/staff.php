@@ -1,4 +1,18 @@
 <?php
+error_reporting(E_ALL);
+ini_set('display_errors', 0);
+ini_set('log_errors', 1);
+ini_set('error_log', __DIR__ . '/staff_debug.log');
+register_shutdown_function(function () {
+    $e = error_get_last();
+    if ($e !== null) {
+        file_put_contents(
+            __DIR__ . '/staff_debug.log',
+            date('Y-m-d H:i:s') . ' FATAL: ' . print_r($e, true) . "\n",
+            FILE_APPEND
+        );
+    }
+});
 require_once __DIR__ . '/db.php';
 require_once __DIR__ . '/../auth/session.php';
 
@@ -14,7 +28,14 @@ $method = $_SERVER['REQUEST_METHOD'];
 
 if ($method === 'GET') {
     $staffList = [];
-    $res = $conn->query("SELECT * FROM staff WHERE isDeleted = 0 OR isDeleted IS NULL ORDER BY id DESC");
+    $deptNameToId = [
+        'Department of Nursing Sciences' => 'dept-health-001',
+        'Department of Medical Laboratory Science' => 'dept-health-002',
+        'Department of Community Health Sciences' => 'dept-health-003',
+        'Department of Business Administration' => 'dept-mgmt-001',
+        'Department of Computer Science & IT' => 'dept-tech-001',
+    ];
+    $res = $conn->query("SELECT *, middle_name AS middleName, phone_number AS phoneNumber FROM staff WHERE isDeleted = 0 OR isDeleted IS NULL ORDER BY id DESC");
     if ($res) {
         while ($row = $res->fetch_assoc()) {
             $fullName = trim(($row['first_name'] ?? '') . ' ' . ($row['last_name'] ?? '')) ?: ($row['username'] ?? 'Staff Member');
@@ -25,11 +46,14 @@ if ($method === 'GET') {
                 'sin' => $row['staff_no'] ?? (string)$row['id'],
                 'name' => $fullName,
                 'firstName' => $row['first_name'] ?? '',
+                'middleName' => $row['middle_name'] ?? '',
                 'lastName' => $row['last_name'] ?? '',
                 'email' => $row['email'] ?? '',
+                'phoneNumber' => $row['phone_number'] ?? '',
                 'username' => $row['username'] ?? '',
                 'role' => strtoupper($row['role_name'] ?? $row['role'] ?? 'LECTURER'),
-                'department' => $row['department_name'] ?? 'General Studies'
+                'department' => $row['department_name'] ?? 'General Studies',
+                'departmentId' => $deptNameToId[$row['department_name'] ?? 'General Studies'] ?? ''
             ];
         }
     }
@@ -58,25 +82,28 @@ if ($method === 'POST' || $method === 'PUT') {
     $input = json_decode($rawInput, true) ?? $_POST ?? [];
 
     $staffId = (int)($input['id'] ?? 0);
+    error_log('STAFF EDIT INPUT: ' . print_r($input, true));
     $firstName = trim($input['firstName'] ?? $input['name'] ?? '');
+    $middleName = trim($input['middleName'] ?? '');
     $lastName = trim($input['lastName'] ?? '');
     $email = trim($input['email'] ?? '');
+    $phoneNumber = trim($input['phoneNumber'] ?? '');
     $username = trim($input['username'] ?? $input['staffNo'] ?? $email);
     $staffNo = trim($input['staffNo'] ?? $input['staffId'] ?? 'STAFF/' . rand(100, 999) . '/' . date('Y'));
     $role = strtoupper(trim($input['role'] ?? 'LECTURER'));
-    $department = trim($input['department'] ?? 'General Studies');
+    $department = trim($input['departmentName'] ?? $input['department'] ?? 'General Studies');
 
     if ($staffId > 0) {
         if (!empty($input['password'])) {
             $passwordHash = password_hash(trim($input['password']), PASSWORD_BCRYPT);
-            $stmt = $conn->prepare("UPDATE staff SET first_name=?, last_name=?, email=?, username=?, staff_no=?, role=?, role_name=?, department_name=?, password_hash=? WHERE id=?");
+            $stmt = $conn->prepare("UPDATE staff SET first_name=?, middle_name=?, last_name=?, email=?, phone_number=?, username=?, staff_no=?, role=?, role_name=?, department_name=?, password_hash=? WHERE id=?");
             if ($stmt) {
-                $stmt->bind_param("sssssssssi", $firstName, $lastName, $email, $username, $staffNo, $role, $role, $department, $passwordHash, $staffId);
+                $stmt->bind_param("sssssssssssi", $firstName, $middleName, $lastName, $email, $phoneNumber, $username, $staffNo, $role, $role, $department, $passwordHash, $staffId);
             }
         } else {
-            $stmt = $conn->prepare("UPDATE staff SET first_name=?, last_name=?, email=?, username=?, staff_no=?, role=?, role_name=?, department_name=? WHERE id=?");
+            $stmt = $conn->prepare("UPDATE staff SET first_name=?, middle_name=?, last_name=?, email=?, phone_number=?, username=?, staff_no=?, role=?, role_name=?, department_name=? WHERE id=?");
             if ($stmt) {
-                $stmt->bind_param("ssssssssi", $firstName, $lastName, $email, $username, $staffNo, $role, $role, $department, $staffId);
+                $stmt->bind_param("ssssssssssi", $firstName, $middleName, $lastName, $email, $phoneNumber, $username, $staffNo, $role, $role, $department, $staffId);
             }
         }
         if (!$stmt) {
@@ -113,7 +140,7 @@ if ($method === 'POST' || $method === 'PUT') {
     $password = trim($input['password'] ?? 'Staff@2026');
     $passwordHash = password_hash($password, PASSWORD_BCRYPT);
 
-    $stmt = $conn->prepare("INSERT INTO staff (first_name, last_name, email, username, staff_no, password_hash, role, role_name, department_name, isDeleted) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 0)");
+    $stmt = $conn->prepare("INSERT INTO staff (first_name, middle_name, last_name, email, phone_number, username, staff_no, password_hash, role, role_name, department_name, isDeleted) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0)");
     if (!$stmt) {
         $conn->close();
         http_response_code(500);
@@ -121,7 +148,7 @@ if ($method === 'POST' || $method === 'PUT') {
         echo json_encode(['success' => false, 'message' => 'Failed to prepare staff record.'], JSON_UNESCAPED_SLASHES);
         exit();
     }
-    $stmt->bind_param("sssssssss", $firstName, $lastName, $email, $username, $staffNo, $passwordHash, $role, $role, $department);
+    $stmt->bind_param("sssssssssss", $firstName, $middleName, $lastName, $email, $phoneNumber, $username, $staffNo, $passwordHash, $role, $role, $department);
     try {
         $stmt->execute();
     } catch (mysqli_sql_exception $e) {

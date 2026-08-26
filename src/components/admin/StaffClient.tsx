@@ -57,6 +57,7 @@ interface StaffItem {
     id: string;
     name: string;
   };
+  departmentId?: string;
   lecturer?: {
     rank: string;
     specialization: string;
@@ -370,7 +371,7 @@ export default function StaffClient({ staffList: initialStaff, departments: rawD
       designation: staff.designation || "",
       status: staff.status || "ACTIVE",
       joiningDate: typeof staff.joiningDate === "string" ? staff.joiningDate.split("T")[0] : new Date().toISOString().split("T")[0],
-      departmentId: staff.department?.id || "",
+      departmentId: staff.departmentId || staff.department?.id || "",
       roleName: (staff.user?.role?.name as any) || "LECTURER",
       rank: staff.lecturer?.rank || "LECTURER_II",
       specialization: staff.lecturer?.specialization || "",
