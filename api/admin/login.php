@@ -11,13 +11,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
 
 try {
     require_once __DIR__ . '/../admin/db.php';
-    
-    if (session_status() === PHP_SESSION_NONE) {
-        ini_set('session.cookie_domain', '.crestoakcollege.com.ng');
-        ini_set('session.cookie_httponly', 1);
-        ini_set('session.cookie_samesite', 'Lax');
-        session_start();
-    }
+    require_once __DIR__ . '/../auth/session.php';
 
     $rawInput = file_get_contents('php://input');
     $input = json_decode($rawInput, true) ?? $_POST;
@@ -62,7 +56,6 @@ try {
         }
     }
 
-
     if ($user) {
         $dbPassword = $user['password'] ?? $user['password_hash'] ?? '';
         $authenticated = false;
@@ -72,19 +65,21 @@ try {
         }
 
         if ($authenticated) {
-            $_SESSION['user'] = [
-                'id' => $user['id'] ?? 1,
-                'username' => $user['username'] ?? $username,
-                'role' => strtoupper($user['role'] ?? 'ADMIN'),
-                'email' => $user['email'] ?? 'admin@crestoakcollege.com.ng'
-            ];
+            $userId = (int)($user['id'] ?? 0);
+            $role = strtoupper($user['role'] ?? 'ADMIN');
 
-            setcookie('admin_session', 'active', time() + 86400 * 7, '/', '.crestoakcollege.com.ng', true, true);
+            $sessionToken = create_session($userId, $role);
 
             echo json_encode([
                 'success' => true,
                 'message' => 'Login successful',
-                'user' => $_SESSION['user']
+                'token' => $sessionToken,
+                'user' => [
+                    'id' => $userId,
+                    'username' => $user['username'] ?? $username,
+                    'role' => $role,
+                    'email' => $user['email'] ?? 'admin@crestoakcollege.com.ng'
+                ]
             ]);
             $conn->close();
             exit();

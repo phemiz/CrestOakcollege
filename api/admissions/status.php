@@ -9,6 +9,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
     exit();
 }
 
+require_once __DIR__ . '/../admin/db.php';
+
 $query = '';
 if ($_SERVER['REQUEST_METHOD'] === 'GET') {
     $query = isset($_GET['query']) ? trim($_GET['query']) : (isset($_GET['appId']) ? trim($_GET['appId']) : '');
@@ -28,33 +30,48 @@ if (empty($query)) {
     exit();
 }
 
-// Format clean query string
-$queryUpper = strtoupper($query);
+$conn = getDbConnection();
+if (!$conn) {
+    http_response_code(500);
+    echo json_encode(['success' => false, 'message' => 'Database connection failed.']);
+    exit();
+}
 
-// Sample response record
-$applicationId = strpos($queryUpper, 'CCHSMT') !== false ? $queryUpper : 'CCHSMT-2026-'.rand(1000, 9999);
+$stmt = $conn->prepare(
+    "SELECT appNo, fullName, email, phone, faculty, course, status, dateSubmitted
+     FROM Application
+     WHERE appNo = ? OR phone = ? OR email = ?
+     LIMIT 1"
+);
+$stmt->bind_param("sss", $query, $query, $query);
+$stmt->execute();
+$res = $stmt->get_result();
+$record = $res ? $res->fetch_assoc() : null;
+$stmt->close();
+$conn->close();
+
+if (!$record) {
+    http_response_code(404);
+    echo json_encode([
+        'success' => false,
+        'found' => false,
+        'message' => 'No application found matching that Application ID or Phone Number.'
+    ]);
+    exit();
+}
 
 echo json_encode([
     'success' => true,
     'found' => true,
     'record' => [
-        'applicationId' => $applicationId,
-        'fullName' => 'Azeez Olanrewaju Okunola',
-        'phone' => strpos($queryUpper, 'CCHSMT') !== false ? '08155884804' : $query,
-        'email' => 'applicant@crestoakcollege.com.ng',
-        'course' => 'Community Health Extension Worker (CHEW)',
-        'department' => 'Department of Community Health Sciences',
-        'school' => 'School of Health Sciences',
-        'status' => 'PROVISIONALLY ADMITTED',
-        'session' => '2026/2027 Academic Session',
-        'admissionDate' => '2026-07-20',
-        'screeningVenue' => 'Admissions Hall, CrestOAK College Main Campus',
-        'acceptanceFee' => '₦25,000.00',
-        'verificationNextSteps' => [
-            'Pay acceptance fee via bursary portal or direct bank transfer',
-            'Bring original O\'Level certificate (WAEC/NECO/NABTEB) and 2 photocopies',
-            'Provide birth certificate or official declaration of age',
-            'Provide 4 recent passport-sized photographs'
-        ]
+        'applicationId' => $record['appNo'],
+        'fullName' => $record['fullName'],
+        'phone' => $record['phone'],
+        'email' => $record['email'],
+        'course' => $record['course'],
+        'faculty' => $record['faculty'],
+        'status' => $record['status'],
+        'submittedAt' => $record['dateSubmitted']
     ]
 ]);
+exit();
