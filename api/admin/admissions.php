@@ -14,20 +14,22 @@ $method = $_SERVER['REQUEST_METHOD'];
 
 if ($method === 'GET') {
     $apps = [];
-    $res = $conn->query("SELECT * FROM admissions ORDER BY id DESC");
+    $res = $conn->query("SELECT * FROM Application ORDER BY id DESC");
     if ($res) {
         while ($row = $res->fetch_assoc()) {
             $apps[] = [
                 'id' => (string)$row['id'],
                 'applicationId' => (string)$row['id'],
-                'applicant_name' => $row['applicant_name'] ?? '',
-                'fullName' => $row['applicant_name'] ?? '',
+                'appNo' => $row['appNo'] ?? '',
+                'applicant_name' => $row['fullName'] ?? '',
+                'fullName' => $row['fullName'] ?? '',
                 'email' => $row['email'] ?? '',
                 'phone' => $row['phone'] ?? '',
-                'program_applied' => $row['program_applied'] ?? '',
-                'programme' => $row['program_applied'] ?? '',
-                'status' => $row['status'] ?? 'PENDING',
-                'created_at' => $row['created_at'] ?? ''
+                'program_applied' => $row['course'] ?? '',
+                'programme' => $row['course'] ?? '',
+                'faculty' => $row['faculty'] ?? '',
+                'status' => $row['status'] ?? 'pending',
+                'created_at' => $row['dateSubmitted'] ?? ''
             ];
         }
     }
@@ -46,7 +48,14 @@ if ($method === 'POST' || $method === 'PUT') {
     $input = json_decode($rawInput, true) ?? $_POST ?? [];
 
     $appId = (int)($input['applicationId'] ?? $input['id'] ?? 0);
-    $status = strtoupper($input['decision'] ?? $input['status'] ?? 'ACCEPTED');
+    $rawStatus = strtolower(trim($input['decision'] ?? $input['status'] ?? 'approved'));
+    if (in_array($rawStatus, ['accepted', 'approve', 'approved'], true)) {
+        $status = 'approved';
+    } elseif (in_array($rawStatus, ['reject', 'rejected', 'declined'], true)) {
+        $status = 'rejected';
+    } else {
+        $status = 'pending';
+    }
 
     if ($appId <= 0) {
         $conn->close();
@@ -55,7 +64,7 @@ if ($method === 'POST' || $method === 'PUT') {
         exit();
     }
 
-    $stmt = $conn->prepare("UPDATE admissions SET status = ? WHERE id = ?");
+    $stmt = $conn->prepare("UPDATE Application SET status = ? WHERE id = ?");
     if ($stmt) {
         $stmt->bind_param("si", $status, $appId);
         $stmt->execute();
