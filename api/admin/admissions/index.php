@@ -28,17 +28,17 @@ $method = $_SERVER['REQUEST_METHOD'];
 
 // GET: List applications
 if ($method === 'GET') {
-    $status = $_GET['status'] ?? 'PENDING';
-    $stmt = $conn->prepare("SELECT * FROM admissions WHERE status = ? ORDER BY id DESC");
+    $status = strtolower($_GET['status'] ?? 'pending');
+    $stmt = $conn->prepare("SELECT * FROM Application WHERE LOWER(status) = ? ORDER BY id DESC");
     $stmt->bind_param("s", $status);
     $stmt->execute();
     $res = $stmt->get_result();
-    
+
     $applications = [];
     while ($row = $res->fetch_assoc()) {
         $applications[] = $row;
     }
-    
+
     echo json_encode(['success' => true, 'data' => $applications]);
     $conn->close();
     exit;
@@ -48,16 +48,24 @@ if ($method === 'GET') {
 if ($method === 'POST' || $method === 'PUT') {
     $rawInput = file_get_contents('php://input');
     $input = json_decode($rawInput, true) ?? $_POST;
-    
-    $id = (int)($input['id'] ?? 0);
-    $action = strtoupper($input['action'] ?? ''); // ACCEPTED or REJECTED
 
-    if (!$id || !in_array($action, ['ACCEPTED', 'REJECTED'])) {
+    $id = (int)($input['id'] ?? 0);
+    $rawAction = strtolower($input['action'] ?? '');
+
+    if (in_array($rawAction, ['accepted', 'approve', 'approved'], true)) {
+        $action = 'approved';
+    } elseif (in_array($rawAction, ['reject', 'rejected', 'declined'], true)) {
+        $action = 'rejected';
+    } else {
+        $action = '';
+    }
+
+    if (!$id || !in_array($action, ['approved', 'rejected'], true)) {
         echo json_encode(['success' => false, 'message' => 'Invalid ID or action provided.']);
         exit;
     }
 
-    $stmt = $conn->prepare("SELECT * FROM admissions WHERE id = ?");
+    $stmt = $conn->prepare("SELECT * FROM Application WHERE id = ?");
     $stmt->bind_param("i", $id);
     $stmt->execute();
     $applicant = $stmt->get_result()->fetch_assoc();
@@ -67,13 +75,13 @@ if ($method === 'POST' || $method === 'PUT') {
         exit;
     }
 
-    $stmt = $conn->prepare("UPDATE admissions SET status = ? WHERE id = ?");
+    $stmt = $conn->prepare("UPDATE Application SET status = ? WHERE id = ?");
     $stmt->bind_param("si", $action, $id);
     $stmt->execute();
 
-    if ($action === 'ACCEPTED') {
-        $nameParts = explode(' ', trim($applicant['applicant_name']), 2);
-        $firstName = $nameParts[0] ?? $applicant['applicant_name'];
+    if ($action === 'approved') {
+        $nameParts = explode(' ', trim($applicant['fullName']), 2);
+        $firstName = $nameParts[0] ?? $applicant['fullName'];
         $lastName = $nameParts[1] ?? 'Student';
         $email = $applicant['email'] ?? strtolower($firstName) . '@crestoakcollege.com.ng';
 
@@ -84,7 +92,7 @@ if ($method === 'POST' || $method === 'PUT') {
 
     echo json_encode([
         'success' => true,
-        'message' => "Application successfully " . strtolower($action) . "."
+        'message' => "Application successfully " . $action . "."
     ]);
     $conn->close();
     exit;
