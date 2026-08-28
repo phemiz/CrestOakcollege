@@ -71,19 +71,44 @@ export function SessionProvider({ children }: { children: React.ReactNode }) {
         credentials: "include"
       });
 
-          if (res.ok) {
+      if (res.ok) {
         const json = await res.json();
         if (json.authenticated && json.user) {
-          ...
+          const authUser: AuthUser = {
+            id: String(json.user.user_id || json.user.id || ""),
+            name: json.user.name || "User",
+            email: json.user.email || "",
+            role: json.user.role || "STUDENT"
+          };
+          setUser(authUser);
+          setStatus("authenticated");
+          if (typeof window !== "undefined") {
+            localStorage.setItem("user", JSON.stringify(authUser));
+            localStorage.setItem("isAuthenticated", "true");
+            localStorage.setItem("userRole", authUser.role);
+            if (json.user.csrf) {
+              localStorage.setItem("csrfToken", json.user.csrf);
+            }
+          }
           return;
         } else {
           // Server explicitly says NOT authenticated.
-          ...
+          // Clear any stale local state instead of silently leaving it in place.
+          if (typeof window !== "undefined") {
+            localStorage.removeItem("user");
+            localStorage.removeItem("isAuthenticated");
+            localStorage.removeItem("userRole");
+            localStorage.removeItem("cchsmt_user_session");
+            localStorage.removeItem("crestoak_session");
+            localStorage.removeItem("sessionToken");
+            localStorage.removeItem("csrfToken");
+          }
           setUser(null);
           setStatus("unauthenticated");
           return;
         }
       }
+
       // res.ok === false (e.g. 401/403/500 from session.php) — the server is
       // authoritatively saying there is no valid session. Do NOT trust stale
       // localStorage here; clear it and mark unauthenticated.
