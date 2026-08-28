@@ -42,15 +42,6 @@ function getCookie(name: string): string | null {
   return null;
 }
 
-function clearLocalAuth() {
-  if (typeof window === "undefined") return;
-  localStorage.removeItem("user");
-  localStorage.removeItem("isAuthenticated");
-  localStorage.removeItem("userRole");
-  localStorage.removeItem("cchsmt_user_session");
-  localStorage.removeItem("csrfToken");
-}
-
 export function SessionProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<AuthUser | null>(null);
   const [status, setStatus] = useState<"loading" | "authenticated" | "unauthenticated">("loading");
@@ -101,23 +92,33 @@ export function SessionProvider({ children }: { children: React.ReactNode }) {
             }
           }
           return;
+        } else {
+          // FIX: Server explicitly says NOT authenticated.
+          // Clear any stale local state instead of silently leaving it in place.
+          if (typeof window !== "undefined") {
+            localStorage.removeItem("user");
+            localStorage.removeItem("isAuthenticated");
+            localStorage.removeItem("userRole");
+            localStorage.removeItem("cchsmt_user_session");
+            localStorage.removeItem("crestoak_session");
+            localStorage.removeItem("sessionToken");
+            localStorage.removeItem("csrfToken");
+          }
+          setUser(null);
+          setStatus("unauthenticated");
+          return;
         }
-
-        // Server responded and explicitly said we're not authenticated —
-        // trust it over any stale local state, and clear that stale state.
-        clearLocalAuth();
-        setUser(null);
-        setStatus("unauthenticated");
-        return;
       }
 
-      // Server responded with a non-OK status (not a network failure) — treat as unauthenticated.
-      clearLocalAuth();
-      setUser(null);
-      setStatus("unauthenticated");
+      // If server session is invalid but local user exists without active server session,
+      // keep local if offline or reset
+      if (!localUser) {
+        setUser(null);
+        setStatus("unauthenticated");
+      }
     } catch (err) {
       console.warn("Session check error:", err);
-      // Network/request failure (e.g. offline) — keep existing local user state rather than logging out.
+      // Keep existing local user state if network fetch fails temporarily
     }
   }, []);
 
@@ -133,8 +134,10 @@ export function SessionProvider({ children }: { children: React.ReactNode }) {
       });
     } catch {}
 
-    clearLocalAuth();
     if (typeof window !== "undefined") {
+      localStorage.removeItem("user");
+      localStorage.removeItem("isAuthenticated");
+      localStorage.removeItem("userRole");
       localStorage.removeItem("cchsmt_user_session");
       localStorage.removeItem("crestoak_session");
       localStorage.removeItem("sessionToken");
