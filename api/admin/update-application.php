@@ -30,20 +30,26 @@ if (!$conn) {
 
 $input = json_decode(file_get_contents('php://input'), true) ?? $_POST;
 $id = (int)($input['id'] ?? 0);
-$status = strtoupper(trim($input['status'] ?? ''));
+$rawStatus = strtolower(trim($input['status'] ?? ''));
 
-if ($status === 'APPROVED') {
-    $status = 'ACCEPTED';
+if (in_array($rawStatus, ['approved', 'accepted', 'approve'], true)) {
+    $status = 'approved';
+} elseif (in_array($rawStatus, ['rejected', 'reject', 'declined'], true)) {
+    $status = 'rejected';
+} elseif ($rawStatus === 'pending') {
+    $status = 'pending';
+} else {
+    $status = '';
 }
 
-$validStatuses = ['ACCEPTED', 'REJECTED', 'PENDING'];
+$validStatuses = ['approved', 'rejected', 'pending'];
 
-if (!$id || !in_array($status, $validStatuses)) {
-    echo json_encode(['success' => false, 'message' => 'Valid application ID and status (ACCEPTED/REJECTED/PENDING) required.']);
+if (!$id || !in_array($status, $validStatuses, true)) {
+    echo json_encode(['success' => false, 'message' => 'Valid application ID and status (approved/rejected/pending) required.']);
     exit;
 }
 
-$stmt = $conn->prepare("SELECT application_ref, applicant_name, email, status AS old_status FROM admissions WHERE id = ?");
+$stmt = $conn->prepare("SELECT appNo AS application_ref, fullName AS applicant_name, email, status AS old_status FROM Application WHERE id = ?");
 $stmt->bind_param("i", $id);
 $stmt->execute();
 $applicant = $stmt->get_result()->fetch_assoc();
@@ -55,7 +61,7 @@ if (!$applicant) {
     exit;
 }
 
-$stmt = $conn->prepare("UPDATE admissions SET status = ? WHERE id = ?");
+$stmt = $conn->prepare("UPDATE Application SET status = ? WHERE id = ?");
 $stmt->bind_param("si", $status, $id);
 
 if (!$stmt->execute()) {
@@ -79,18 +85,18 @@ if ($logStmt) {
 
 $conn->close();
 
-if (in_array($status, ['ACCEPTED', 'REJECTED'], true) && !empty($applicant['email'])) {
+if (in_array($status, ['approved', 'rejected'], true) && !empty($applicant['email'])) {
     send_admission_decision_email($applicant['email'], $applicant['applicant_name'], $applicant['application_ref'], $status);
 }
 
 echo json_encode(['success' => true, 'message' => "Application {$applicant['application_ref']} status updated to {$status}."]);
 
 function send_admission_decision_email(string $toEmail, string $name, string $ref, string $status): void {
-    $subject = $status === 'ACCEPTED'
+    $subject = $status === 'approved'
         ? "CrestOak College - Admission Offer ({$ref})"
         : "CrestOak College - Application Update ({$ref})";
 
-    if ($status === 'ACCEPTED') {
+    if ($status === 'approved') {
         $body = "Dear {$name},\n\n"
               . "Congratulations! You have been provisionally admitted to CrestOak College of Health Sciences, Management and Technology.\n\n"
               . "Application Reference: {$ref}\n\n"
