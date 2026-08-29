@@ -40,7 +40,7 @@ import {
 export const dynamic = "force-static";
 
 // TYPES & INTERFACES
-type ActiveTab = "records" | "courses" | "graduation" | "calendar";
+type ActiveTab = "admissions" | "records" | "courses" | "graduation" | "calendar";
 
 interface StudentRecord {
   id: string;
@@ -97,6 +97,18 @@ interface GradeLockStatus {
   submittedCourses: number;
 }
 
+interface Application {
+  id: number;
+  appNo: string;
+  fullName: string;
+  email: string;
+  phone: string;
+  faculty: string;
+  course: string;
+  status: string;
+  dateSubmitted: string;
+}
+
 export default function RegistrarDashboardPage() {
   const router = useRouter();
   const sessionResult = useSession();
@@ -149,6 +161,12 @@ export default function RegistrarDashboardPage() {
     { departmentId: "5", departmentName: "Radiography", faculty: "Faculty of Allied Health", gradeSubmissionLocked: true, totalCourses: 22, submittedCourses: 22 }
   ]);
 
+  // ADMISSIONS APPLICATIONS STATE
+  const [applications, setApplications] = useState<Application[]>([]);
+  const [applicationsLoading, setApplicationsLoading] = useState(false);
+  const [applicationActionId, setApplicationActionId] = useState<string | null>(null);
+  const [applicationSearch, setApplicationSearch] = useState("");
+
   // CALENDAR CONFIG STATE
   const [calendarSettings, setCalendarSettings] = useState({
     session: "2026/2027 Academic Session",
@@ -198,6 +216,31 @@ export default function RegistrarDashboardPage() {
       setLoading(false);
     }
   }, [router]);
+
+  // FETCH ADMISSIONS APPLICATIONS
+  const fetchApplications = async () => {
+    setApplicationsLoading(true);
+    try {
+      const res = await fetch("/api/registrar/list-applications.php", {
+        method: "GET",
+        credentials: "include"
+      });
+      const json = await res.json();
+      if (json.success && Array.isArray(json.data)) {
+        setApplications(json.data);
+      }
+    } catch (e) {
+      console.error("Failed to load applications", e);
+    } finally {
+      setApplicationsLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    if (currentUser) {
+      fetchApplications();
+    }
+  }, [currentUser]);
 
   // TOAST FEEDBACK HELPER
   const showToast = (msg: string) => {
@@ -258,6 +301,31 @@ export default function RegistrarDashboardPage() {
       prev.map(c => (c.id === courseId ? { ...c, status } : c))
     );
     showToast(`Course offering schedule status set to ${status}.`);
+  };
+
+  const handleApplicationStatus = async (appId: number, newStatus: "approved" | "rejected" | "pending") => {
+    setApplicationActionId(String(appId));
+    try {
+      const res = await fetch("/api/admin/update-application.php", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({ id: appId, status: newStatus })
+      });
+      const json = await res.json();
+      if (json.success) {
+        setApplications(prev =>
+          prev.map(a => (a.id === appId ? { ...a, status: newStatus.toUpperCase() } : a))
+        );
+        showToast(json.message || `Application status updated to ${newStatus}.`);
+      } else {
+        showToast(json.message || "Failed to update application status.");
+      }
+    } catch (e) {
+      showToast("Network error while updating application status.");
+    } finally {
+      setApplicationActionId(null);
+    }
   };
 
   const handleAddOverride = (e: React.FormEvent<HTMLFormElement>) => {
@@ -381,6 +449,26 @@ export default function RegistrarDashboardPage() {
               <span className="text-[10px] font-extrabold text-slate-500 uppercase tracking-widest px-3">
                 Governance Modules
               </span>
+
+              <button
+                onClick={() => setActiveTab("admissions")}
+                className={`w-full flex items-center justify-between px-3.5 py-3 rounded-xl text-xs font-bold transition-all ${
+                  activeTab === "admissions"
+                    ? "bg-indigo-600 text-white shadow-lg shadow-indigo-900/50"
+                    : "text-slate-400 hover:text-white hover:bg-slate-800/60"
+                }`}
+              >
+                <div className="flex items-center gap-2.5">
+                  <UserCheck className="w-4.5 h-4.5" />
+                  <span>Admissions Review</span>
+                  {applications.filter(a => (a.status || "").toUpperCase() === "PENDING").length > 0 && (
+                    <span className="ml-1 px-1.5 py-0.5 rounded-full bg-amber-500 text-slate-950 text-[9px] font-extrabold">
+                      {applications.filter(a => (a.status || "").toUpperCase() === "PENDING").length}
+                    </span>
+                  )}
+                </div>
+                <ChevronRight className="w-4 h-4 opacity-70" />
+              </button>
 
               <button
                 onClick={() => setActiveTab("records")}
@@ -521,6 +609,137 @@ export default function RegistrarDashboardPage() {
               <p className="text-xs text-slate-400">Out of {gradeLocks.length} Faculties</p>
             </div>
           </div>
+
+          {/* TAB MODULE 0: ADMISSIONS REVIEW */}
+          {activeTab === "admissions" && (
+            <div className="space-y-6">
+              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 bg-slate-900 p-6 rounded-2xl border border-slate-800">
+                <div>
+                  <h3 className="text-lg font-bold text-white flex items-center gap-2">
+                    <UserCheck className="w-5 h-5 text-indigo-400" />
+                    Admissions Application Review
+                  </h3>
+                  <p className="text-xs text-slate-400">
+                    Review applications submitted through the public admissions portal. Approve, reject, or return to pending.
+                  </p>
+                </div>
+
+                <div className="flex items-center gap-3 w-full sm:w-auto">
+                  <div className="relative flex-grow sm:flex-grow-0">
+                    <Search className="w-4 h-4 absolute left-3 top-3 text-slate-400" />
+                    <input
+                      type="text"
+                      placeholder="Search name, appNo, or email..."
+                      value={applicationSearch}
+                      onChange={(e) => setApplicationSearch(e.target.value)}
+                      className="pl-9 pr-4 py-2 bg-slate-950 border border-slate-700 rounded-xl text-xs text-white placeholder-slate-500 focus:outline-none focus:border-indigo-500"
+                    />
+                  </div>
+                  <button
+                    onClick={fetchApplications}
+                    className="px-3 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-xl text-xs font-bold flex items-center gap-1.5 transition-all"
+                  >
+                    <RefreshCw className={`w-3.5 h-3.5 ${applicationsLoading ? "animate-spin" : ""}`} />
+                    <span>Refresh</span>
+                  </button>
+                </div>
+              </div>
+
+              <div className="bg-slate-900 border border-slate-800 rounded-2xl overflow-hidden shadow-xl">
+                <div className="px-6 py-4 border-b border-slate-800 flex items-center justify-between">
+                  <h4 className="text-sm font-bold text-white">Submitted Applications</h4>
+                  <span className="text-xs text-indigo-400 font-semibold">{applications.length} Total</span>
+                </div>
+
+                <div className="overflow-x-auto">
+                  <table className="w-full text-left text-xs text-slate-300">
+                    <thead className="bg-slate-950 text-slate-400 font-bold uppercase text-[10px] tracking-wider border-b border-slate-800">
+                      <tr>
+                        <th className="px-6 py-3.5">Applicant</th>
+                        <th className="px-6 py-3.5">Programme</th>
+                        <th className="px-6 py-3.5">Submitted</th>
+                        <th className="px-6 py-3.5">Status</th>
+                        <th className="px-6 py-3.5 text-right">Registrar Decision</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-800/60 font-medium">
+                      {applications.length === 0 && !applicationsLoading && (
+                        <tr>
+                          <td colSpan={5} className="px-6 py-10 text-center text-slate-500">
+                            No applications found.
+                          </td>
+                        </tr>
+                      )}
+                      {applications
+                        .filter(a =>
+                          a.fullName.toLowerCase().includes(applicationSearch.toLowerCase()) ||
+                          a.appNo.toLowerCase().includes(applicationSearch.toLowerCase()) ||
+                          a.email.toLowerCase().includes(applicationSearch.toLowerCase())
+                        )
+                        .map((app) => {
+                          const statusUpper = (app.status || "PENDING").toUpperCase();
+                          const isBusy = applicationActionId === String(app.id);
+                          return (
+                            <tr key={app.id} className="hover:bg-slate-800/40 transition-colors">
+                              <td className="px-6 py-4">
+                                <p className="font-bold text-white">{app.fullName}</p>
+                                <p className="text-[11px] font-mono text-slate-400">{app.appNo}</p>
+                                <p className="text-[11px] text-slate-500">{app.email} &middot; {app.phone}</p>
+                              </td>
+                              <td className="px-6 py-4 text-slate-300">
+                                <p>{app.course}</p>
+                                <p className="text-[11px] text-slate-500">{app.faculty}</p>
+                              </td>
+                              <td className="px-6 py-4 text-slate-400 text-[11px]">
+                                {app.dateSubmitted}
+                              </td>
+                              <td className="px-6 py-4">
+                                <span
+                                  className={`inline-flex items-center px-2.5 py-1 rounded-full text-[10px] font-extrabold ${
+                                    statusUpper === "APPROVED"
+                                      ? "bg-emerald-500/10 text-emerald-400 border border-emerald-500/30"
+                                      : statusUpper === "REJECTED"
+                                      ? "bg-red-500/10 text-red-400 border border-red-500/30"
+                                      : "bg-amber-500/10 text-amber-400 border border-amber-500/30"
+                                  }`}
+                                >
+                                  {statusUpper}
+                                </span>
+                              </td>
+                              <td className="px-6 py-4 text-right space-x-2">
+                                <button
+                                  disabled={isBusy || statusUpper === "APPROVED"}
+                                  onClick={() => handleApplicationStatus(app.id, "approved")}
+                                  className="px-2.5 py-1.5 bg-emerald-600 hover:bg-emerald-500 disabled:opacity-40 disabled:cursor-not-allowed text-white rounded-lg text-[11px] font-bold transition-all"
+                                >
+                                  Approve
+                                </button>
+                                <button
+                                  disabled={isBusy || statusUpper === "REJECTED"}
+                                  onClick={() => handleApplicationStatus(app.id, "rejected")}
+                                  className="px-2.5 py-1.5 bg-red-600 hover:bg-red-500 disabled:opacity-40 disabled:cursor-not-allowed text-white rounded-lg text-[11px] font-bold transition-all"
+                                >
+                                  Reject
+                                </button>
+                                {statusUpper !== "PENDING" && (
+                                  <button
+                                    disabled={isBusy}
+                                    onClick={() => handleApplicationStatus(app.id, "pending")}
+                                    className="px-2.5 py-1.5 bg-slate-800 hover:bg-slate-700 disabled:opacity-40 text-slate-300 rounded-lg text-[11px] font-bold transition-all"
+                                  >
+                                    Revert to Pending
+                                  </button>
+                                )}
+                              </td>
+                            </tr>
+                          );
+                        })}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+          )}
 
           {/* TAB MODULE 1: STUDENT ACADEMIC RECORDS */}
           {activeTab === "records" && (
