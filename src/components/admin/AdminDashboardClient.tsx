@@ -14,6 +14,8 @@ import {
   Loader2
 } from "lucide-react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { useAuth } from "@/components/providers/session-provider";
 
 interface AuditLog {
   id: string;
@@ -50,6 +52,14 @@ export default function AdminDashboardClient() {
     recentAudits: []
   });
   const [isLoading, setIsLoading] = useState(true);
+  const { status } = useAuth();
+  const router = useRouter();
+
+  useEffect(() => {
+    if (status === "unauthenticated") {
+      router.push("/admin/login");
+    }
+  }, [status, router]);
 
   // Fetch metrics on component mount
   useEffect(() => {
@@ -83,6 +93,14 @@ export default function AdminDashboardClient() {
     }
     fetchStats();
   }, []);
+
+  if (status === "loading" || status === "unauthenticated") {
+    return (
+      <div className="flex items-center justify-center py-24">
+        <Loader2 className="h-6 w-6 animate-spin text-slate-400" />
+      </div>
+    );
+  }
 
   const stats = [
     {

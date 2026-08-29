@@ -24,80 +24,144 @@ if (($_SERVER['REQUEST_METHOD'] ?? '') === 'OPTIONS') {
     exit(0);
 }
 
-$storageFile = '/home/crestoa2/domains/crestoakcollege.com.ng/public_html/applications_data.json';
+require_once __DIR__ . '/admin/db.php';
 
-// --- GET Request: Query Admission Status by appId or Phone ---
+$conn = getDbConnection();
+if (!$conn) {
+    http_response_code(500);
+    ob_end_clean();
+    echo json_encode(['success' => false, 'message' => 'Database connection failed.']);
+    exit(0);
+}
+
 if ($_SERVER['REQUEST_METHOD'] === 'GET') {
     $appId = trim($_GET['appId'] ?? $_GET['applicationId'] ?? $_GET['id'] ?? $_GET['phone'] ?? '');
-    
-    $application = null;
-    
-    // 1. Check persistent JSON storage
-    if (file_exists($storageFile)) {
-        $data = json_decode(file_get_contents($storageFile), true);
-        if (is_array($data)) {
-            foreach ($data as $item) {
-                if (
-                    (isset($item['applicationId']) && strcasecmp($item['applicationId'], $appId) === 0) ||
-                    (isset($item['phone']) && $item['phone'] === $appId)
-                ) {
-                    $application = $item;
-                    break;
-                }
-            }
-        }
+
+    if (empty($appId)) {
+        http_response_code(400);
+        ob_end_clean();
+        echo json_encode(['success' => false, 'message' => 'Please provide an Application ID or Phone Number.']);
+        exit(0);
     }
-    
-    // 2. Default Fallback Payload if empty (Prevents 500 error on client)
-    if (!$application) {
-        $application = [
-            'applicationId' => !empty($appId) ? $appId : 'CCHSMT-2026-1023',
-            'fullName' => 'Azeez Olanrewaju Okunola',
-            'course' => 'Nursing Science (B.N.Sc.)',
-            'faculty' => 'Faculty of Allied Health Sciences',
-            'session' => '2026/2027 Academic Session',
-            'status' => 'PROVISIONALLY ADMITTED',
-            'submittedAt' => date('Y-m-d H:i:s')
-        ];
+
+    $stmt = $conn->prepare(
+        "SELECT appNo, fullName, email, phone, faculty, course, status, dateSubmitted
+         FROM Application
+         WHERE appNo = ? OR phone = ? OR email = ?
+         LIMIT 1"
+    );
+    $stmt->bind_param("sss", $appId, $appId, $appId);
+    $stmt->execute();
+    $res = $stmt->get_result();
+    $record = $res ? $res->fetch_assoc() : null;
+    $stmt->close();
+    $conn->close();
+
+    if (!$record) {
+        http_response_code(404);
+        ob_end_clean();
+        echo json_encode([
+            'success' => false,
+            'found' => false,
+            'message' => 'No application found matching that Application ID or Phone Number.'
+        ]);
+        exit(0);
     }
-    
+
+    $application = [
+        'applicationId' => $record['appNo'],
+        'fullName' => $record['fullName'],
+        'email' => $record['email'],
+        'phone' => $record['phone'],
+        'course' => $record['course'],
+        'faculty' => $record['faculty'],
+        'status' => $record['status'],
+        'submittedAt' => $record['dateSubmitted']
+    ];
+
     ob_end_clean();
     echo json_encode([
         'success' => true,
+        'found' => true,
         'status' => 'success',
         'application' => $application,
-        'data' => $application
+        'data' => $application,
+        'record' => $application
     ]);
     exit(0);
 }
 
-// --- POST Request: Save New Application ---
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $rawInput = file_get_contents('php://input');
     $input = json_decode($rawInput, true) ?? $_POST;
-    
-    $appId = 'CCHSMT-2026-' . rand(1000, 9999);
-    $fullName = trim($input['fullName'] ?? ($input['firstName'] . ' ' . $input['lastName']));
-    
+
+    $fullName = trim($input['fullName'] ?? (($input['firstName'] ?? '') . ' ' . ($input['lastName'] ?? '')));
+    $email = trim($input['email'] ?? '');
+    $phone = trim($input['phone'] ?? '');
+    $course = trim($input['course'] ?? 'Nursing Science (B.N.Sc.)');
+    $faculty = trim($input['faculty'] ?? 'Faculty of Allied Health Sciences');
+
+    if (empty($fullName) || empty($phone)) {
+        http_response_code(400);
+        ob_end_clean();
+        echo json_encode(['success' => false, 'message' => 'Full name and phone number are required.']);
+        exit(0);
+    }
+
+    $appId = '';
+    for ($i = 0; $i < 5; $i++) {
+        $candidate = 'CCHSMT-2026-' . rand(1000, 9999);
+        $check = $conn->prepare("SELECT appNo FROM Application WHERE appNo = ? LIMIT 1");
+        $check->bind_param("s", $candidate);
+        $check->execute();
+        $exists = $check->get_result()->fetch_assoc();
+        $check->close();
+        if (!$exists) {
+            $appId = $candidate;
+            break;
+        }
+    }
+    if (empty($appId)) {
+        http_response_code(500);
+        ob_end_clean();
+        echo json_encode(['success' => false, 'message' => 'Could not generate a unique application ID, please try again.']);
+        exit(0);
+    }
+
+    $status = 'pending';
+    $stmt = $conn->prepare(
+        "INSERT INTO Application (appNo, fullName, email, phone, faculty, course, status, dateSubmitted)
+         VALUES (?, ?, ?, ?, ?, ?, ?, NOW())"
+    );
+    $stmt->bind_param("sssssss", $appId, $fullName, $email, $phone, $faculty, $course, $status);
+
+    $ok = false;
+    try {
+        $ok = $stmt->execute();
+    } catch (mysqli_sql_exception $e) {
+        $ok = false;
+    }
+    $stmt->close();
+    $conn->close();
+
+    if (!$ok) {
+        http_response_code(500);
+        ob_end_clean();
+        echo json_encode(['success' => false, 'message' => 'Could not save application. Please try again.']);
+        exit(0);
+    }
+
     $newApp = [
         'applicationId' => $appId,
         'fullName' => $fullName,
-        'email' => $input['email'] ?? '',
-        'phone' => $input['phone'] ?? '',
-        'course' => $input['course'] ?? 'Nursing Science (B.N.Sc.)',
-        'faculty' => $input['faculty'] ?? 'Faculty of Allied Health Sciences',
-        'programLevel' => $input['programLevel'] ?? 'B.Sc. Degree',
-        'session' => '2026/2027 Academic Session',
-        'status' => 'PROVISIONALLY ADMITTED',
+        'email' => $email,
+        'phone' => $phone,
+        'course' => $course,
+        'faculty' => $faculty,
+        'status' => $status,
         'submittedAt' => date('Y-m-d H:i:s')
     ];
-    
-    $existingData = file_exists($storageFile) ? json_decode(file_get_contents($storageFile), true) : [];
-    if (!is_array($existingData)) { $existingData = []; }
-    
-    array_unshift($existingData, $newApp);
-    file_put_contents($storageFile, json_encode($existingData, JSON_PRETTY_PRINT));
-    
+
     ob_end_clean();
     echo json_encode([
         'success' => true,
@@ -109,6 +173,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     exit(0);
 }
 
+$conn->close();
 http_response_code(405);
 ob_end_clean();
 echo json_encode(['success' => false, 'message' => 'Method not allowed']);
