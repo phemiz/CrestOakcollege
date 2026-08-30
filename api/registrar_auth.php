@@ -59,9 +59,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
 }
 
 $method = $_SERVER['REQUEST_METHOD'];
+$isDirectRequest = basename($_SERVER['SCRIPT_NAME']) === basename(__FILE__);
 
 // GET REQUEST: VERIFY ACTIVE REGISTRAR SESSION
-if ($method === 'GET') {
+if ($isDirectRequest && $method === 'GET') {
     // 1. Check PHP Native Session
     if (!empty($_SESSION['registrar_authenticated']) && $_SESSION['registrar_authenticated'] === true && !empty($_SESSION['user'])) {
         echo json_encode([
@@ -106,7 +107,7 @@ if ($method === 'GET') {
 }
 
 // POST REQUEST: REGISTRAR AUTHENTICATION
-if ($method === 'POST') {
+if ($isDirectRequest && $method === 'POST') {
     $rawInput = file_get_contents('php://input');
     $data = json_decode($rawInput, true) ?? $_POST ?? [];
 
@@ -245,10 +246,12 @@ if ($method === 'POST') {
     exit();
 }
 
-// Method Not Allowed
-http_response_code(405);
-echo json_encode([
-    'success' => false,
-    'message' => 'Method not allowed.'
-]);
-exit();
+if ($isDirectRequest) {
+    // Method Not Allowed
+    http_response_code(405);
+    echo json_encode([
+        'success' => false,
+        'message' => 'Method not allowed.'
+    ]);
+    exit();
+}

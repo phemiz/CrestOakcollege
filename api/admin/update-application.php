@@ -72,15 +72,21 @@ if (!$stmt->execute()) {
 }
 $stmt->close();
 
-$actorId = $_SESSION['user']['id'] ?? 'unknown';
+$actorId = $_SESSION['user']['id'] ?? null;
+$actorIdNum = is_numeric($actorId) ? (int)$actorId : null;
 $actorName = $_SESSION['user']['name'] ?? 'unknown';
-$logStmt = $conn->prepare("INSERT INTO audit_logs (actor_id, actor_name, action, target_type, target_id, details, created_at) VALUES (?, ?, ?, 'admission', ?, ?, NOW())");
-if ($logStmt) {
-    $action = 'status_change';
-    $details = "Status changed from {$applicant['old_status']} to {$status}";
-    $logStmt->bind_param("sssis", $actorId, $actorName, $action, $id, $details);
-    @$logStmt->execute();
-    $logStmt->close();
+$action = 'status_change';
+$details = "Status changed from {$applicant['old_status']} to {$status} by {$actorName}";
+$ipAddress = $_SERVER['REMOTE_ADDR'] ?? null;
+try {
+    $logStmt = $conn->prepare("INSERT INTO audit_logs (user_id, action, details, ip_address, created_at) VALUES (?, ?, ?, ?, NOW())");
+    if ($logStmt) {
+        $logStmt->bind_param("isss", $actorIdNum, $action, $details, $ipAddress);
+        $logStmt->execute();
+        $logStmt->close();
+    }
+} catch (Throwable $e) {
+    error_log("Audit log insert failed: " . $e->getMessage());
 }
 
 $conn->close();
