@@ -41,5 +41,6 @@ if ($conn) {
 echo json_encode([
     "success" => true,
     "message" => "Application submitted successfully!",
-    "appNumber" => $appNo
+    "appNumber" => $appNo,
+    "applicationId" => $appNo
 ]);
