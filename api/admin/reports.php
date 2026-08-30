@@ -8,7 +8,8 @@ $conn = getDbConnection();
 
 $totalStudents = 0;
 $totalRevenue = 0.0;
-$avgCgpa = 3.50;
+$avgCgpa = 0.0;
+$studentCgpa = [];
 $unpaidAmount = 0.0;
 $deptDistribution = [];
 $revenueByFeeType = [];
@@ -20,6 +21,20 @@ if ($conn) {
     $res = @$conn->query("SELECT COUNT(*) as cnt FROM students WHERE isDeleted = 0 OR isDeleted IS NULL");
     if ($res && $row = $res->fetch_assoc()) {
         $totalStudents = intval($row['cnt']);
+    }
+
+    // 1b. Overall Average CGPA (from real results data)
+    $res = @$conn->query("SELECT COALESCE(AVG(grade_point), 0) as avg_gpa FROM results");
+    if ($res && $row = $res->fetch_assoc()) {
+        $avgCgpa = round(floatval($row['avg_gpa']), 2);
+    }
+
+    // 1c. Per-Student Average CGPA (for rawStudents export)
+    $res = @$conn->query("SELECT student_id, AVG(grade_point) as gpa FROM results GROUP BY student_id");
+    if ($res && $res->num_rows > 0) {
+        while ($row = $res->fetch_assoc()) {
+            $studentCgpa[intval($row['student_id'])] = round(floatval($row['gpa']), 2);
+        }
     }
 
     // 2. Total Settled Revenue
@@ -46,7 +61,7 @@ if ($conn) {
     }
 
     // 5. Raw Students Dataset for Export
-    $res = @$conn->query("SELECT matric_no, CONCAT(first_name, ' ', last_name) as name, department_name as department, level, email FROM students WHERE (isDeleted = 0 OR isDeleted IS NULL) LIMIT 500");
+    $res = @$conn->query("SELECT id, matric_no, CONCAT(first_name, ' ', last_name) as name, department_name as department, level, email FROM students WHERE (isDeleted = 0 OR isDeleted IS NULL) LIMIT 500");
     if ($res && $res->num_rows > 0) {
         while ($row = $res->fetch_assoc()) {
             $rawStudents[] = [
@@ -54,7 +69,7 @@ if ($conn) {
                 "name" => trim($row['name']) ?: 'Student Record',
                 "department" => $row['department'] ?? 'Health Sciences',
                 "level" => intval($row['level'] ?? 100),
-                "cgpa" => 3.50,
+                "cgpa" => ($studentCgpa[intval($row['id'] ?? 0)] ?? 0.0),
                 "email" => $row['email'] ?? 'student@crestoakcollege.com.ng'
             ];
         }
