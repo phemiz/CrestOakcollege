@@ -13,7 +13,7 @@ if (!$conn) {
 $method = $_SERVER['REQUEST_METHOD'];
 
 if ($method === 'GET') {
-    $res = $conn->query("SELECT id, reviewer_name, reviewer_role, review_text, photo_url, display_order, status, created_at FROM reviews ORDER BY display_order ASC, created_at DESC");
+    $res = $conn->query("SELECT id, reviewer_name, reviewer_role, review_text, photo_url, display_order, status, category, program_or_relation, outcome, created_at FROM reviews ORDER BY display_order ASC, created_at DESC");
     $reviews = [];
     if ($res) {
         while ($row = $res->fetch_assoc()) {
@@ -26,28 +26,13 @@ if ($method === 'GET') {
 
 $input = json_decode(file_get_contents('php://input'), true);
 
-if ($method === 'POST') {
-    $name = trim($input['reviewerName'] ?? '');
-    $role = trim($input['reviewerRole'] ?? '');
-    $text = trim($input['reviewText'] ?? '');
-    $order = intval($input['displayOrder'] ?? 0);
-    $status = trim($input['status'] ?? 'ACTIVE');
-    $photoUrl = null;
-
-    if (empty($name) || empty($text)) {
-        http_response_code(400);
-        echo json_encode(["success" => false, "message" => "Reviewer name and review text are required."]);
-        exit();
-    }
-
+function handlePhotoUpload($input, $existingUrl = null) {
     if (!empty($input['photoBase64'])) {
         $photoData = $input['photoBase64'];
         if (preg_match('/^data:image\/(\w+);base64,/', $photoData, $matches)) {
             $ext = strtolower($matches[1]);
             if (!in_array($ext, ['jpg', 'jpeg', 'png', 'webp'])) {
-                http_response_code(400);
-                echo json_encode(["success" => false, "message" => "Unsupported image format."]);
-                exit();
+                return ['error' => 'Unsupported image format.'];
             }
             $raw = base64_decode(substr($photoData, strpos($photoData, ',') + 1));
             $filename = 'review-' . uniqid() . '.' . $ext;
@@ -56,12 +41,38 @@ if ($method === 'POST') {
                 mkdir($uploadDir, 0755, true);
             }
             file_put_contents($uploadDir . $filename, $raw);
-            $photoUrl = '/uploads/reviews/' . $filename;
+            return ['url' => '/uploads/reviews/' . $filename];
         }
     }
+    return ['url' => $existingUrl];
+}
 
-    $stmt = $conn->prepare("INSERT INTO reviews (reviewer_name, reviewer_role, review_text, photo_url, display_order, status) VALUES (?, ?, ?, ?, ?, ?)");
-    $stmt->bind_param("ssssis", $name, $role, $text, $photoUrl, $order, $status);
+if ($method === 'POST') {
+    $name = trim($input['reviewerName'] ?? '');
+    $role = trim($input['reviewerRole'] ?? '');
+    $text = trim($input['reviewText'] ?? '');
+    $order = intval($input['displayOrder'] ?? 0);
+    $status = trim($input['status'] ?? 'ACTIVE');
+    $category = trim($input['category'] ?? 'students');
+    $programOrRelation = trim($input['programOrRelation'] ?? '');
+    $outcome = trim($input['outcome'] ?? '');
+
+    if (empty($name) || empty($text)) {
+        http_response_code(400);
+        echo json_encode(["success" => false, "message" => "Reviewer name and review text are required."]);
+        exit();
+    }
+
+    $photoResult = handlePhotoUpload($input);
+    if (isset($photoResult['error'])) {
+        http_response_code(400);
+        echo json_encode(["success" => false, "message" => $photoResult['error']]);
+        exit();
+    }
+    $photoUrl = $photoResult['url'];
+
+    $stmt = $conn->prepare("INSERT INTO reviews (reviewer_name, reviewer_role, review_text, photo_url, display_order, status, category, program_or_relation, outcome) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)");
+    $stmt->bind_param("ssssissss", $name, $role, $text, $photoUrl, $order, $status, $category, $programOrRelation, $outcome);
     $ok = $stmt->execute();
     $newId = $stmt->insert_id;
     $stmt->close();
@@ -87,27 +98,20 @@ if ($method === 'PUT') {
     $text = trim($input['reviewText'] ?? '');
     $order = intval($input['displayOrder'] ?? 0);
     $status = trim($input['status'] ?? 'ACTIVE');
+    $category = trim($input['category'] ?? 'students');
+    $programOrRelation = trim($input['programOrRelation'] ?? '');
+    $outcome = trim($input['outcome'] ?? '');
 
-    $photoUrl = $input['existingPhotoUrl'] ?? null;
-    if (!empty($input['photoBase64'])) {
-        $photoData = $input['photoBase64'];
-        if (preg_match('/^data:image\/(\w+);base64,/', $photoData, $matches)) {
-            $ext = strtolower($matches[1]);
-            if (in_array($ext, ['jpg', 'jpeg', 'png', 'webp'])) {
-                $raw = base64_decode(substr($photoData, strpos($photoData, ',') + 1));
-                $filename = 'review-' . uniqid() . '.' . $ext;
-                $uploadDir = __DIR__ . '/../../uploads/reviews/';
-                if (!is_dir($uploadDir)) {
-                    mkdir($uploadDir, 0755, true);
-                }
-                file_put_contents($uploadDir . $filename, $raw);
-                $photoUrl = '/uploads/reviews/' . $filename;
-            }
-        }
+    $photoResult = handlePhotoUpload($input, $input['existingPhotoUrl'] ?? null);
+    if (isset($photoResult['error'])) {
+        http_response_code(400);
+        echo json_encode(["success" => false, "message" => $photoResult['error']]);
+        exit();
     }
+    $photoUrl = $photoResult['url'];
 
-    $stmt = $conn->prepare("UPDATE reviews SET reviewer_name=?, reviewer_role=?, review_text=?, photo_url=?, display_order=?, status=? WHERE id=?");
-    $stmt->bind_param("ssssisi", $name, $role, $text, $photoUrl, $order, $status, $id);
+    $stmt = $conn->prepare("UPDATE reviews SET reviewer_name=?, reviewer_role=?, review_text=?, photo_url=?, display_order=?, status=?, category=?, program_or_relation=?, outcome=? WHERE id=?");
+    $stmt->bind_param("ssssissssi", $name, $role, $text, $photoUrl, $order, $status, $category, $programOrRelation, $outcome, $id);
     $ok = $stmt->execute();
     $stmt->close();
 
