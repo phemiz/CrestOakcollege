@@ -50,7 +50,7 @@ if ($conn) {
     }
 
     // 4. Students Distribution by Department
-    $res = @$conn->query("SELECT COALESCE(department_name, 'General Studies') as name, COUNT(*) as count FROM students WHERE (isDeleted = 0 OR isDeleted IS NULL) GROUP BY department_name");
+    $res = @$conn->query("SELECT COALESCE(department_name, 'General Studies') as name, COUNT(*) as count FROM students WHERE (isDeleted = 0 OR isDeleted IS NULL) GROUP BY COALESCE(department_name, 'General Studies')");
     if ($res && $res->num_rows > 0) {
         while ($row = $res->fetch_assoc()) {
             $deptDistribution[] = [
