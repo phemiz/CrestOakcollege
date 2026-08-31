@@ -19,6 +19,7 @@ import {
   X,
   User,
   ShieldCheck,
+  MessageSquareQuote,
   Loader2
 } from "lucide-react";
 
@@ -46,6 +47,7 @@ export default function AdminLayoutClient({ children, user }: AdminLayoutClientP
     { name: "Fee Management", href: "/admin/fees", icon: CreditCard, roles: ["Super Admin", "Admin", "Bursary"] },
     { name: "News & Alerts", href: "/admin/news", icon: Newspaper, roles: ["Super Admin", "Admin", "Staff"] },
     { name: "Gallery Manager", href: "/admin/gallery", icon: Image, roles: ["Super Admin", "Admin", "Staff"] },
+    { name: "Reviews", href: "/admin/reviews", icon: MessageSquareQuote, roles: ["Super Admin", "Admin", "Staff"] },
     { name: "Programmes", href: "/admin/programmes", icon: BookOpen, roles: ["Super Admin", "Admin", "Staff"] },
     { name: "Faculties & Depts", href: "/admin/faculties", icon: Building2, roles: ["Super Admin", "Admin"] },
     { name: "Analytics & Reports", href: "/admin/reports", icon: BarChart3, roles: ["Super Admin", "Admin", "Bursary"] },
