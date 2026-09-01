@@ -315,11 +315,14 @@ export default function StaffClient({ staffList: initialStaff, departments: rawD
     }));
   };
 
+  const NON_ACADEMIC_ROLES = ["BURSAR", "REGISTRAR", "ADMIN", "STAFF", "SUPER_ADMIN"];
   const handleRoleChange = (role: any) => {
+    const isNonAcademic = NON_ACADEMIC_ROLES.includes(role);
     setFormData((prev) => ({
       ...prev,
       roleName: role,
-      staffNo: editingStaff ? prev.staffNo : computeSIN(prev.departmentId, role)
+      departmentId: isNonAcademic ? "" : prev.departmentId,
+      staffNo: editingStaff ? prev.staffNo : computeSIN(isNonAcademic ? "" : prev.departmentId, role)
     }));
   };
 
@@ -1077,22 +1080,31 @@ export default function StaffClient({ staffList: initialStaff, departments: rawD
                     <option value="SUPER_ADMIN">SUPER ADMIN</option>
                   </select>
                 </div>
-                <div className="flex flex-col gap-1">
-                  <label className="text-[10px] uppercase font-bold text-slate-700">Department *</label>
-                  <select
-                    value={formData.departmentId}
-                    onChange={(e) => handleDepartmentChange(e.target.value)}
-                    required
-                    className="p-2.5 bg-white border border-slate-300 rounded-xl focus:outline-none focus:border-slate-900 text-slate-900 font-bold"
-                  >
-                    <option value="">-- Select Department --</option>
-                    {(departments || []).map((dept: any) => (
-                      <option key={dept?.id || dept?.name} value={dept?.id}>
-                        {dept?.name || dept?.title || 'General Department'}
-                      </option>
-                    ))}
-                  </select>
-                </div>
+                {NON_ACADEMIC_ROLES.includes(formData.roleName) ? (
+                  <div className="flex flex-col gap-1">
+                    <label className="text-[10px] uppercase font-bold text-slate-700">Department</label>
+                    <div className="p-2.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-500 font-semibold text-sm">
+                      Institution-wide role — no department required
+                    </div>
+                  </div>
+                ) : (
+                  <div className="flex flex-col gap-1">
+                    <label className="text-[10px] uppercase font-bold text-slate-700">Department *</label>
+                    <select
+                      value={formData.departmentId}
+                      onChange={(e) => handleDepartmentChange(e.target.value)}
+                      required
+                      className="p-2.5 bg-white border border-slate-300 rounded-xl focus:outline-none focus:border-slate-900 text-slate-900 font-bold"
+                    >
+                      <option value="">-- Select Department --</option>
+                      {(departments || []).map((dept: any) => (
+                        <option key={dept?.id || dept?.name} value={dept?.id}>
+                          {dept?.name || dept?.title || 'General Department'}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                )}
               </div>
 
               <div className="pt-4 flex justify-end gap-3 border-t border-slate-100 mt-6">
