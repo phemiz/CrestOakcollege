@@ -14,6 +14,7 @@ register_shutdown_function(function () {
     }
 });
 require_once __DIR__ . '/db.php';
+require_once __DIR__ . '/../includes/mailer.php';
 require_once __DIR__ . '/../auth/session.php';
 
 $session = require_session(['ADMIN', 'SUPERADMIN']);
@@ -129,6 +130,13 @@ if ($method === 'POST' || $method === 'PUT') {
         $stmt->close();
         $conn->close();
 
+        if (!empty($input['sendEmail']) && !empty($input['password'])) {
+            $mailSent = sendWelcomeEmail($email, trim($firstName . ' ' . $lastName), $staffNo, $role, trim($input['password']));
+            if (!$mailSent) {
+                error_log('Welcome email failed to send on staff update for: ' . $email);
+            }
+        }
+
         echo json_encode([
             'success' => true,
             'message' => 'Staff record updated successfully.',
@@ -163,6 +171,10 @@ if ($method === 'POST' || $method === 'PUT') {
         exit();
     }
     $newId = $stmt->insert_id;
+    $mailSent = sendWelcomeEmail($email, trim($firstName . ' ' . $lastName), $staffNo, $role, $password);
+    if (!$mailSent) {
+        error_log('Welcome email failed to send for new staff: ' . $email);
+    }
     $stmt->close();
     $conn->close();
 

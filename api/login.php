@@ -108,7 +108,7 @@ try {
     // 2. Check `students` table
     if (!$matchedUser) {
         try {
-            $stmt = $conn->prepare("SELECT * FROM students WHERE (REPLACE(LOWER(matric_no), '\\\\', '') = ? OR LOWER(email) = ? OR LOWER(id) = ?) AND (isDeleted = 0 OR isDeleted IS NULL) LIMIT 1");
+            $stmt = $conn->prepare("SELECT * FROM students WHERE (REPLACE(REPLACE(LOWER(matric_no), '\\\\', ''), '/', '') = ? OR LOWER(email) = ? OR LOWER(id) = ?) AND (isDeleted = 0 OR isDeleted IS NULL) LIMIT 1");
             if ($stmt) {
                 $stmt->bind_param("sss", $cleanIdentifier, $cleanIdentifier, $cleanIdentifier);
                 $stmt->execute();
@@ -140,7 +140,7 @@ try {
     // 3. Check `staff` table
     if (!$matchedUser) {
         try {
-            $stmt = $conn->prepare("SELECT * FROM staff WHERE (REPLACE(LOWER(staff_no), '\\\\', '') = ? OR LOWER(email) = ? OR LOWER(username) = ? OR LOWER(id) = ?) AND (isDeleted = 0 OR isDeleted IS NULL) LIMIT 1");
+            $stmt = $conn->prepare("SELECT * FROM staff WHERE (REPLACE(REPLACE(LOWER(staff_no), '\\\\', ''), '/', '') = ? OR LOWER(email) = ? OR LOWER(username) = ? OR LOWER(id) = ?) AND (isDeleted = 0 OR isDeleted IS NULL) LIMIT 1");
             if ($stmt) {
                 $stmt->bind_param("ssss", $cleanIdentifier, $cleanIdentifier, $cleanIdentifier, $cleanIdentifier);
                 $stmt->execute();

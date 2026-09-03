@@ -79,3 +79,6 @@ config.php
 *.simple-version-*
 *_debug.log
 *.bak.*
+
+# logs
+/logs/
