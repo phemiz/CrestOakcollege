@@ -127,6 +127,7 @@ export default function StaffClient({ staffList: initialStaff, departments: rawD
 
   const router = useRouter();
   const [staffList, setStaffList] = useState<StaffItem[]>(initialStaff || []);
+  const [isLoadingStaff, setIsLoadingStaff] = useState<boolean>(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
 
@@ -216,6 +217,8 @@ export default function StaffClient({ staffList: initialStaff, departments: rawD
         }
       } catch (error) {
         console.error("Error fetching live staff records:", error);
+      } finally {
+        if (isMounted) setIsLoadingStaff(false);
       }
     };
 
@@ -738,7 +741,16 @@ export default function StaffClient({ staffList: initialStaff, departments: rawD
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100 text-xs">
-              {paginatedStaff.length === 0 ? (
+              {isLoadingStaff ? (
+                <tr>
+                  <td colSpan={6} className="py-8 text-center text-slate-400 font-medium">
+                    <div className="flex items-center justify-center gap-2">
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                      <span>Loading staff registry...</span>
+                    </div>
+                  </td>
+                </tr>
+              ) : paginatedStaff.length === 0 ? (
                 <tr>
                   <td colSpan={6} className="py-8 text-center text-slate-400 font-medium">
                     No staff records match your filters.
