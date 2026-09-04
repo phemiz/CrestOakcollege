@@ -1,52 +1,64 @@
-import React from "react";
-import BillingClientView from "./BillingClientView";
-import { ShieldCheck } from "lucide-react";
+"use client";
 
-export const dynamic = "force-static";
+import React, { useState, useEffect } from "react";
+import BillingClientView from "./BillingClientView";
+import { ShieldCheck, Loader2 } from "lucide-react";
+
+interface Invoice {
+  id: string;
+  invoiceNo: string;
+  amount: number;
+  description: string;
+  feeType: string;
+  status: string;
+  dueDate: string;
+}
+
+interface Payment {
+  id: string;
+  reference: string;
+  amountPaid: number;
+  method: string;
+  status: string;
+  paidAt: string;
+  invoice: {
+    invoiceNo: string;
+    description: string;
+  };
+}
 
 export default function StudentBillingPage() {
-  const student = {
-    matricNo: "CCHMS/2026/SCS/0001",
-    user: { firstName: "Student", lastName: "User" }
-  };
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [invoices, setInvoices] = useState<Invoice[]>([]);
+  const [payments, setPayments] = useState<Payment[]>([]);
+  const [studentName, setStudentName] = useState("Student");
+  const [matricNo, setMatricNo] = useState("");
 
-  const today = new Date().toLocaleDateString();
-
-  const invoices = [
-    {
-      id: "inv1",
-      invoiceNo: "INV-2026-001",
-      amount: 150000,
-      description: "2025/2026 First Semester Tuition Fee",
-      feeType: "TUITION",
-      status: "PENDING",
-      dueDate: today
-    },
-    {
-      id: "inv2",
-      invoiceNo: "INV-2025-089",
-      amount: 35000,
-      description: "Freshman Acceptance & Registration Dues",
-      feeType: "ACCEPTANCE",
-      status: "PAID",
-      dueDate: today
-    }
-  ];
-
-  const payments = [
-    {
-      id: "pay1",
-      reference: "PAY-REF-998231",
-      amountPaid: 35000,
-      method: "Paystack Card",
-      status: "SUCCESSFUL",
-      paidAt: today,
-      invoice: {
-        invoiceNo: "INV-2025-089",
-        description: "Freshman Acceptance & Registration Dues"
+  useEffect(() => {
+    const fetchBilling = async () => {
+      try {
+        const res = await fetch("/api/bursary/dashboard.php", {
+          method: "GET",
+          credentials: "include"
+        });
+        const data = await res.json();
+        if (data.success) {
+          setInvoices(data.invoices || []);
+          setPayments(data.payments || []);
+          setStudentName(data.studentName || "Student");
+          setMatricNo(data.matricNo || "");
+        } else {
+          setError(data.message || "Could not load billing information.");
+        }
+      } catch {
+        setError("Network error loading billing information.");
+      } finally {
+        setLoading(false);
       }
-    }
-  ];
+    };
+    fetchBilling();
+  }, []);
 
   return (
     <div className="flex flex-col gap-8 animate-fade-in-up">
@@ -62,12 +74,23 @@ export default function StudentBillingPage() {
         </div>
       </div>
 
-      <BillingClientView 
-        invoices={invoices}
-        payments={payments}
-        studentName={`${student.user.firstName} ${student.user.lastName}`}
-        matricNo={student.matricNo}
-      />
+      {loading ? (
+        <div className="flex items-center justify-center py-20 text-slate-400 gap-2">
+          <Loader2 size={20} className="animate-spin" />
+          <span className="text-xs font-semibold">Loading billing information...</span>
+        </div>
+      ) : error ? (
+        <div className="bg-red-50 border border-red-200 text-red-800 p-4 rounded-2xl text-xs font-semibold">
+          {error}
+        </div>
+      ) : (
+        <BillingClientView
+          invoices={invoices}
+          payments={payments}
+          studentName={studentName}
+          matricNo={matricNo}
+        />
+      )}
     </div>
   );
 }

@@ -49,6 +49,11 @@ interface BillingClientViewProps {
 
 export default function BillingClientView({ invoices, payments, studentName, matricNo }: BillingClientViewProps) {
   const router = useRouter();
+
+  const getCsrfToken = () => {
+    if (typeof document === "undefined") return "";
+    return document.cookie.split("; ").find(r => r.startsWith("cchsmt_csrf_token="))?.split("=")[1] || "";
+  };
   
   // URL status states
   const [alertState, setAlertState] = useState<{ status: string | null; reference: string | null; error: string | null }>({ status: null, reference: null, error: null });
@@ -99,12 +104,11 @@ export default function BillingClientView({ invoices, payments, studentName, mat
     try {
       const res = await fetch("/api/bursary/dashboard.php", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: { "Content-Type": "application/json", "X-CSRF-Token": getCsrfToken() },
         body: JSON.stringify({
           action: "initialize_payment",
-          invoiceId: selectedInvoice.id,
-          amount: selectedInvoice.amount,
-          invoiceNo: selectedInvoice.invoiceNo
+          student_fee_id: selectedInvoice.id,
+          amount: selectedInvoice.amount
         })
       });
       const data = await res.json();
@@ -125,7 +129,11 @@ export default function BillingClientView({ invoices, payments, studentName, mat
     setVerificationFeedback(null);
 
     try {
-      const res = await fetch(`/api/bursary/dashboard.php?action=verify&reference=${encodeURIComponent(reference)}`);
+      const res = await fetch("/api/bursary/dashboard.php", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "X-CSRF-Token": getCsrfToken() },
+        body: JSON.stringify({ action: "verify_payment", reference })
+      });
       const data = await res.json();
       setVerifyingPaymentId(null);
 
