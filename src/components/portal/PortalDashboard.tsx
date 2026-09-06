@@ -1,30 +1,22 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import Image from "next/image";
 import { Logo } from "@/components/ui/logo";
 import { portalAvailableCourses, portalResultsData, portalTimetableSlots } from "@/data/portalData";
-import { motion, AnimatePresence } from "framer-motion";
+import BillingClientView from "@/app/portal/billing/BillingClientView";
 import { 
   User, 
   BookOpen, 
-  FileText, 
   HelpCircle, 
   Wallet, 
   Calendar, 
-  ArrowUpRight, 
   Lock, 
   Plus, 
   Download, 
   Check, 
-  RefreshCw, 
   Send, 
   Clock, 
-  ShieldCheck, 
-  Building, 
-  CheckCircle2, 
-  Printer, 
-  Info
+  CheckCircle2
 } from "lucide-react";
 
 interface StudentProfile {
@@ -45,20 +37,6 @@ interface Invoice {
   status: string;
   category: string;
   date: string;
-}
-
-interface Receipt {
-  invoiceId: string;
-  receiptNo: string;
-  description: string;
-  amount: number;
-  date: string;
-  refCode: string;
-  verificationCode: string;
-  gateway: string;
-  method: string;
-  studentName: string;
-  regNumber: string;
 }
 
 interface Ticket {
@@ -97,31 +75,8 @@ export default function PortalDashboard({ initialUser }: { initialUser?: any }) 
 
   // Invoices & Billing
   const [invoices, setInvoices] = useState<Invoice[]>([]);
-  const [receipts, setReceipts] = useState<Receipt[]>([]);
   const [dynamicResultsList, setDynamicResultsList] = useState<any[]>([]);
-  const [financeSummary, setFinanceSummary] = useState<{
-    totalBilled: number;
-    totalPaid: number;
-    outstandingBalance: number;
-    minimumRequiredUpfront: number;
-    status: string;
-  } | null>(null);
-  
-  // Checkout simulator modal states
-  const [checkoutModalOpen, setCheckoutModalOpen] = useState(false);
-  const [selectedInvoice, setSelectedInvoice] = useState<Invoice | null>(null);
-  const [paymentGateway, setPaymentGateway] = useState<"paystack" | "flutterwave">("paystack");
-  const [paymentMethod, setPaymentMethod] = useState<"card" | "transfer" | "ussd">("card");
-  
-  // Checkout interaction states
-  const [cardNumber, setCardNumber] = useState("");
-  const [cardExpiry, setCardExpiry] = useState("");
-  const [cardCvv, setCardCvv] = useState("");
-  const [selectedBank, setSelectedBank] = useState("gtb");
-  const [transferConfirmed, setTransferConfirmed] = useState(false);
-  const [paymentProcessing, setPaymentProcessing] = useState(false);
-  const [paymentSuccess, setPaymentSuccess] = useState(false);
-  const [receiptToPrint, setReceiptToPrint] = useState<Receipt | null>(null);
+  const [billingData, setBillingData] = useState<any>(null);
 
   // Tickets support
   const [tickets, setTickets] = useState<Ticket[]>([]);
@@ -172,6 +127,15 @@ export default function PortalDashboard({ initialUser }: { initialUser?: any }) 
         })
         .catch((err) => console.warn("Live student API fetch notice:", err));
 
+      fetch("/api/bursary/dashboard.php", { credentials: "include" })
+        .then((res) => res.json())
+        .then((data) => {
+          if (data && data.success !== false) {
+            setBillingData(data);
+          }
+        })
+        .catch((err) => console.warn("Bursary dashboard fetch notice:", err));
+
       let tuitionRate = 400000;
       const loadedFaculty = mockProfile.faculty;
       if (loadedFaculty === "natural" || loadedFaculty === "physical") tuitionRate = 300000;
@@ -188,7 +152,6 @@ export default function PortalDashboard({ initialUser }: { initialUser?: any }) 
       ];
 
       const savedInvoices = localStorage.getItem("cchsmt_student_invoices");
-      const savedReceipts = localStorage.getItem("cchsmt_student_receipts");
       const savedTickets = localStorage.getItem("cchsmt_student_tickets");
       const savedRequests = localStorage.getItem("cchsmt_student_requests");
 
@@ -199,7 +162,6 @@ export default function PortalDashboard({ initialUser }: { initialUser?: any }) 
         localStorage.setItem("cchsmt_student_invoices", JSON.stringify(defaultInvoices));
       }
 
-      if (savedReceipts) setReceipts(JSON.parse(savedReceipts));
       if (savedTickets) setTickets(JSON.parse(savedTickets));
       if (savedRequests) setRequestsList(JSON.parse(savedRequests));
       return;
@@ -246,7 +208,6 @@ export default function PortalDashboard({ initialUser }: { initialUser?: any }) 
     ];
 
     const savedInvoices = localStorage.getItem("cchsmt_student_invoices");
-    const savedReceipts = localStorage.getItem("cchsmt_student_receipts");
     const savedTickets = localStorage.getItem("cchsmt_student_tickets");
     const savedRequests = localStorage.getItem("cchsmt_student_requests");
 
@@ -301,24 +262,19 @@ export default function PortalDashboard({ initialUser }: { initialUser?: any }) 
         })
         .catch((err) => console.error("CGPA Fetch Error:", err));
 
-      // Real-Time Finance & 70/30 Installment Fetch
-      fetch(`/api/student/finance.php?matricNo=${encodeURIComponent(activeMatric)}`)
+      // Real-Time Finance Fetch (live bursary API)
+      fetch("/api/bursary/dashboard.php", { credentials: "include" })
         .then((res) => res.json())
         .then((data) => {
-          if (data.success) {
+          if (data && data.success !== false) {
+            setBillingData(data);
             if (data.invoices && data.invoices.length > 0) {
               setInvoices(data.invoices);
+            } else if (savedInvoices) {
+              setInvoices(JSON.parse(savedInvoices));
+            } else {
+              setInvoices(defaultInvoices);
             }
-            if (data.receipts) {
-              setReceipts(data.receipts);
-            }
-            setFinanceSummary({
-              totalBilled: data.totalBilled ?? data.financialSummary?.totalBilled ?? 770000,
-              totalPaid: data.totalPaid ?? data.financialSummary?.totalPaid ?? 0,
-              outstandingBalance: data.outstandingBalance ?? data.financialSummary?.outstandingBalance ?? 770000,
-              minimumRequiredUpfront: data.minimumUpfrontRequired ?? data.financialSummary?.minimumRequiredUpfront ?? 390000,
-              status: data.status ?? data.financialSummary?.paymentStatus ?? "UNPAID"
-            });
           } else if (savedInvoices) {
             setInvoices(JSON.parse(savedInvoices));
           } else {
@@ -326,14 +282,11 @@ export default function PortalDashboard({ initialUser }: { initialUser?: any }) 
           }
         })
         .catch((err) => {
-          console.warn("Dynamic Finance fetch notice:", err);
+          console.warn("Bursary dashboard fetch notice:", err);
           if (savedInvoices) {
             setInvoices(JSON.parse(savedInvoices));
           } else {
             setInvoices(defaultInvoices);
-          }
-          if (savedReceipts) {
-            setReceipts(JSON.parse(savedReceipts));
           }
         });
 
@@ -447,60 +400,6 @@ export default function PortalDashboard({ initialUser }: { initialUser?: any }) 
       return;
     }
     setRegistrationSubmitted(true);
-  };
-
-  // Start Payment modal
-  const openPaymentCheckout = (invoice: Invoice) => {
-    setSelectedInvoice(invoice);
-    setCheckoutModalOpen(true);
-    setPaymentSuccess(false);
-    setTransferConfirmed(false);
-  };
-
-  // Checkout process simulation
-  const handleGatewayPayment = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!selectedInvoice || !studentProfile) return;
-    const currentInvoice = selectedInvoice;
-    const currentProfile = studentProfile;
-    setPaymentProcessing(true);
-
-    setTimeout(() => {
-      // payment finishes
-      setPaymentProcessing(false);
-      setPaymentSuccess(true);
-
-      // Create Receipt
-      const refCode = `CCHSMT-TX-${Math.floor(100000 + Math.random() * 900000)}`;
-      const newReceipt = {
-        invoiceId: currentInvoice.id,
-        receiptNo: `REC-${Math.floor(1000 + Math.random() * 9000)}`,
-        description: currentInvoice.description,
-        amount: currentInvoice.amount,
-        date: new Date().toLocaleDateString(),
-        refCode,
-        verificationCode: Math.random().toString(36).substring(2, 8).toUpperCase(),
-        gateway: paymentGateway.toUpperCase(),
-        method: paymentMethod.toUpperCase(),
-        studentName: currentProfile.fullName,
-        regNumber: currentProfile.regNumber
-      };
-
-      // Update invoices status
-      const updatedInvoices = invoices.map(inv => {
-        if (inv.id === currentInvoice.id) {
-          return { ...inv, status: "Paid" };
-        }
-        return inv;
-      });
-      setInvoices(updatedInvoices);
-      localStorage.setItem("cchsmt_student_invoices", JSON.stringify(updatedInvoices));
-
-      // Append Receipt
-      const updatedReceipts = [newReceipt, ...receipts];
-      setReceipts(updatedReceipts);
-      localStorage.setItem("cchsmt_student_receipts", JSON.stringify(updatedReceipts));
-    }, 2000);
   };
 
   // Submit IT support ticket
@@ -689,7 +588,7 @@ export default function PortalDashboard({ initialUser }: { initialUser?: any }) 
                       <div>
                         <p className="text-2xl font-extrabold text-brand-blue-dark">
                           {formatNaira(
-                            financeSummary?.outstandingBalance ??
+                            billingData?.outstandingBalance ??
                             invoices.filter(i => i.status === "Pending").reduce((acc, i) => acc + i.amount, 0)
                           )}
                         </p>
@@ -945,160 +844,12 @@ export default function PortalDashboard({ initialUser }: { initialUser?: any }) 
 
               {/* FINANCIAL SERVICES TAB */}
               {activeTab === "billing" && (
-                <div className="flex flex-col gap-8">
-                  {/* Summary Cards */}
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                    <div className="bg-slate-50 border border-slate-150 p-4 rounded-2xl">
-                      <span className="text-slate-400 font-bold uppercase text-[10px] tracking-wider block">Total Billed Fees</span>
-                      <p className="text-xl font-extrabold text-brand-blue-dark mt-1">
-                        {formatNaira(financeSummary?.totalBilled ?? 770000)}
-                      </p>
-                    </div>
-                    <div className="bg-slate-50 border border-slate-150 p-4 rounded-2xl">
-                      <span className="text-slate-400 font-bold uppercase text-[10px] tracking-wider block">Total Amount Paid</span>
-                      <p className="text-xl font-extrabold text-emerald-600 mt-1">
-                        {formatNaira(financeSummary?.totalPaid ?? 0)}
-                      </p>
-                    </div>
-                    <div className="bg-brand-red/5 border border-brand-red/20 p-4 rounded-2xl">
-                      <span className="text-brand-red font-bold uppercase text-[10px] tracking-wider block">Outstanding Balance</span>
-                      <p className="text-xl font-extrabold text-brand-red mt-1">
-                        {formatNaira(financeSummary?.outstandingBalance ?? 770000)}
-                      </p>
-                    </div>
-                  </div>
-
-                  {/* Active Invoices */}
-                  <div>
-                    <h4 className="font-display font-extrabold text-brand-blue-dark text-base mb-4">Outstanding Invoices (₦)</h4>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                      {invoices.map((inv) => (
-                        <div
-                          key={inv.id}
-                          className="bg-slate-50 border border-slate-150 p-5 rounded-2xl shadow-sm flex flex-col justify-between gap-4 h-36 relative overflow-hidden"
-                        >
-                          {inv.status === "Paid" && (
-                            <div className="absolute top-0 right-0 p-3 bg-emerald-500 text-white rounded-bl-xl font-bold text-[8px] tracking-wider uppercase">
-                              PAID
-                            </div>
-                          )}
-                          
-                          <div>
-                            <span className="text-[10px] font-bold text-slate-400 block uppercase tracking-wider">{inv.id} • {inv.date}</span>
-                            <h5 className="font-display font-bold text-brand-blue-dark text-sm sm:text-base mt-1.5">{inv.description}</h5>
-                          </div>
-
-                          <div className="flex justify-between items-center border-t border-slate-200/50 pt-3 text-xs">
-                            <span className="font-display font-black text-brand-red text-base">
-                              {formatNaira(inv.amount)}
-                            </span>
-                            {inv.status === "Pending" ? (
-                              <button
-                                onClick={() => openPaymentCheckout(inv)}
-                                className="bg-brand-blue hover:bg-brand-blue-dark text-white px-4 py-2 rounded-xl font-bold transition-all cursor-pointer flex items-center gap-1"
-                              >
-                                <span>Pay Now</span>
-                                <ArrowUpRight size={14} />
-                              </button>
-                            ) : (
-                              <button
-                                onClick={() => {
-                                  const r = receipts.find(rc => rc.invoiceId === inv.id);
-                                  if (r) {
-                                    setReceiptToPrint(r);
-                                  } else {
-                                    alert("Receipt not found. It will be generated when payment completes.");
-                                  }
-                                }}
-                                className="border border-brand-red text-brand-red hover:bg-brand-red hover:text-white px-3.5 py-2 rounded-xl font-bold transition-all cursor-pointer flex items-center gap-1"
-                              >
-                                <FileText size={14} />
-                                <span>Receipt</span>
-                              </button>
-                            )}
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-
-                  {/* Payment Note and Bank details */}
-                  <div className="bg-slate-50 border border-slate-150 p-5 rounded-3xl grid grid-cols-1 md:grid-cols-2 gap-6 text-xs text-slate-700">
-                    <div className="flex flex-col gap-2">
-                      <div className="flex items-center gap-1.5 font-bold text-brand-blue-dark">
-                        <Info size={16} className="text-brand-blue" />
-                        <span>Installment Policy Guidelines</span>
-                      </div>
-                      <p className="text-slate-500 mt-1 font-semibold leading-relaxed">
-                        A minimum of <strong>70% upfront payment</strong> is required upon receiving admission, with the remaining <strong>30% balance</strong> paid before semester examinations.
-                      </p>
-                      <p className="text-slate-500 font-semibold leading-relaxed">
-                        Fees marked with <strong>(*)</strong> represent administrative, medical test, acceptance, and matriculation charges and must be <strong>paid in full upfront</strong>.
-                      </p>
-                    </div>
-
-                    <div className="flex flex-col gap-2.5">
-                      <div className="flex items-center gap-1.5 font-bold text-brand-blue-dark">
-                        <Building size={16} className="text-amber-600" />
-                        <span>Official Bank Transfer Coordinates</span>
-                      </div>
-                      <div className="bg-white p-3 rounded-xl border border-slate-100 flex flex-col gap-1.5 text-[11px] font-semibold">
-                        <div>
-                          <span className="text-slate-400 font-bold block uppercase text-[8px]">Bank Name</span>
-                          <span className="text-brand-blue-dark font-extrabold">First Bank of Nigeria</span>
-                        </div>
-                        <div>
-                          <span className="text-slate-400 font-bold block uppercase text-[8px]">Account Name</span>
-                          <span className="text-brand-blue-dark font-extrabold block truncate">CrestOak College of Health Sciences Management and Technology</span>
-                        </div>
-                        <div>
-                          <span className="text-slate-400 font-bold block uppercase text-[8px]">Account Number</span>
-                          <span className="text-brand-red font-black font-display text-sm">1023948576</span>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Payment Ledger / History */}
-                  <div>
-                    <h4 className="font-display font-extrabold text-brand-blue-dark text-base mb-4">Receipt History Ledger</h4>
-                    {receipts.length > 0 ? (
-                      <div className="flex flex-col gap-3">
-                        {receipts.map((rec) => (
-                          <div
-                            key={rec.refCode}
-                            className="bg-white border border-slate-200 rounded-xl p-4 flex justify-between items-center text-xs text-slate-700 font-semibold"
-                          >
-                            <div className="flex items-center gap-3">
-                              <div className="p-2 bg-emerald-50 text-emerald-600 rounded-xl">
-                                <Check size={16} />
-                              </div>
-                              <div>
-                                <p className="font-bold text-brand-blue-dark">{rec.description}</p>
-                                <p className="text-[10px] text-slate-400 mt-0.5">Ref: {rec.refCode} • Date: {rec.date}</p>
-                              </div>
-                            </div>
-                            
-                            <div className="flex items-center gap-3">
-                              <span className="font-display font-bold text-brand-blue-dark">{formatNaira(rec.amount)}</span>
-                              <button
-                                onClick={() => setReceiptToPrint(rec)}
-                                className="text-brand-blue hover:text-brand-blue-light font-bold"
-                              >
-                                View Receipt
-                              </button>
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    ) : (
-                      <div className="py-12 border border-dashed border-slate-200 rounded-2xl text-center text-slate-400 font-bold text-xs uppercase tracking-wider">
-                        No payments recorded in ledger yet.
-                      </div>
-                    )}
-                  </div>
-
-                </div>
+                <BillingClientView
+                  invoices={billingData?.invoices ?? []}
+                  payments={billingData?.payments ?? []}
+                  studentName={billingData?.studentName ?? studentProfile.fullName}
+                  matricNo={billingData?.matricNo ?? studentProfile.regNumber}
+                />
               )}
 
               {/* STUDENT SERVICES TAB */}
@@ -1237,398 +988,6 @@ export default function PortalDashboard({ initialUser }: { initialUser?: any }) 
         )}
       </div>
 
-      {/* PAYSTACK & FLUTTERWAVE GATEWAY SIMULATION MODAL */}
-      <AnimatePresence>
-        {checkoutModalOpen && selectedInvoice && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 z-[120] bg-slate-900/60 backdrop-blur-sm flex justify-center items-center px-4"
-          >
-            <motion.div
-              initial={{ scale: 0.95, y: 15 }}
-              animate={{ scale: 1, y: 0 }}
-              exit={{ scale: 0.95, y: 15 }}
-              className="bg-white rounded-3xl w-full max-w-lg overflow-hidden shadow-2xl border border-slate-100 flex flex-col"
-            >
-              {/* Checkout modal header */}
-              <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100 bg-slate-50">
-                <div className="flex items-center gap-2.5">
-                  <div className="w-8 h-8 rounded-full bg-brand-red flex items-center justify-center text-white font-bold font-display text-[10px]">CC</div>
-                  <div>
-                    <h4 className="font-display font-extrabold text-brand-blue-dark text-sm leading-tight">CrestOak College billing</h4>
-                    <p className="text-slate-400 text-[9px] mt-0.5 uppercase tracking-widest">Secure Fintech Integration</p>
-                  </div>
-                </div>
-                
-                {/* Gateway Selector Toggles */}
-                <div className="flex gap-1.5 bg-slate-200 p-1 rounded-xl">
-                  <button
-                    onClick={() => {
-                      setPaymentGateway("paystack");
-                      setPaymentSuccess(false);
-                    }}
-                    className={`px-3 py-1 rounded-lg text-[10px] font-black uppercase tracking-wider transition-all cursor-pointer ${
-                      paymentGateway === "paystack" ? "bg-white text-emerald-600 shadow-sm" : "text-slate-500"
-                    }`}
-                  >
-                    Paystack
-                  </button>
-                  <button
-                    onClick={() => {
-                      setPaymentGateway("flutterwave");
-                      setPaymentSuccess(false);
-                    }}
-                    className={`px-3 py-1 rounded-lg text-[10px] font-black uppercase tracking-wider transition-all cursor-pointer ${
-                      paymentGateway === "flutterwave" ? "bg-white text-amber-600 shadow-sm" : "text-slate-500"
-                    }`}
-                  >
-                    Flutterwave
-                  </button>
-                </div>
-              </div>
-
-              {!paymentSuccess ? (
-                // PAYMENT METHOD INPUTS PANEL
-                <div className="grid grid-cols-1 md:grid-cols-12 min-h-[40vh] items-stretch">
-                  
-                  {/* Left Column Method Selectors */}
-                  <div className="md:col-span-4 bg-slate-50 border-r border-slate-100 p-4 flex flex-col gap-2 text-left">
-                    <p className="text-[8px] font-black uppercase text-slate-400 tracking-wider mb-2">Select Method</p>
-                    
-                    {[
-                      { id: "card", label: "Card Payment", desc: "Visa, Mastercard, Verve" },
-                      { id: "transfer", label: "Bank Transfer", desc: "Simulate slip upload" },
-                      { id: "ussd", label: "USSD Code", desc: "Dial quick bank code" }
-                    ].map(method => (
-                      <button
-                        key={method.id}
-                        onClick={() => setPaymentMethod(method.id as "card" | "transfer" | "ussd")}
-                        className={`p-2.5 rounded-xl border text-left flex flex-col gap-1 transition-all cursor-pointer ${
-                          paymentMethod === method.id
-                            ? "bg-white border-brand-blue-light text-brand-blue-dark shadow-sm"
-                            : "bg-transparent border-transparent text-slate-500 hover:bg-slate-100"
-                        }`}
-                      >
-                        <span className="text-[10px] font-black uppercase leading-none">{method.label}</span>
-                        <span className="text-[8px] leading-tight text-slate-400 font-semibold">{method.desc}</span>
-                      </button>
-                    ))}
-
-                    <div className="mt-auto border-t border-slate-150 pt-3 text-[10px] text-slate-400 font-bold flex flex-col gap-1">
-                      <span>Ref ID:</span>
-                      <span className="font-display font-bold text-brand-blue-dark break-all">{selectedInvoice.id}</span>
-                    </div>
-                  </div>
-
-                  {/* Right Column Checkout forms */}
-                  <div className="md:col-span-8 p-6 flex flex-col justify-between">
-                    <div>
-                      <div className="flex justify-between items-center mb-5 pb-3 border-b border-slate-100">
-                        <span className="text-xs text-slate-400 font-bold uppercase tracking-wider">{selectedInvoice.description}</span>
-                        <span className="font-display font-black text-brand-red text-base">
-                          {formatNaira(selectedInvoice.amount)}
-                        </span>
-                      </div>
-
-                      {/* CARD CHECKOUT FORM */}
-                      {paymentMethod === "card" && (
-                        <form onSubmit={handleGatewayPayment} className="flex flex-col gap-4 text-xs font-semibold text-slate-600">
-                          <div className="flex flex-col gap-1">
-                            <label className="text-[9px] uppercase tracking-wider font-bold">Card Number</label>
-                            <input
-                              type="text"
-                              maxLength={19}
-                              placeholder="5061 0000 0000 0000 (Verve/Visa)"
-                              value={cardNumber}
-                              onChange={(e) => setCardNumber(e.target.value)}
-                              className="p-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none text-sm font-semibold tracking-widest text-slate-800"
-                              required
-                            />
-                          </div>
-
-                          <div className="grid grid-cols-2 gap-4">
-                            <div className="flex flex-col gap-1">
-                              <label className="text-[9px] uppercase tracking-wider font-bold">Expiry Date</label>
-                              <input
-                                type="text"
-                                placeholder="MM/YY"
-                                maxLength={5}
-                                value={cardExpiry}
-                                onChange={(e) => setCardExpiry(e.target.value)}
-                                className="p-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none text-sm text-center"
-                                required
-                              />
-                            </div>
-                            <div className="flex flex-col gap-1">
-                              <label className="text-[9px] uppercase tracking-wider font-bold">CVV Code</label>
-                              <input
-                                type="password"
-                                maxLength={3}
-                                placeholder="•••"
-                                value={cardCvv}
-                                onChange={(e) => setCardCvv(e.target.value)}
-                                className="p-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none text-sm text-center"
-                                required
-                              />
-                            </div>
-                          </div>
-
-                          <button
-                            type="submit"
-                            disabled={paymentProcessing}
-                            className={`w-full text-white font-display font-bold py-3.5 rounded-xl transition-all cursor-pointer flex items-center justify-center gap-2 mt-4 shadow-lg ${
-                              paymentGateway === "paystack"
-                                ? "bg-emerald-600 hover:bg-emerald-700 shadow-emerald-600/10"
-                                : "bg-amber-600 hover:bg-amber-700 shadow-amber-600/10"
-                            }`}
-                          >
-                            {paymentProcessing ? (
-                              <>
-                                <RefreshCw className="animate-spin" size={14} />
-                                <span>Verifying Transaction Ledger...</span>
-                              </>
-                            ) : (
-                              <>
-                                <Lock size={13} />
-                                <span>Pay {formatNaira(selectedInvoice.amount)}</span>
-                              </>
-                            )}
-                          </button>
-                        </form>
-                      )}
-
-                      {/* BANK TRANSFER SIMULATOR */}
-                      {paymentMethod === "transfer" && (
-                        <div className="flex flex-col gap-4 text-xs font-semibold text-slate-600">
-                          <div className="bg-slate-50 border border-slate-150 p-4 rounded-xl flex flex-col gap-1.5 leading-relaxed">
-                            <p className="text-[10px] text-slate-400 font-bold uppercase">Mock Transfer Bank Coordinates</p>
-                            <p className="text-brand-blue-dark font-black text-sm">Wema Bank PLC</p>
-                            <p className="font-display font-extrabold text-base tracking-widest text-slate-800">9823948293</p>
-                            <p className="text-[10px] text-slate-400 font-bold mt-1 uppercase">Account Name: CrestOak College Billing Escrow</p>
-                          </div>
-
-                          <div className="flex items-center gap-3 mt-1.5">
-                            <input
-                              type="checkbox"
-                              id="cchsmt_transfer_check"
-                              checked={transferConfirmed}
-                              onChange={() => setTransferConfirmed(!transferConfirmed)}
-                              className="w-4 h-4 rounded border border-slate-350 bg-white"
-                            />
-                            <label htmlFor="cchsmt_transfer_check" className="text-[10px] text-slate-400 font-bold cursor-pointer select-none">
-                              I have made the bank transfer matching the amount above.
-                            </label>
-                          </div>
-
-                          <button
-                            onClick={handleGatewayPayment}
-                            disabled={!transferConfirmed || paymentProcessing}
-                            className={`w-full text-white font-display font-bold py-3.5 rounded-xl transition-all cursor-pointer flex items-center justify-center gap-2 mt-4 shadow-lg ${
-                              !transferConfirmed ? "bg-slate-200 text-slate-400 cursor-not-allowed shadow-none" : 
-                              paymentGateway === "paystack" ? "bg-emerald-600 hover:bg-emerald-700 shadow-emerald-600/10" : "bg-amber-600 hover:bg-amber-700 shadow-amber-600/10"
-                            }`}
-                          >
-                            {paymentProcessing ? (
-                              <>
-                                <RefreshCw className="animate-spin" size={14} />
-                                <span>Awaiting Bank Confirmation...</span>
-                              </>
-                            ) : (
-                              <span>Confirm Bank Transfer Invoice</span>
-                            )}
-                          </button>
-                        </div>
-                      )}
-
-                      {/* USSD GATEWAY CODES */}
-                      {paymentMethod === "ussd" && (
-                        <div className="flex flex-col gap-4 text-xs font-semibold text-slate-600">
-                          <div className="flex flex-col gap-1">
-                            <label className="text-[9px] uppercase tracking-wider font-bold">Choose Bank</label>
-                            <select
-                              value={selectedBank}
-                              onChange={(e) => setSelectedBank(e.target.value)}
-                              className="p-3 bg-slate-50 border border-slate-200 rounded-xl font-bold focus:outline-none text-slate-800"
-                            >
-                              <option value="gtb">GTBank (*737*)</option>
-                              <option value="zenith">Zenith Bank (*966*)</option>
-                              <option value="access">Access Bank (*901*)</option>
-                              <option value="uba">UBA (*919*)</option>
-                            </select>
-                          </div>
-
-                          <div className="bg-slate-50 border border-slate-150 p-4 rounded-xl text-center flex flex-col gap-1 leading-normal">
-                            <p className="text-[10px] text-slate-400 font-bold uppercase">USSD String</p>
-                            <p className="font-display font-black text-lg text-brand-blue-dark tracking-wider">
-                              {selectedBank === "gtb" && `*737*1*2*9823948293*${selectedInvoice.amount}#`}
-                              {selectedBank === "zenith" && `*966*3*9823948293*${selectedInvoice.amount}#`}
-                              {selectedBank === "access" && `*901*2*9823948293*${selectedInvoice.amount}#`}
-                              {selectedBank === "uba" && `*919*4*9823948293*${selectedInvoice.amount}#`}
-                            </p>
-                            <p className="text-[9px] text-slate-400 mt-1 font-bold">Dial this string on your registered phone to pay.</p>
-                          </div>
-
-                          <button
-                            onClick={handleGatewayPayment}
-                            disabled={paymentProcessing}
-                            className={`w-full text-white font-display font-bold py-3.5 rounded-xl transition-all cursor-pointer flex items-center justify-center gap-2 mt-4 shadow-lg ${
-                              paymentGateway === "paystack"
-                                ? "bg-emerald-600 hover:bg-emerald-700 shadow-emerald-600/10"
-                                : "bg-amber-600 hover:bg-amber-700 shadow-amber-600/10"
-                            }`}
-                          >
-                            {paymentProcessing ? (
-                              <>
-                                <RefreshCw className="animate-spin" size={14} />
-                                <span>Verifying Dial Code...</span>
-                              </>
-                            ) : (
-                              <span>I Have Completed Payment</span>
-                            )}
-                          </button>
-                        </div>
-                      )}
-
-                    </div>
-
-                    <div className="text-[9px] text-slate-400 font-bold leading-normal text-center mt-6">
-                      🔒 Secure PCI-DSS Compliant Gateways. CrestOak College will not store credentials.
-                    </div>
-                  </div>
-
-                </div>
-              ) : (
-                // SUCCESS NOTIFICATION PANEL
-                <div className="flex flex-col items-center justify-center text-center p-8 gap-6 min-h-[40vh]">
-                  <div className="p-4 bg-emerald-50 text-emerald-600 rounded-full">
-                    <ShieldCheck size={48} />
-                  </div>
-                  <div>
-                    <h4 className="font-display font-black text-xl text-brand-blue-dark">Naira Invoice Cleared!</h4>
-                    <p className="text-slate-500 text-xs mt-2 leading-relaxed font-semibold max-w-xs mx-auto">
-                      Congratulations, your payment of {formatNaira(selectedInvoice.amount)} has been cleared and matched on student databases.
-                    </p>
-                  </div>
-
-                  <button
-                    onClick={() => {
-                      setCheckoutModalOpen(false);
-                      // Pull newly generated receipt
-                      const freshReceipt = receipts[0];
-                      if (freshReceipt) {
-                        setReceiptToPrint(freshReceipt);
-                      }
-                    }}
-                    className="bg-brand-blue hover:bg-brand-blue-dark text-white font-display font-bold px-6 py-2.5 rounded-xl text-xs transition-colors cursor-pointer"
-                  >
-                    View Secure Receipt
-                  </button>
-                </div>
-              )}
-            </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-
-      {/* PRINT-READY RECEIPT MODAL POPUP */}
-      <AnimatePresence>
-        {receiptToPrint && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 z-[130] bg-slate-900/60 backdrop-blur-sm flex justify-center items-center px-4"
-          >
-            <motion.div
-              initial={{ scale: 0.95, y: 15 }}
-              animate={{ scale: 1, y: 0 }}
-              exit={{ scale: 0.95, y: 15 }}
-              className="bg-white rounded-3xl w-full max-w-lg overflow-hidden shadow-2xl border border-slate-100 flex flex-col p-6 sm:p-8"
-            >
-              <div className="flex justify-between items-center border-b border-slate-100 pb-4 mb-6 print:hidden">
-                <span className="font-display font-extrabold text-sm text-brand-blue-dark uppercase">Official Receipt View</span>
-                <div className="flex gap-2">
-                  <button
-                    onClick={() => setReceiptToPrint(null)}
-                    className="p-1.5 rounded-lg hover:bg-slate-100 text-slate-400 hover:text-slate-600 transition-all cursor-pointer text-xs font-bold"
-                  >
-                    Close
-                  </button>
-                  <button
-                    onClick={() => window.print()}
-                    className="bg-brand-blue text-white px-3 py-1.5 rounded-lg text-xs font-bold flex items-center gap-1 cursor-pointer"
-                  >
-                    <Printer size={13} />
-                    <span>Print Receipt</span>
-                  </button>
-                </div>
-              </div>
-
-              {/* Receipt formatting */}
-              <div className="border border-slate-100 p-6 rounded-2xl bg-white text-slate-800 leading-relaxed font-sans text-xs sm:text-sm print:border-none print:p-0">
-                {/* Header */}
-                <div className="flex items-center gap-3 border-b-2 border-brand-blue-dark pb-4 mb-5">
-                  <Image src="/crestoak-logo.png" alt="CrestOak logo" width={48} height={48} loading="lazy" className="w-12 h-12 object-contain rounded-full" />
-                  <div className="flex flex-col text-left">
-                    <span className="font-display text-sm font-black text-brand-blue-dark leading-none">CRESTOAK COLLEGE</span>
-                    <span className="text-[6px] tracking-widest font-extrabold text-brand-red uppercase leading-tight mt-0.5">
-                      Official Payment Receipt
-                    </span>
-                    <span className="text-[6px] text-slate-400 font-bold mt-0.5 leading-none">Badagry, Lagos State, Nigeria</span>
-                  </div>
-                </div>
-
-                {/* Receipt breakdown */}
-                <div className="flex flex-col gap-4 text-slate-700 font-semibold text-xs">
-                  <div className="flex justify-between">
-                    <span className="text-slate-400 font-bold uppercase">Receipt Number</span>
-                    <span className="text-brand-blue-dark font-extrabold">{receiptToPrint.receiptNo}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-slate-400 font-bold uppercase">Transaction Ref</span>
-                    <span className="text-brand-blue-dark font-extrabold">{receiptToPrint.refCode}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-slate-400 font-bold uppercase">Payment Date</span>
-                    <span className="text-brand-blue-dark font-extrabold">{receiptToPrint.date}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-slate-400 font-bold uppercase">Candidate Name</span>
-                    <span className="text-brand-blue-dark font-extrabold">{receiptToPrint.studentName}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-slate-400 font-bold uppercase">Registration Number</span>
-                    <span className="text-brand-blue-dark font-extrabold">{receiptToPrint.regNumber}</span>
-                  </div>
-                  
-                  <div className="border-t border-slate-100 my-2 pt-2 flex justify-between font-bold">
-                    <span className="text-slate-400 uppercase">Item Description</span>
-                    <span className="text-brand-blue-dark">{receiptToPrint.description}</span>
-                  </div>
-
-                  <div className="bg-slate-50 border border-slate-100 p-3 rounded-xl flex justify-between items-center text-sm font-black text-brand-blue-dark mt-2">
-                    <span className="text-slate-400 font-bold uppercase text-[10px]">Total Amount Paid</span>
-                    <span className="font-display text-brand-red text-base">{formatNaira(receiptToPrint.amount)}</span>
-                  </div>
-
-                  <div className="border-t border-slate-100 pt-4 mt-2 flex justify-between items-center">
-                    <div>
-                      <p className="text-[8px] text-slate-400 uppercase tracking-widest font-black">Verification Key</p>
-                      <p className="text-brand-blue-dark font-extrabold">{receiptToPrint.verificationCode}</p>
-                    </div>
-                    <div className="bg-emerald-50 text-emerald-800 text-[8px] tracking-wider font-extrabold px-2.5 py-1 rounded uppercase border border-emerald-200">
-                      Payment Verified
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-            </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
     </>
   );
 }

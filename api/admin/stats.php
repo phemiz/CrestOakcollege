@@ -51,7 +51,7 @@ if ($coursesCount === 0) {
 
 // 5. Total Settled Revenue
 $totalRevenue = 0.00;
-$res = $conn->query("SELECT SUM(amount) as total FROM fees WHERE status = 'PAID'");
+$res = $conn->query("SELECT SUM(amount) as total FROM fee_payments WHERE status = 'success'");
 if ($res) {
     $row = $res->fetch_assoc();
     $totalRevenue = (float)($row['total'] ?? 0.00);
