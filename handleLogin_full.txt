@@ -1,0 +1,64 @@
+const handleLogin = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!studentId.trim() || !studentPass.trim()) {
+      setStudentError("Please enter both portal credentials.");
+      return;
+    }
+
+    // Check admissions database to mock match
+    const savedAppsStr = localStorage.getItem("cchsmt_submitted_applications") || "[]";
+    let matchedName = "Olawale Tunde Joseph";
+    let matchedReg = studentId.toUpperCase();
+    let matchedFaculty = "health";
+
+    try {
+      const apps: any[] = JSON.parse(savedAppsStr);
+      const match = apps.find(
+        (a: any) => a.regNumber && a.regNumber.toUpperCase() === studentId.toUpperCase()
+      );
+      if (match) {
+        matchedName = match.fullName;
+        matchedReg = match.regNumber;
+        matchedFaculty = match.faculty;
+      }
+    } catch {
+      // ignore
+    }
+
+    const mockProfile = {
+      fullName: matchedName,
+      regNumber: matchedReg,
+      email: "student@crestoakcollege.com.ng",
+      phone: "+234 815 588 4804",
+      faculty: matchedFaculty,
+      semester: "1st Semester, 2025/2026",
+      level: "Year 1 / 100 Level",
+
+      gpa: "3.82"
+    };
+
+    setStudentProfile(mockProfile);
+    localStorage.setItem("cchsmt_student_profile", JSON.stringify(mockProfile));
+
+    // Dynamically update user invoices based on faculty
+    let loggedTuition = 400000;
+    if (matchedFaculty === "natural" || matchedFaculty === "physical") loggedTuition = 300000;
+    else if (["arts_social_management", "education", "agriculture", "management", "social"].includes(matchedFaculty)) loggedTuition = 250000;
+    else if (matchedFaculty === "law") loggedTuition = 400000;
+
+    const matchedInvoices = [
+      { id: "INV-001", description: "Acceptance Fee & Clearance Token *", amount: 50000, status: "Pending", category: "Acceptance", date: "June 01, 2026" },
+      { id: "INV-002", description: "Medical Examination & Health Insurance *", amount: 35000, status: "Pending", category: "Medical", date: "June 02, 2026" },
+      { id: "INV-003", description: "Administrative & Matriculation Charges *", amount: 25000, status: "Pending", category: "Administrative", date: "June 03, 2026" },
+      { id: "INV-004", description: "First Semester Tuition Fee (70% Upfront Requirement)", amount: 280000, status: "Pending", category: "School Fees", date: "June 04, 2026" },
+      { id: "INV-005", description: "Second Installment Tuition Fee (30% Exam Balance)", amount: 120000, status: "Pending", category: "School Fees", date: "June 05, 2026" },
+      { id: "INV-006", description: "Hostel Accommodation & Facilities (Optional)", amount: 260000, status: "Pending", category: "Hostel", date: "June 06, 2026" }
+    ];
+    setInvoices(matchedInvoices);
+    localStorage.setItem("cchsmt_student_invoices", JSON.stringify(matchedInvoices));
+
+    setIsLoggedIn(true);
+    setStudentError("");
+  };
+
+  // Logout Handler

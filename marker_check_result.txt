@@ -1,0 +1,22 @@
+start_marker found at index: 18233
+end_marker found at index: 21572
+
+Block length in characters: 3339
+
+--- First 200 chars of block ---
+{!isLoggedIn || !studentProfile ? (
+          // LOGIN SCREEN CONTAINER
+          <section className="py-24 flex justify-center items-center px-4">
+            <div className="bg-white border border-s
+
+--- Last 200 chars of block ---
+ssName="text-brand-blue">CCHMS/2026/SCS/0001</strong> with any password to try the simulator.
+                </p>
+              </div>
+            </div>
+          </section>
+        ) : (
+          
+
+start_marker count: 1
+end_marker count: 1

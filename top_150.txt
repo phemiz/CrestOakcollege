@@ -1,0 +1,150 @@
+"use client";
+
+import React, { useState, useEffect } from "react";
+import { Logo } from "@/components/ui/logo";
+import { portalAvailableCourses, portalResultsData, portalTimetableSlots } from "@/data/portalData";
+import BillingClientView from "@/app/portal/billing/BillingClientView";
+import { 
+  User, 
+  BookOpen, 
+  HelpCircle, 
+  Wallet, 
+  Calendar, 
+  Lock, 
+  Plus, 
+  Download, 
+  Check, 
+  Send, 
+  Clock, 
+  CheckCircle2
+} from "lucide-react";
+
+interface StudentProfile {
+  fullName: string;
+  regNumber: string;
+  email: string;
+  phone: string;
+  faculty: string;
+  semester: string;
+  level: string;
+  gpa: string;
+}
+
+interface Invoice {
+  id: string;
+  description: string;
+  amount: number;
+  status: string;
+  category: string;
+  date: string;
+}
+
+interface Ticket {
+  id: string;
+  subject: string;
+  category: string;
+  message: string;
+  status: string;
+  dateCreated: string;
+}
+
+interface RequestItem {
+  id: string;
+  type: string;
+  status: string;
+  date: string;
+}
+
+
+export default function PortalDashboard({ initialUser }: { initialUser?: any }) {
+  const [activeTab, setActiveTab] = useState<"dashboard" | "academics" | "billing" | "services">("dashboard");
+  const [activeAcademicSubTab, setActiveAcademicSubTab] = useState<"registration" | "results" | "timetable">("registration");
+
+  // Authentication Mock
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [studentId, setStudentId] = useState("");
+  const [studentPass, setStudentPass] = useState("");
+  const [studentError, setStudentError] = useState("");
+  const [studentProfile, setStudentProfile] = useState<StudentProfile | null>(null);
+  const [cgpa, setCgpa] = useState<string | null>(null);
+
+  // Course registration
+  const [registeredCourses, setRegisteredCourses] = useState<string[]>([]);
+  const [availableCourses] = useState(portalAvailableCourses);
+  const [registrationSubmitted, setRegistrationSubmitted] = useState(false);
+
+  // Invoices & Billing
+  const [invoices, setInvoices] = useState<Invoice[]>([]);
+  const [dynamicResultsList, setDynamicResultsList] = useState<any[]>([]);
+  const [billingData, setBillingData] = useState<any>(null);
+
+  // Tickets support
+  const [tickets, setTickets] = useState<Ticket[]>([]);
+  const [ticketSubject, setTicketSubject] = useState("");
+  const [ticketCategory, setTicketCategory] = useState("Academic");
+  const [ticketMessage, setTicketMessage] = useState("");
+  
+  // Requests support
+  const [requestsList, setRequestsList] = useState<RequestItem[]>([]);
+  const [requestType, setRequestType] = useState("transcript");
+
+  // Initialize client side data with live PHP MySQL API integration
+  useEffect(() => {
+    if (initialUser) {
+      const mockProfile: StudentProfile = {
+        fullName: initialUser.name || "Adebayo Chukwuma",
+        regNumber: initialUser.registrationNumber || initialUser.username || "STU-2026-001",
+        email: initialUser.email || "student@crestoakcollege.com.ng",
+        phone: "+234 815 588 4804",
+        faculty: initialUser.faculty || "health",
+        semester: "1st Semester, 2026/2027",
+        level: "Year 1 / 100 Level",
+        gpa: "3.82"
+      };
+
+      setStudentProfile(mockProfile);
+      setIsLoggedIn(true);
+
+      const reg = initialUser.registrationNumber || initialUser.username || "STU-2026-001";
+      fetch(`/api/student/dashboard.php?regNumber=${encodeURIComponent(reg)}`)
+        .then((res) => res.json())
+        .then((data) => {
+          if (data.success && data.student) {
+            setStudentProfile({
+              fullName: `${data.student.firstName || ''} ${data.student.lastName || ''}`.trim() || mockProfile.fullName,
+              regNumber: data.student.regNumber || mockProfile.regNumber,
+              email: data.student.email || mockProfile.email,
+              phone: data.student.phone || mockProfile.phone,
+              faculty: data.student.faculty || mockProfile.faculty,
+              semester: "1st Semester, 2026/2027",
+              level: data.student.level || mockProfile.level,
+              gpa: data.student.gpa || mockProfile.gpa
+            });
+            if (data.invoices && data.invoices.length > 0) {
+              setInvoices(data.invoices);
+            }
+          }
+        })
+        .catch((err) => console.warn("Live student API fetch notice:", err));
+
+      fetch("/api/bursary/dashboard.php", { credentials: "include" })
+        .then((res) => res.json())
+        .then((data) => {
+          if (data && data.success !== false) {
+            setBillingData(data);
+          }
+        })
+        .catch((err) => console.warn("Bursary dashboard fetch notice:", err));
+
+      let tuitionRate = 400000;
+      const loadedFaculty = mockProfile.faculty;
+      if (loadedFaculty === "natural" || loadedFaculty === "physical") tuitionRate = 300000;
+      else if (["arts_social_management", "education", "agriculture", "management", "social"].includes(loadedFaculty)) tuitionRate = 250000;
+      else if (loadedFaculty === "law") tuitionRate = 400000;
+
+      const defaultInvoices = [
+        { id: "INV-001", description: "Acceptance Fee & Clearance Token *", amount: 50000, status: "Pending", category: "Acceptance", date: "June 01, 2026" },
+        { id: "INV-002", description: "Medical Examination & Health Insurance *", amount: 35000, status: "Pending", category: "Medical", date: "June 02, 2026" },
+        { id: "INV-003", description: "Administrative & Matriculation Charges *", amount: 25000, status: "Pending", category: "Administrative", date: "June 03, 2026" },
+        { id: "INV-004", description: "First Semester Tuition Fee (70% Upfront Requirement)", amount: 280000, status: "Pending", category: "School Fees", date: "June 04, 2026" },
+        { id: "INV-005", description: "Second Installment Tuition Fee (30% Exam Balance)", amount: 120000, status: "Pending", category: "School Fees", date: "June 05, 2026" },

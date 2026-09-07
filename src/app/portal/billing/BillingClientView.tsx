@@ -45,9 +45,10 @@ interface BillingClientViewProps {
   payments: Payment[];
   studentName: string;
   matricNo: string;
+  status?: string;
 }
 
-export default function BillingClientView({ invoices, payments, studentName, matricNo }: BillingClientViewProps) {
+export default function BillingClientView({ invoices, payments, studentName, matricNo, status }: BillingClientViewProps) {
   const router = useRouter();
 
   const getCsrfToken = () => {
@@ -243,7 +244,9 @@ export default function BillingClientView({ invoices, payments, studentName, mat
               {invoices.filter(i => i.status !== "PAID").length === 0 ? (
                 <tr>
                   <td colSpan={7} className="text-center text-emerald-700 py-10 font-bold bg-emerald-50/20">
-                    No pending invoices! All of your accounts are fully paid.
+                    {status === "NO_INVOICES"
+                      ? "No fee invoices have been issued for your account yet."
+                      : "No pending invoices! All of your accounts are fully paid."}
                   </td>
                 </tr>
               ) : (
