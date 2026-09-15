@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import React, { useState, useEffect, useTransition } from "react";
 import { useRouter } from "next/navigation";
@@ -26,6 +26,7 @@ import {
   Lock,
   ChevronRight,
   FileText,
+  Settings,
   X
 } from "lucide-react";
 
@@ -93,6 +94,22 @@ interface StudentUser {
   email: string;
   matricNo: string;
 }
+interface FeeStructure {
+  id: number;
+  department: string | null;
+  level: string | null;
+  session: string;
+  feeType: string;
+  description: string | null;
+  amount: number;
+  isMandatory: boolean;
+  allowInstallment: boolean;
+  minInstallmentAmount: number | null;
+  isActive: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
 
 interface BursaryDashboardClientProps {
   payments: Payment[];
@@ -112,7 +129,7 @@ export default function BursaryDashboardClient({
   bursarEmail
 }: BursaryDashboardClientProps) {
   const router = useRouter();
-  const [activeTab, setActiveTab] = useState<"ledger" | "invoices" | "simulator" | "audit">("ledger");
+  const [activeTab, setActiveTab] = useState<"ledger" | "invoices" | "simulator" | "audit" | "structures">("ledger");
   
   // Search and Filter States
   const [searchQuery, setSearchQuery] = useState("");
@@ -146,10 +163,37 @@ export default function BursaryDashboardClient({
   const [verifyingRef, setVerifyingRef] = useState<string | null>(null);
   const [verificationFeedback, setVerificationFeedback] = useState<string | null>(null);
 
+  // Fee Structures Editor States
+  const [feeStructures, setFeeStructures] = useState<FeeStructure[]>([]);
+  const [isLoadingFeeStructures, setIsLoadingFeeStructures] = useState(false);
+  const [feeStructureModalOpen, setFeeStructureModalOpen] = useState(false);
+  const [editingFeeStructure, setEditingFeeStructure] = useState<FeeStructure | null>(null);
+
   const [isPending, startTransition] = useTransition();
 
   const [livePayments, setLivePayments] = useState<Payment[]>(payments || []);
   const [liveInvoices, setLiveInvoices] = useState<Invoice[]>(invoices || []);
+
+  // Fetch Fee Structures
+  useEffect(() => {
+    if (activeTab !== "structures") return;
+    let isMounted = true;
+    setIsLoadingFeeStructures(true);
+    fetch("/api/admin/fee-structures.php", {
+      headers: {
+        Authorization: `Bearer ${localStorage.getItem("sessionToken") || ""}`,
+        "X-CSRF-Token": localStorage.getItem("csrfToken") || "",
+      },
+    })
+      .then((res) => res.json())
+      .then((data) => {
+        if (!isMounted) return;
+        if (data.success) setFeeStructures(data.feeStructures || []);
+      })
+      .catch((err) => console.warn("Fee structures fetch error:", err))
+      .finally(() => { if (isMounted) setIsLoadingFeeStructures(false); });
+    return () => { isMounted = false; };
+  }, [activeTab]);
 
   useEffect(() => {
     async function fetchLiveFees() {
@@ -405,6 +449,52 @@ export default function BursaryDashboardClient({
     document.body.removeChild(link);
   };
 
+  // Fee Structure CRUD Handlers
+  const handleSaveFeeStructure = async (payload: Partial<FeeStructure>, id?: number) => {
+    const res = await fetch("/api/admin/fee-structures.php", {
+      method: id ? "PUT" : "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${localStorage.getItem("sessionToken") || ""}`,
+        "X-CSRF-Token": localStorage.getItem("csrfToken") || "",
+      },
+      body: JSON.stringify(id ? { id, ...payload } : payload),
+    });
+    const data = await res.json();
+    if (data.success) {
+      setFeeStructureModalOpen(false);
+      setEditingFeeStructure(null);
+      const refreshed = await fetch("/api/admin/fee-structures.php", {
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem("sessionToken") || ""}`,
+          "X-CSRF-Token": localStorage.getItem("csrfToken") || "",
+        },
+      }).then((r) => r.json());
+      if (refreshed.success) setFeeStructures(refreshed.feeStructures || []);
+    } else {
+      alert("Error saving fee structure: " + (data.message || "Failed"));
+    }
+  };
+
+  const handleDeactivateFeeStructure = async (id: number) => {
+    if (!confirm("Deactivate this fee structure? It will no longer apply to new invoices.")) return;
+    const res = await fetch("/api/admin/fee-structures.php", {
+      method: "DELETE",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${localStorage.getItem("sessionToken") || ""}`,
+        "X-CSRF-Token": localStorage.getItem("csrfToken") || "",
+      },
+      body: JSON.stringify({ id }),
+    });
+    const data = await res.json();
+    if (data.success) {
+      setFeeStructures((prev) => prev.map((f) => (f.id === id ? { ...f, isActive: false } : f)));
+    } else {
+      alert("Error deactivating: " + (data.message || "Failed"));
+    }
+  };
+
   // Print Summary Report
   const handlePrintSummary = () => {
     window.print();
@@ -515,7 +605,8 @@ export default function BursaryDashboardClient({
           { id: "ledger", label: "Settlement Ledger", icon: CreditCard },
           { id: "invoices", label: "Student Invoices", icon: FileText },
           { id: "simulator", label: "Paystack Hook Simulator", icon: Send },
-          { id: "audit", label: "Financial Audit Trail", icon: Activity }
+          { id: "audit", label: "Financial Audit Trail", icon: Activity },
+          { id: "structures", label: "Fee Structures", icon: Settings }
         ].map(tab => (
           <button
             key={tab.id}
@@ -939,6 +1030,250 @@ export default function BursaryDashboardClient({
                 )}
               </tbody>
             </table>
+          </div>
+        </div>
+      )}
+
+      {activeTab === "structures" && (
+        <div className="flex flex-col gap-4">
+          <div className="flex flex-col sm:flex-row gap-3 justify-between items-center bg-white border border-slate-200 p-4 rounded-2xl shadow-sm">
+            <div>
+              <h4 className="font-display font-black text-brand-blue-dark text-sm sm:text-base">Fee Structures</h4>
+              <p className="text-slate-400 text-xs mt-1">Manage the standard fee amounts used to generate student invoices.</p>
+            </div>
+            <button
+              onClick={() => { setEditingFeeStructure(null); setFeeStructureModalOpen(true); }}
+              className="bg-brand-blue-dark hover:bg-brand-blue-light text-white p-2 px-4 rounded-xl text-xs font-bold cursor-pointer flex items-center gap-1.5"
+            >
+              <Settings size={14} />
+              <span>Add Fee Structure</span>
+            </button>
+          </div>
+
+          <div className="overflow-x-auto border border-slate-200 rounded-2xl bg-white shadow-sm">
+            <table className="w-full text-left text-xs border-collapse">
+              <thead>
+                <tr className="bg-slate-50 border-b border-slate-200 text-slate-400 font-bold uppercase tracking-wider">
+                  <th className="p-4 py-3">Session</th>
+                  <th className="p-4 py-3">Department</th>
+                  <th className="p-4 py-3">Level</th>
+                  <th className="p-4 py-3">Fee Type</th>
+                  <th className="p-4 py-3 text-right">Amount</th>
+                  <th className="p-4 py-3 text-center">Mandatory</th>
+                  <th className="p-4 py-3 text-center">Installment</th>
+                  <th className="p-4 py-3 text-center">Status</th>
+                  <th className="p-4 py-3 text-center">Actions</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100 font-semibold text-slate-700">
+                {isLoadingFeeStructures ? (
+                  <tr>
+                    <td colSpan={9} className="text-center text-slate-400 py-10 font-bold bg-slate-50/20">
+                      Loading fee structures...
+                    </td>
+                  </tr>
+                ) : feeStructures.length === 0 ? (
+                  <tr>
+                    <td colSpan={9} className="text-center text-slate-400 py-10 font-bold bg-slate-50/20">
+                      No fee structures found.
+                    </td>
+                  </tr>
+                ) : (
+                  feeStructures.map((fs) => (
+                    <tr key={fs.id} className="hover:bg-slate-50/30 transition-colors">
+                      <td className="p-4 font-bold text-brand-blue-dark">{fs.session}</td>
+                      <td className="p-4 text-slate-500 font-medium">{fs.department || "All"}</td>
+                      <td className="p-4 text-slate-500 font-medium">{fs.level || "All"}</td>
+                      <td className="p-4"><span className="text-[10px] bg-slate-100 text-slate-600 px-1.5 py-0.5 rounded font-black uppercase">{fs.feeType}</span></td>
+                      <td className="p-4 text-right font-display text-brand-blue-dark">{formatNaira(fs.amount)}</td>
+                      <td className="p-4 text-center">
+                        <span className={`px-2 py-0.5 rounded font-black text-[9px] uppercase tracking-wider ${fs.isMandatory ? "bg-amber-100 text-amber-800" : "bg-slate-100 text-slate-600"}`}>
+                          {fs.isMandatory ? "Yes" : "No"}
+                        </span>
+                      </td>
+                      <td className="p-4 text-center">
+                        <span className={`px-2 py-0.5 rounded font-black text-[9px] uppercase tracking-wider ${fs.allowInstallment ? "bg-emerald-150 text-emerald-800" : "bg-slate-100 text-slate-600"}`}>
+                          {fs.allowInstallment ? "Allowed" : "No"}
+                        </span>
+                      </td>
+                      <td className="p-4 text-center">
+                        <span className={`px-2 py-0.5 rounded font-black text-[9px] uppercase tracking-wider ${fs.isActive ? "bg-emerald-150 text-emerald-800" : "bg-red-100 text-red-800"}`}>
+                          {fs.isActive ? "Active" : "Inactive"}
+                        </span>
+                      </td>
+                      <td className="p-4 text-center">
+                        <div className="flex items-center justify-center gap-2">
+                          <button
+                            onClick={() => { setEditingFeeStructure(fs); setFeeStructureModalOpen(true); }}
+                            className="border border-slate-200 hover:bg-slate-50 p-1.5 rounded-lg text-slate-500 cursor-pointer"
+                          >
+                            Edit
+                          </button>
+                          {fs.isActive && (
+                            <button
+                              onClick={() => handleDeactivateFeeStructure(fs.id)}
+                              className="border border-slate-200 hover:bg-red-50 p-1.5 rounded-lg text-red-500 cursor-pointer"
+                            >
+                              Deactivate
+                            </button>
+                          )}
+                        </div>
+                      </td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
+
+      {/* ----------------- MODAL: FEE STRUCTURE ADD/EDIT ----------------- */}
+      {feeStructureModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 print:hidden">
+          <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm" onClick={() => { setFeeStructureModalOpen(false); setEditingFeeStructure(null); }} />
+
+          <div className="bg-white border border-slate-200 rounded-3xl p-6 sm:p-8 w-full max-w-md relative z-10 shadow-2xl overflow-hidden animate-scale-in">
+            <button
+              onClick={() => { setFeeStructureModalOpen(false); setEditingFeeStructure(null); }}
+              className="absolute top-4 right-4 p-1.5 border border-slate-200 rounded-lg text-slate-400 hover:bg-slate-50 cursor-pointer"
+            >
+              <X size={16} />
+            </button>
+
+            <form
+              onSubmit={(e) => {
+                e.preventDefault();
+                const fd = new FormData(e.target as HTMLFormElement);
+                handleSaveFeeStructure({
+                  department: (fd.get("department") as string) || undefined,
+                  level: (fd.get("level") as string) || undefined,
+                  session: fd.get("session") as string,
+                  feeType: fd.get("feeType") as string,
+                  description: (fd.get("description") as string) || undefined,
+                  amount: parseFloat(fd.get("amount") as string),
+                  isMandatory: fd.get("isMandatory") === "on",
+                  allowInstallment: fd.get("allowInstallment") === "on",
+                  minInstallmentAmount: fd.get("minInstallmentAmount") ? parseFloat(fd.get("minInstallmentAmount") as string) : undefined,
+                }, editingFeeStructure?.id);
+              }}
+              className="flex flex-col gap-4 text-xs font-semibold text-slate-700"
+            >
+              <div>
+                <span className="text-[10px] text-brand-red font-black uppercase tracking-widest">Administrative Actions</span>
+                <h4 className="font-display font-black text-brand-blue-dark text-base mt-0.5">
+                  {editingFeeStructure ? "Edit Fee Structure" : "Add Fee Structure"}
+                </h4>
+                <p className="text-[10px] text-slate-400 mt-0.5">Define a standard fee amount used when generating student invoices.</p>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div className="flex flex-col gap-1">
+                  <label className="text-[9px] font-black uppercase text-slate-400">Session *</label>
+                  <input
+                    name="session"
+                    type="text"
+                    placeholder="e.g. 2025/2026"
+                    defaultValue={editingFeeStructure?.session}
+                    className="p-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:border-brand-blue-light text-xs"
+                    required
+                  />
+                </div>
+                <div className="flex flex-col gap-1">
+                  <label className="text-[9px] font-black uppercase text-slate-400">Fee Type *</label>
+                  <select
+                    name="feeType"
+                    defaultValue={editingFeeStructure?.feeType}
+                    className="p-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:border-brand-blue-light text-xs"
+                    required
+                  >
+                    <option value="TUITION">Tuition Fees</option>
+                    <option value="ACCOMMODATION">Hostel Fees</option>
+                    <option value="ACCEPTANCE">Acceptance Fee</option>
+                    <option value="APPLICATION">Application Fee</option>
+                    <option value="TRANSCRIPT">Transcript Fee</option>
+                    <option value="OTHER">Other Fees</option>
+                  </select>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div className="flex flex-col gap-1">
+                  <label className="text-[9px] font-black uppercase text-slate-400">Department</label>
+                  <input
+                    name="department"
+                    type="text"
+                    placeholder="Leave blank for all"
+                    defaultValue={editingFeeStructure?.department ?? ""}
+                    className="p-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:border-brand-blue-light text-xs"
+                  />
+                </div>
+                <div className="flex flex-col gap-1">
+                  <label className="text-[9px] font-black uppercase text-slate-400">Level</label>
+                  <input
+                    name="level"
+                    type="text"
+                    placeholder="Leave blank for all"
+                    defaultValue={editingFeeStructure?.level ?? ""}
+                    className="p-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:border-brand-blue-light text-xs"
+                  />
+                </div>
+              </div>
+
+              <div className="flex flex-col gap-1">
+                <label className="text-[9px] font-black uppercase text-slate-400">Description</label>
+                <input
+                  name="description"
+                  type="text"
+                  placeholder="Optional description"
+                  defaultValue={editingFeeStructure?.description ?? ""}
+                  className="p-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:border-brand-blue-light text-xs"
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div className="flex flex-col gap-1">
+                  <label className="text-[9px] font-black uppercase text-slate-400">Amount (₦) *</label>
+                  <input
+                    name="amount"
+                    type="number"
+                    placeholder="e.g. 150000"
+                    defaultValue={editingFeeStructure?.amount}
+                    className="p-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:border-brand-blue-light text-xs font-bold"
+                    required
+                    min={1}
+                  />
+                </div>
+                <div className="flex flex-col gap-1">
+                  <label className="text-[9px] font-black uppercase text-slate-400">Min Installment (₦)</label>
+                  <input
+                    name="minInstallmentAmount"
+                    type="number"
+                    placeholder="Optional"
+                    defaultValue={editingFeeStructure?.minInstallmentAmount ?? ""}
+                    className="p-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:border-brand-blue-light text-xs font-bold"
+                  />
+                </div>
+              </div>
+
+              <div className="flex gap-4">
+                <label className="flex items-center gap-2 text-[10px] font-bold text-slate-500">
+                  <input name="isMandatory" type="checkbox" defaultChecked={editingFeeStructure?.isMandatory} />
+                  Mandatory
+                </label>
+                <label className="flex items-center gap-2 text-[10px] font-bold text-slate-500">
+                  <input name="allowInstallment" type="checkbox" defaultChecked={editingFeeStructure?.allowInstallment} />
+                  Allow Installment
+                </label>
+              </div>
+
+              <button
+                type="submit"
+                className="bg-brand-blue-dark hover:bg-brand-blue-light text-white p-3 rounded-xl text-xs font-bold cursor-pointer mt-2"
+              >
+                {editingFeeStructure ? "Save Changes" : "Create Fee Structure"}
+              </button>
+            </form>
           </div>
         </div>
       )}

@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import {
   Search,
@@ -61,6 +61,10 @@ export default function FeesClient({ invoices: initialInvoices, students: rawStu
 
   const router = useRouter();
   const [invoices, setInvoices] = useState<InvoiceItem[]>(initialInvoices);
+
+  useEffect(() => {
+    setInvoices(initialInvoices);
+  }, [initialInvoices]);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Search & Filters
