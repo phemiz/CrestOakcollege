@@ -19,6 +19,12 @@ if (($_SERVER['REQUEST_METHOD'] ?? '') === 'OPTIONS') {
     ob_end_clean();
     exit(0);
 }
+session_start();
+if (empty($_SESSION['admin_logged_in'])) {
+    http_response_code(401);
+    echo json_encode(['success' => false, 'message' => 'Unauthorized. Admin login required.']);
+    exit(0);
+}
 
 // 1. Fetch Students from MySQL Database
 $students = [];
