@@ -429,7 +429,9 @@ export default function StaffClient({ staffList: initialStaff, departments: rawD
     setIsSubmitting(true);
     try {
       const selectedDept = departments.find((d) => d.id === formData.departmentId);
-      const deptName = selectedDept ? selectedDept.name : "General Administration";
+      const deptName = NON_ACADEMIC_ROLES.includes(formData.roleName)
+  ? ""
+  : (selectedDept ? selectedDept.name : "General Administration");
       const computedStaffNo = formData.staffNo || computeSIN(formData.departmentId, formData.roleName);
 
       const payload = {

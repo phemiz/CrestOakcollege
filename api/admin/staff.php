@@ -92,7 +92,8 @@ if ($method === 'POST' || $method === 'PUT') {
     $username = trim($input['username'] ?? $input['staffNo'] ?? $email);
     $staffNo = trim($input['staffNo'] ?? $input['staffId'] ?? 'STAFF/' . rand(100, 999) . '/' . date('Y'));
     $role = strtoupper(trim($input['role'] ?? $input['roleName'] ?? 'LECTURER'));
-    $department = trim($input['departmentName'] ?? $input['department'] ?? 'General Studies');
+    $department = trim($input['departmentName'] ?? $input['department'] ?? '');
+    $department = $department !== '' ? $department : null;
 
     if ($staffId > 0) {
         if (!empty($input['password'])) {
