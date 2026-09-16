@@ -188,11 +188,40 @@ export default function ApplicantWizardClient({
     });
   };
 
-  // Mock upload handlers that generate static mock links to pass validation
-  const triggerMockUpload = (field: "olevelUrl" | "jambUrl" | "passportUrl", defaultName: string) => {
-    const mockUrl = `https://documents.crestoakcollege.com.ng/uploads/${defaultName}-${Math.floor(1000 + Math.random() * 9000)}.pdf`;
-    setFormData(prev => ({ ...prev, [field]: mockUrl }));
-    setFormErrors(prev => ({ ...prev, [field]: "" }));
+  // Real file upload handlers: post the selected file to the server and store the returned URL
+  const handleFileUpload = async (field: "olevelUrl" | "jambUrl" | "passportUrl", file: File) => {
+    try {
+      const uploadData = new FormData();
+      uploadData.append("file", file);
+      uploadData.append("field", field);
+
+      const res = await fetch("/api/admissions/upload.php", {
+        method: "POST",
+        body: uploadData
+      });
+      const data = await res.json();
+      if (data.success && data.url) {
+        setFormData(prev => ({ ...prev, [field]: data.url }));
+        setFormErrors(prev => ({ ...prev, [field]: "" }));
+      } else {
+        setFormErrors(prev => ({ ...prev, [field]: data.message || "Upload failed. Please try again." }));
+      }
+    } catch {
+      setFormErrors(prev => ({ ...prev, [field]: "Upload failed. Please try again." }));
+    }
+  };
+
+  const triggerFileSelect = (field: "olevelUrl" | "jambUrl" | "passportUrl") => {
+    const input = document.createElement("input");
+    input.type = "file";
+    input.accept = field === "passportUrl" ? "image/*" : "application/pdf,image/*";
+    input.onchange = (e) => {
+      const file = (e.target as HTMLInputElement).files?.[0];
+      if (file) {
+        handleFileUpload(field, file);
+      }
+    };
+    input.click();
   };
 
   return (
@@ -386,7 +415,7 @@ export default function ApplicantWizardClient({
               </div>
               <button
                 type="button"
-                onClick={() => triggerMockUpload("olevelUrl", "olevel-slip")}
+                onClick={() => triggerFileSelect("olevelUrl")}
                 className="bg-white border border-slate-300 hover:bg-slate-100 text-slate-900 font-bold py-1.5 px-3 rounded-lg flex items-center gap-1 cursor-pointer text-[10px]"
               >
                 <Upload className="h-3.5 w-3.5 text-slate-500" />
@@ -409,7 +438,7 @@ export default function ApplicantWizardClient({
               </div>
               <button
                 type="button"
-                onClick={() => triggerMockUpload("jambUrl", formData.level === "undergraduate" ? "jamb-slip" : "degree-cert")}
+                onClick={() => triggerFileSelect("jambUrl")}
                 className="bg-white border border-slate-300 hover:bg-slate-100 text-slate-900 font-bold py-1.5 px-3 rounded-lg flex items-center gap-1 cursor-pointer text-[10px]"
               >
                 <Upload className="h-3.5 w-3.5 text-slate-500" />
@@ -430,7 +459,7 @@ export default function ApplicantWizardClient({
               </div>
               <button
                 type="button"
-                onClick={() => triggerMockUpload("passportUrl", "passport")}
+                onClick={() => triggerFileSelect("passportUrl")}
                 className="bg-white border border-slate-300 hover:bg-slate-100 text-slate-900 font-bold py-1.5 px-3 rounded-lg flex items-center gap-1 cursor-pointer text-[10px]"
               >
                 <Upload className="h-3.5 w-3.5 text-slate-500" />
@@ -529,4 +558,3 @@ export default function ApplicantWizardClient({
     </div>
   );
 }
-
