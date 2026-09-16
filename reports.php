@@ -18,6 +18,12 @@ if (isset($_SERVER['REQUEST_METHOD']) && $_SERVER['REQUEST_METHOD'] === 'OPTIONS
     ob_end_clean();
     exit(0); 
 }
+session_start();
+if (empty($_SESSION['admin_logged_in'])) {
+    http_response_code(401);
+    echo json_encode(['success' => false, 'message' => 'Unauthorized. Admin login required.']);
+    exit(0);
+}
 
 $deptDistribution = [
     ['name' => 'Community Health (CHEW)', 'count' => 1],
