@@ -59,7 +59,8 @@ $nameParts = explode(' ', trim($app['applicant_name']), 2);
 $firstName = $nameParts[0];
 $lastName = $nameParts[1] ?? 'Student';
 
-    $matricNo = get_next_matric_number($conn);
+	$deptCode = get_dept_code($app['program_applied'] ?? '');
+	$matricNo = get_next_matric_number($conn, $deptCode);
 
 // Check column names in students table to accommodate schema variations (department vs program)
 $colsRes = $conn->query("SHOW COLUMNS FROM students");

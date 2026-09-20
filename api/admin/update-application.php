@@ -156,7 +156,7 @@ function create_or_activate_student_account(mysqli $conn, int $applicationId, ar
     }
     $deptCode = $deptCodeMap[$departmentName] ?? 'GEN';
 
-    $matricNo = get_next_matric_number($conn);
+    $matricNo = get_next_matric_number($conn, $deptCode);
 
     $tempPassword = generate_temp_password();
     $passwordHash = password_hash($tempPassword, PASSWORD_BCRYPT);
