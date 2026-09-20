@@ -28,7 +28,7 @@ if (!in_array($ext, $allowed)) {
     exit();
 }
 
-$filename = 'doc_' . time() . '_' . rand(1000, 9999) . '.' . $ext;
+$filename = 'doc_' . bin2hex(random_bytes(16)) . '.' . $ext;
 $targetPath = $uploadDir . $filename;
 
 if (move_uploaded_file($file['tmp_name'], $targetPath)) {
