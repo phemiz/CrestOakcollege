@@ -26,25 +26,43 @@ export const PartnershipSection = () => {
               All degree programmes and scientific syllabi are directly monitored and validated under national accreditation guidelines, ensuring seamless graduation, official transcript clearances, and recognized professional qualifications.
             </p>
             
-            {/* Logo Badge Card */}
-            <div className="bg-white/5 border border-white/10 backdrop-blur-sm rounded-2xl p-5 flex items-center gap-5 w-fit">
-              <div className="bg-white p-2 rounded-xl shrink-0">
-                <Image 
-                  src="/crestoak-seal.png" 
-                  alt="CrestOak College Seal" 
-                  width={48}
-                  height={48}
-                  loading="lazy"
-                  className="h-12 w-auto object-contain"
-                />
+            {/* Partner Institutions */}
+            <div className="flex flex-col sm:flex-row gap-4">
+              <div className="bg-white/5 border border-white/10 backdrop-blur-sm rounded-2xl p-5 flex items-center gap-4 flex-1">
+                <div className="bg-white p-2 rounded-xl shrink-0">
+                  <Image
+                    src="/jabu-logo.png"
+                    alt="Joseph Ayo Babalola University Logo"
+                    width={48}
+                    height={48}
+                    loading="lazy"
+                    className="h-12 w-auto object-contain"
+                  />
+                </div>
+                <div>
+                  <p className="text-xs font-bold text-slate-400 uppercase tracking-wider">Academic Partner</p>
+                  <p className="text-sm font-extrabold text-white">Joseph Ayo Babalola University</p>
+                  <p className="text-[10px] text-brand-gold font-semibold mt-0.5">Osun State</p>
+                </div>
               </div>
-              <div>
-                <p className="text-xs font-bold text-slate-400 uppercase tracking-wider">Quality Standards</p>
-                <p className="text-sm font-extrabold text-white">Accredited Tertiary Institution</p>
-                <p className="text-[10px] text-brand-gold font-semibold mt-0.5">Verified Academic Partner</p>
+              <div className="bg-white/5 border border-white/10 backdrop-blur-sm rounded-2xl p-5 flex items-center gap-4 flex-1">
+                <div className="bg-white p-2 rounded-xl shrink-0">
+                  <Image
+                    src="/atiba-logo.png"
+                    alt="Atiba University Logo"
+                    width={48}
+                    height={48}
+                    loading="lazy"
+                    className="h-12 w-auto object-contain"
+                  />
+                </div>
+                <div>
+                  <p className="text-xs font-bold text-slate-400 uppercase tracking-wider">Academic Partner</p>
+                  <p className="text-sm font-extrabold text-white">Atiba University</p>
+                  <p className="text-[10px] text-brand-gold font-semibold mt-0.5">Oyo State</p>
+                </div>
               </div>
             </div>
-          </div>
 
           {/* Details & Benefits */}
           <div className="lg:col-span-7 grid grid-cols-1 sm:grid-cols-2 gap-6">
