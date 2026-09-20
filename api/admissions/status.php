@@ -60,6 +60,12 @@ if (!$record) {
     exit();
 }
 
+$n = preg_split('/\s+/', trim((string)$record['fullName']));
+$record['fullName'] = $n[0] . (count($n) > 1 ? ' ' . strtoupper(substr(end($n), 0, 1)) . '.' : '');
+$p = (string)$record['phone'];
+$record['phone'] = substr($p, 0, 4) . '****' . substr($p, -3);
+$e = (string)$record['email'];
+$record['email'] = substr($e, 0, 1) . '***' . (string)strstr($e, '@');
 echo json_encode([
     'success' => true,
     'found' => true,
