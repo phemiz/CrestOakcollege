@@ -44,7 +44,7 @@ if (!$conn) {
     exit();
 }
 
-$code = (string) random_int(100000, 999999);
+$code = (string) random_int(1000, 9999);
 $expiresAt = date('Y-m-d H:i:s', strtotime('+10 minutes'));
 
 $stmt = $conn->prepare("DELETE FROM otp_verifications WHERE email = ? AND purpose = ? AND verified = 0");
