@@ -9,6 +9,7 @@ if (isset($_SERVER['REQUEST_METHOD']) && $_SERVER['REQUEST_METHOD'] === 'OPTIONS
 
 require_once __DIR__ . '/../admin/db.php';
 require_once __DIR__ . '/../registrar_auth.php';
+require_once __DIR__ . '/../includes/matric.php';
 if (empty($_SESSION['registrar_authenticated']) || $_SESSION['registrar_authenticated'] !== true) {
     http_response_code(401);
     echo json_encode(['success' => false, 'message' => 'You must be logged in as a registrar/admin to matriculate students.']);
@@ -58,9 +59,7 @@ $nameParts = explode(' ', trim($app['applicant_name']), 2);
 $firstName = $nameParts[0];
 $lastName = $nameParts[1] ?? 'Student';
 
-// Generate Matric Number: CCHMT/2026/000X
-$year = date('Y');
-$matricNo = "CCHMT/{$year}/" . str_pad($appId, 4, '0', STR_PAD_LEFT);
+    $matricNo = get_next_matric_number($conn);
 
 // Check column names in students table to accommodate schema variations (department vs program)
 $colsRes = $conn->query("SHOW COLUMNS FROM students");
