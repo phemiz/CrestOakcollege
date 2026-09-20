@@ -1,28 +1,10 @@
-export const DEFAULT_FACULTIES = [
-  "Faculty of Health Sciences",
-  "Faculty of Management & Law",
-  "Faculty of Applied Technology & Computing",
-  "Faculty of Natural & Applied Sciences",
-  "Faculty of Education"
-];
+import { facultiesData } from "../data/academicsData";
 
-export const DEFAULT_DEPARTMENTS = [
-  "Department of Nursing Sciences",
-  "Department of Medical Laboratory Science",
-  "Department of Community Health Sciences",
-  "Department of Computer Science & IT",
-  "Department of Business Administration",
-  "Department of Law & Criminology"
-];
+export const DEFAULT_FACULTIES = facultiesData.map((f) => f.name);
 
-export const DEFAULT_PROGRAMMES = [
-  "Nursing Sciences (B.Sc.)",
-  "Medical Laboratory Science (B.Sc.)",
-  "Community Health (Diploma / B.Sc.)",
-  "Computer Science & IT (B.Sc.)",
-  "Business Administration (B.Sc.)",
-  "Criminology & Security Studies (B.Sc.)"
-];
+export const DEFAULT_DEPARTMENTS = facultiesData.flatMap((f) => f.courses.map((c) => "Department of " + c));
+
+export const DEFAULT_PROGRAMMES = facultiesData.flatMap((f) => f.courses);
 
 export const DEFAULT_SESSIONS = [
   "2025/2026 Academic Session",
