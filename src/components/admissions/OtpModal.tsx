@@ -54,7 +54,6 @@ export const OtpModal: React.FC<OtpModalProps> = ({
             onChange={(e) => setOtpInput(e.target.value)}
             className="w-full p-3.5 bg-slate-50 border border-slate-200 rounded-xl text-center text-lg font-black focus:outline-none focus:border-brand-blue"
           />
-          <p className="text-[10px] text-slate-400 text-center font-bold">Use code <strong className="text-brand-blue-dark font-black">1234</strong> or <strong className="text-brand-blue-dark font-black">4321</strong> for testing</p>
         </div>
 
         <div className="flex gap-3">
