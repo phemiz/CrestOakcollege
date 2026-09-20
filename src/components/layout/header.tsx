@@ -154,9 +154,9 @@ export const Header: React.FC = () => {
       {/* Top Banner (Contact info & session announcement) */}
       <div className="bg-brand-blue-dark text-white text-xs py-2 px-4 sm:px-6 md:px-8 flex flex-col md:flex-row justify-between items-center gap-2 border-b border-white/10">
         <div className="flex flex-wrap items-center justify-center gap-4 text-center md:text-left">
-          <a href="tel:+2348155884804" className="flex items-center gap-1.5 hover:text-brand-gold transition-colors">
+          <a href="tel:+2348038617259" className="flex items-center gap-1.5 hover:text-brand-gold transition-colors">
             <Phone size={13} className="text-brand-gold" />
-            <span>+234 815 588 4804</span>
+            <span>+234 803 861 7259</span>
           </a>
           <span className="hidden sm:inline opacity-30">|</span>
           <a href="mailto:info@crestoakcollege.com.ng" className="flex items-center gap-1.5 hover:text-brand-gold transition-colors">

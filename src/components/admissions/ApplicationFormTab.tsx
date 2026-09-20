@@ -342,7 +342,7 @@ export const ApplicationFormTab: React.FC<ApplicationFormTabProps> = ({
                 name="phone"
                 value={formData.phone}
                 onChange={handleChange}
-                placeholder="e.g. 08155884804"
+                placeholder="e.g. 08038617259"
                 className={`w-full p-3.5 bg-slate-50 rounded-xl border text-sm font-semibold focus:outline-none focus:border-brand-blue transition-colors ${
                   formErrors.phone ? "border-brand-red" : "border-slate-200"
                 }`}

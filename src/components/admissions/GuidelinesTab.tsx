@@ -131,7 +131,7 @@ export const GuidelinesTab: React.FC<GuidelinesTabProps> = ({ onStartApply }) =>
               For direct registration guidance and application support:
             </p>
             <p className="text-brand-blue-dark font-extrabold text-sm mt-3">
-              📞 +234 (0) 815 588 4804, +234 (0) 803 861 7259
+              📞 +234 (0) 803 861 7259
             </p>
             <p className="text-slate-400 text-xs mt-2 font-semibold">
               Email: <a href="mailto:info@crestoakcollege.com.ng" className="text-brand-red hover:underline">info@crestoakcollege.com.ng</a>

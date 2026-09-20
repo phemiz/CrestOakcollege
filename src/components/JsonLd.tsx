@@ -10,7 +10,7 @@ export function JsonLd() {
     "logo": "https://crestoakcollege.com.ng/crestoak-seal.png",
     "contactPoint": {
       "@type": "ContactPoint",
-      "telephone": "+2348155884804",
+      "telephone": "+2348038617259",
       "contactType": "Admissions",
       "email": "info@crestoakcollege.com.ng",
       "areaServed": "NG",

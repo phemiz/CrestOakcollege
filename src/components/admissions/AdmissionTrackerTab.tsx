@@ -47,7 +47,7 @@ export const AdmissionTrackerTab: React.FC<AdmissionTrackerTabProps> = ({
           regNumber: regNum.toUpperCase(),
           fullName: "Mock Student Account",
           email: "student@crestoakcollege.com.ng",
-          phone: "08155884804",
+          phone: "08038617259",
           level: "undergraduate",
           faculty: "health",
           course: "nursing",

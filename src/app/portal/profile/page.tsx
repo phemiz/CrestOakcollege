@@ -14,7 +14,7 @@ export default function StudentProfilePage() {
       lastName: "User",
       middleName: "Demo",
       email: "student@crestoakcollege.com.ng",
-      phoneNumber: "+234 815 588 4804"
+      phoneNumber: "+234 803 861 7259"
     },
     department: {
       name: "Community Health",

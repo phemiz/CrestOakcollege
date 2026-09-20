@@ -48,7 +48,7 @@ export default function Contact() {
       "@type": "CollegeOrUniversity",
       "name": "CrestOak College",
       "url": "https://crestoakcollege.com.ng",
-      "telephone": "+2348155884804",
+      "telephone": "+2348038617259",
       "email": "info@crestoakcollege.com.ng"
     }
   };
@@ -107,10 +107,12 @@ export default function Contact() {
                     <div>
                       <h4 className="font-display font-bold text-slate-700 text-sm">Phone Numbers</h4>
                       <div className="flex flex-col gap-1 mt-1 text-xs sm:text-sm text-slate-500 font-semibold">
-                        <a href="tel:+2348155884804" className="hover:text-brand-red transition-colors">+234 (0) 815 588 4804</a>
-                        <a href="tel:+2348038617259" className="hover:text-brand-red transition-colors">+234 (0) 803 861 7259</a>
-                        <a href="tel:+2349123592617" className="hover:text-brand-red transition-colors">+234 (0) 912 359 2617</a>
-                        <a href="tel:+2348068635152" className="hover:text-brand-red transition-colors">+234 (0) 806 863 5152</a>
+<a href="tel:+2348038617259" className="hover:text-brand-red transition-colors">+234 (0) 803 861 7259</a>
+<a href="tel:+2348068635251" className="hover:text-brand-red transition-colors">+234 (0) 806 863 5251</a>
+<a href="tel:+2349123592617" className="hover:text-brand-red transition-colors">+234 (0) 912 359 2617</a>
+<a href="tel:+2348039240207" className="hover:text-brand-red transition-colors">+234 (0) 803 924 0207</a>
+<a href="tel:+2349081042779" className="hover:text-brand-red transition-colors">+234 (0) 908 104 2779</a>
+<a href="tel:+2347030859848" className="hover:text-brand-red transition-colors">+234 (0) 703 085 9848</a>
                       </div>
                     </div>
                   </div>
