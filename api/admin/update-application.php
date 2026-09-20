@@ -21,6 +21,8 @@ if (!in_array($role, ['REGISTRAR', 'ADMIN', 'SUPERADMIN'], true)) {
 }
 
 require_once __DIR__ . '/db.php';
+require_once __DIR__ . '/../includes/mailer.php';
+require_once __DIR__ . '/../includes/matric.php';
 
 $conn = getDbConnection();
 if (!$conn) {
@@ -49,7 +51,7 @@ if (!$id || !in_array($status, $validStatuses, true)) {
     exit;
 }
 
-$stmt = $conn->prepare("SELECT appNo AS application_ref, fullName AS applicant_name, email, status AS old_status FROM Application WHERE id = ?");
+$stmt = $conn->prepare("SELECT appNo AS application_ref, fullName AS applicant_name, email, phone, faculty, course, status AS old_status FROM Application WHERE id = ?");
 $stmt->bind_param("i", $id);
 $stmt->execute();
 $applicant = $stmt->get_result()->fetch_assoc();
@@ -89,24 +91,128 @@ try {
     error_log("Audit log insert failed: " . $e->getMessage());
 }
 
-$conn->close();
+$studentCredentials = null;
 
-if (in_array($status, ['approved', 'rejected'], true) && !empty($applicant['email'])) {
+if ($status === 'approved' && !empty($applicant['email'])) {
+    $studentCredentials = create_or_activate_student_account($conn, $id, $applicant);
     send_admission_decision_email($applicant['email'], $applicant['applicant_name'], $applicant['application_ref'], $status);
 }
 
-echo json_encode(['success' => true, 'message' => "Application {$applicant['application_ref']} status updated to {$status}."]);
+if ($status === 'rejected' && !empty($applicant['email'])) {
+    send_admission_decision_email($applicant['email'], $applicant['applicant_name'], $applicant['application_ref'], $status);
+}
+
+$conn->close();
+
+echo json_encode([
+    'success' => true,
+    'message' => "Application {$applicant['application_ref']} status updated to {$status}." .
+        ($studentCredentials ? " Student account created ({$studentCredentials['matricNo']})." : "")
+]);
+
+/**
+ * Creates a new student account for an approved applicant (or skips if one
+ * already exists for this application/email), generates a temp password,
+ * flags force_password_change, and emails the credentials via the existing
+ * working SMTP mailer. Returns the new credentials array, or null if a
+ * student already existed / creation failed.
+ */
+function create_or_activate_student_account(mysqli $conn, int $applicationId, array $applicant): ?array {
+    $check = $conn->prepare("SELECT id, matric_no FROM students WHERE application_id = ? LIMIT 1");
+    $check->bind_param("i", $applicationId);
+    $check->execute();
+    $existing = $check->get_result()->fetch_assoc();
+    $check->close();
+    if ($existing) {
+        error_log("create_or_activate_student_account: skipped — student already exists for application_id={$applicationId} (existing matric_no={$existing['matric_no']})");
+        return null;
+    }
+
+    $nameParts = preg_split('/\s+/', trim($applicant['applicant_name']), 2);
+    $firstName = $nameParts[0] ?? 'Student';
+    $lastName = $nameParts[1] ?? '';
+
+    $facultyMap = [
+        'nursing' => 'Department of Nursing Sciences',
+        'medical laboratory' => 'Department of Medical Laboratory Science',
+        'community health' => 'Department of Community Health Sciences',
+        'business' => 'Department of Business Administration',
+        'computer' => 'Department of Computer Science & IT',
+    ];
+    $deptCodeMap = [
+        'Department of Nursing Sciences' => 'NUR',
+        'Department of Medical Laboratory Science' => 'MLS',
+        'Department of Community Health Sciences' => 'CHEW',
+        'Department of Business Administration' => 'BUS',
+        'Department of Computer Science & IT' => 'CSC',
+    ];
+    $rawFaculty = strtolower($applicant['faculty'] ?? '');
+    $departmentName = $applicant['faculty'] ?: 'General Studies';
+    foreach ($facultyMap as $needle => $mapped) {
+        if (str_contains($rawFaculty, $needle)) {
+            $departmentName = $mapped;
+            break;
+        }
+    }
+    $deptCode = $deptCodeMap[$departmentName] ?? 'GEN';
+
+    $matricNo = get_next_matric_number($conn);
+
+    $tempPassword = generate_temp_password();
+    $passwordHash = password_hash($tempPassword, PASSWORD_BCRYPT);
+
+    $stmt = $conn->prepare(
+        "INSERT INTO students (first_name, last_name, email, phone_number, matric_no, password_hash, department_name, level, isDeleted, force_password_change, application_id, payment_status)
+         VALUES (?, ?, ?, ?, ?, ?, ?, 100, 0, 1, ?, 'pending')"
+    );
+    if (!$stmt) {
+        error_log('create_or_activate_student_account prepare failed: ' . $conn->error);
+        return null;
+    }
+    $stmt->bind_param(
+        "sssssssi",
+        $firstName,
+        $lastName,
+        $applicant['email'],
+        $applicant['phone'],
+        $matricNo,
+        $passwordHash,
+        $departmentName,
+        $applicationId
+    );
+
+    try {
+        $stmt->execute();
+    } catch (mysqli_sql_exception $e) {
+        $stmt->close();
+        error_log('create_or_activate_student_account INSERT error: ' . $e->getMessage());
+        return null;
+    }
+    $stmt->close();
+
+    $mailSent = sendWelcomeEmail($applicant['email'], $applicant['applicant_name'], $matricNo, 'STUDENT', $tempPassword);
+    if (!$mailSent) {
+        error_log('Approval welcome email failed to send for: ' . $applicant['email']);
+    }
+
+    return ['matricNo' => $matricNo, 'tempPassword' => $tempPassword];
+}
+
+function generate_temp_password(): string {
+    $words = ['Crest', 'Oak', 'Scholar', 'Bright', 'Rise', 'Learn'];
+    $word = $words[array_rand($words)];
+    return $word . random_int(1000, 9999) . '!';
+}
 
 function send_admission_decision_email(string $toEmail, string $name, string $ref, string $status): void {
-    $subject = $status === 'approved'
-        ? "CrestOak College - Admission Offer ({$ref})"
-        : "CrestOak College - Application Update ({$ref})";
+    $subject = "CrestOak College - Application Update ({$ref})";
 
     if ($status === 'approved') {
         $body = "Dear {$name},\n\n"
-              . "Congratulations! You have been provisionally admitted to CrestOak College of Health Sciences, Management and Technology.\n\n"
+              . "Congratulations! We are pleased to inform you that your application to CrestOak College of Health Sciences, Management and Technology has been APPROVED.\n\n"
               . "Application Reference: {$ref}\n\n"
-              . "Please log in to the Application Status Checker on our website to view your admission letter and next steps for document verification and fee payment.\n\n"
+              . "You will receive a separate email shortly with your Student Portal login details.\n\n"
+              . "We look forward to welcoming you to CrestOak College.\n\n"
               . "Regards,\nCrestOak College Admissions Office";
     } else {
         $body = "Dear {$name},\n\n"
