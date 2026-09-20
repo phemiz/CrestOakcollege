@@ -58,6 +58,11 @@ export const ApplicationFormTab: React.FC<ApplicationFormTabProps> = ({
 
   // File Upload States
   const [filePreviews, setFilePreviews] = useState<Record<string, string>>({});
+  const [uploadedUrls, setUploadedUrls] = useState<Record<string, string>>({});
+
+  // Submission States
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState("");
 
   // Sync default course when level or faculty changes
   useEffect(() => {
@@ -121,20 +126,38 @@ export const ApplicationFormTab: React.FC<ApplicationFormTabProps> = ({
     }
   };
 
-  // Mock File Uploads
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>, key: string) => {
-    if (e.target.files && e.target.files[0]) {
-      const file = e.target.files[0];
-      const previewUrl = URL.createObjectURL(file);
-      setFilePreviews(prev => ({
-        ...prev,
-        [key]: previewUrl
-      }));
+  // Real File Upload — posts to api/admissions/upload.php
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>, key: string) => {
+    if (!e.target.files || !e.target.files[0]) return;
+    const file = e.target.files[0];
+    const previewUrl = URL.createObjectURL(file);
+    setFilePreviews(prev => ({
+      ...prev,
+      [key]: previewUrl
+    }));
+
+    const body = new FormData();
+    body.append("file", file);
+
+    try {
+      const res = await fetch("https://crestoakcollege.com.ng/api/admissions/upload.php", {
+        method: "POST",
+        body,
+      });
+      const result = await res.json();
+      if (result.success) {
+        const urlField = key === "olevel" ? "olevelUrl" : key === "jamb" ? "jambUrl" : "passportUrl";
+        setUploadedUrls(prev => ({ ...prev, [urlField]: result.url }));
+      } else {
+        setFormErrors(prev => ({ ...prev, [key]: result.message || "Upload failed." }));
+      }
+    } catch {
+      setFormErrors(prev => ({ ...prev, [key]: "Upload failed. Check your connection." }));
     }
   };
 
-  // Validate Account & Trigger OTP
-  const handleStartApplication = (e: React.FormEvent) => {
+  // Validate Account & Trigger real OTP send
+  const handleStartApplication = async (e: React.FormEvent) => {
     e.preventDefault();
     const errors: Record<string, string> = {};
 
@@ -151,23 +174,46 @@ export const ApplicationFormTab: React.FC<ApplicationFormTabProps> = ({
       return;
     }
 
-    // Trigger OTP Popup
-    setShowOtpModal(true);
-  };
-
-  // Confirm OTP Code
-  const verifyOtpCode = () => {
-    if (otpInput === "1234" || otpInput === "4321") {
-      setOtpVerified(true);
-      setShowOtpModal(false);
-      setOtpError("");
-    } else {
-      setOtpError("Invalid verification code. Use '1234' for testing.");
+    try {
+      const res = await fetch("https://crestoakcollege.com.ng/api/admissions/send-otp.php", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: formData.email, phone: formData.phone, fullName: formData.fullName }),
+      });
+      const result = await res.json();
+      if (result.success) {
+        setShowOtpModal(true);
+      } else {
+        setFormErrors({ email: result.message || "Could not send verification code." });
+      }
+    } catch {
+      setFormErrors({ email: "Could not send verification code. Check your connection." });
     }
   };
 
-  // Final Form Submit
-  const handleFinalSubmit = (e: React.FormEvent) => {
+  // Confirm real OTP Code against server
+  const verifyOtpCode = async () => {
+    try {
+      const res = await fetch("https://crestoakcollege.com.ng/api/admissions/verify-otp.php", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: formData.email, code: otpInput }),
+      });
+      const result = await res.json();
+      if (result.success) {
+        setOtpVerified(true);
+        setShowOtpModal(false);
+        setOtpError("");
+      } else {
+        setOtpError(result.message || "Invalid or expired code.");
+      }
+    } catch {
+      setOtpError("Could not verify code. Check your connection.");
+    }
+  };
+
+  // Final Form Submit — posts to api/admissions/apply.php
+  const handleFinalSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     const errors: Record<string, string> = {};
 
@@ -191,45 +237,35 @@ export const ApplicationFormTab: React.FC<ApplicationFormTabProps> = ({
       return;
     }
 
-    // Success Generation
-    const randId = Math.floor(1000 + Math.random() * 9000);
-    const generatedReg = `CCHMS/2026/ADM/${String(Math.floor(1 + Math.random() * 999)).padStart(4, "0")}`;
-    const generatedVerify = Math.random().toString(36).substring(2, 8).toUpperCase();
-    
-    setRegNumber(generatedReg);
-    setVerificationCode(generatedVerify);
+    setIsSubmitting(true);
+    setSubmitError("");
 
-    const savedAppsStr = localStorage.getItem("cchsmt_submitted_applications") || "[]";
-    let savedApps = [];
     try {
-      savedApps = JSON.parse(savedAppsStr);
+      const res = await fetch("https://crestoakcollege.com.ng/api/admissions/apply.php", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          ...formData,
+          ...uploadedUrls,
+        }),
+      });
+      const result = await res.json();
+
+      if (!result.success) {
+        setSubmitError(result.message || "Submission failed. Please try again.");
+        setIsSubmitting(false);
+        return;
+      }
+
+      setRegNumber(result.appNumber);
+      setVerificationCode(result.appNumber.split("-").pop() || "");
+      localStorage.removeItem("cchsmt_admissions_draft");
+      setIsSubmitted(true);
     } catch {
-      savedApps = [];
+      setSubmitError("Submission failed. Check your connection and try again.");
+    } finally {
+      setIsSubmitting(false);
     }
-
-    const applicationRecord: Admission = {
-      regNumber: generatedReg,
-      fullName: formData.fullName,
-      email: formData.email,
-      phone: formData.phone,
-      level: formData.level as "undergraduate" | "postgraduate",
-      faculty: formData.faculty,
-      course: formData.course,
-      jambScore: formData.level === "undergraduate" ? formData.jambScore : null,
-      firstDegreeInstitution: formData.level === "postgraduate" ? formData.firstDegreeInstitution : null,
-      firstDegreeClass: formData.level === "postgraduate" ? formData.firstDegreeClass : null,
-      olevelCredits: formData.olevelCredits,
-      verificationCode: generatedVerify,
-      status: "Decided",
-      dateSubmitted: new Date().toLocaleDateString(),
-    };
-
-    savedApps.push(applicationRecord);
-    localStorage.setItem("cchsmt_submitted_applications", JSON.stringify(savedApps));
-    
-    // Clear draft
-    localStorage.removeItem("cchsmt_admissions_draft");
-    setIsSubmitted(true);
   };
 
   return (
@@ -550,11 +586,16 @@ export const ApplicationFormTab: React.FC<ApplicationFormTabProps> = ({
             </div>
           </div>
 
+          {submitError && (
+            <span className="text-brand-red text-xs font-bold text-center">{submitError}</span>
+          )}
+
           <button
             type="submit"
-            className="bg-brand-red hover:bg-brand-red/90 text-white font-display font-bold py-3.5 rounded-xl shadow-lg transition-colors flex items-center justify-center gap-2 cursor-pointer mt-2"
+            disabled={isSubmitting}
+            className="bg-brand-red hover:bg-brand-red/90 text-white font-display font-bold py-3.5 rounded-xl shadow-lg transition-colors flex items-center justify-center gap-2 cursor-pointer mt-2 disabled:opacity-60 disabled:cursor-not-allowed"
           >
-            <span>Submit Application Form</span>
+            <span>{isSubmitting ? "Submitting..." : "Submit Application Form"}</span>
             <ArrowRight size={15} />
           </button>
         </form>
@@ -624,6 +665,9 @@ export const ApplicationFormTab: React.FC<ApplicationFormTabProps> = ({
               onClick={() => {
                 setIsSubmitted(false);
                 setOtpVerified(false);
+                setUploadedUrls({});
+                setFilePreviews({});
+                setSubmitError("");
                 setFormData({
                   fullName: "",
                   email: "",

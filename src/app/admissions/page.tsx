@@ -92,7 +92,7 @@ export default function Admissions() {
             {/* PROMINENT DIRECT ACTION CTA BUTTONS */}
             <div className="flex flex-col sm:flex-row gap-4 pt-2 w-full max-w-md justify-center">
               <Link
-                href="/admissions/apply"
+                href="/admissions?tab=apply"
                 className="py-3.5 px-6 bg-gradient-to-r from-brand-red to-red-700 hover:from-red-600 hover:to-red-800 text-white rounded-xl font-bold flex items-center justify-center gap-2 shadow-xl shadow-red-900/30 transition-all text-sm no-underline border border-red-500/20 hover:scale-[1.02]"
               >
                 <GraduationCap className="w-5 h-5" />
@@ -124,7 +124,7 @@ export default function Admissions() {
             </div>
             <div className="flex gap-3 text-xs font-semibold">
               <Link
-                href="/admissions/apply"
+                href="/admissions?tab=apply"
                 className="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg transition-colors no-underline"
               >
                 Start Multi-Step Application

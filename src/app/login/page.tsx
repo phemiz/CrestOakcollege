@@ -461,7 +461,7 @@ function LoginForm() {
               </span>
               {gatewayConfig.role === "Student" ? (
                 <Link
-                  href="/admissions/apply"
+                  href="/admissions?tab=apply"
                   className="font-extrabold text-brand-blue hover:text-brand-blue-dark hover:underline flex items-center gap-1.5 shrink-0 text-sm sm:text-base"
                 >
                   Apply for Admission
