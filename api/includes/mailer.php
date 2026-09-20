@@ -15,7 +15,8 @@ function sendWelcomeEmail(string $toEmail, string $recipientName, string $idNumb
     $cleanName = htmlspecialchars($recipientName, ENT_QUOTES, 'UTF-8');
     $cleanId = htmlspecialchars($idNumber, ENT_QUOTES, 'UTF-8');
     $cleanPassword = htmlspecialchars($plainPassword, ENT_QUOTES, 'UTF-8');
-    $loginUrl = 'https://' . strtolower($roleLabel) . '.crestoakcollege.com.ng/login/';
+    $portalSubdomain = (strtoupper($role) === 'STUDENT') ? 'portal' : strtolower($roleLabel); 
+	$loginUrl = 'https://' . $portalSubdomain . '.crestoakcollege.com.ng/login/'; 
 
     $body = "
     <!DOCTYPE html>
