@@ -57,7 +57,9 @@ export const facultiesData: FacultyAcademicData[] = [
       "Nursing Sciences (B.Sc.)",
       "Medical Laboratory Science (BMLs)",
       "Public Health",
-      "Physiology"
+      "Physiology",
+      "Environmental Health",
+      "Community Health"
     ],
     fees: {
       application: 20000,
@@ -101,8 +103,8 @@ export const facultiesData: FacultyAcademicData[] = [
     duration: "4 Years (Bachelor of Science / Bachelor of Arts pathways)",
     outcomes: "Financial Analyst, Business Manager, Criminology Investigator, Hotel Executive, Diplomat, Communicator.",
     courses: [
-      "English",
-      "Theater",
+      "English Language",
+      "Theatre Arts",
       "Accounting",
       "Banking and Finance",
       "Business Administration",
@@ -116,7 +118,9 @@ export const facultiesData: FacultyAcademicData[] = [
       "Public Administration",
       "Psychology",
       "Sociology",
-      "Transport Management"
+      "Transport Management",
+      "Cyber Security",
+      "Mass Communication"
     ],
     fees: {
       application: 20000,
