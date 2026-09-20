@@ -1,5 +1,10 @@
 <?php
 require_once __DIR__ . '/../admin/db.php';
+require_once __DIR__ . '/../registrar_auth.php';
+if (empty($_SESSION['registrar_authenticated']) || $_SESSION['registrar_authenticated'] !== true) {
+    http_response_code(403);
+    die('Access denied.');
+}
 
 $ref = trim($_GET['ref'] ?? '');
 $id = (int) preg_replace('/[^0-9]/', '', $ref);
