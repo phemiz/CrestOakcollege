@@ -52,8 +52,8 @@ export default function BillingClientView({ invoices, payments, studentName, mat
   const router = useRouter();
 
   const getCsrfToken = () => {
-    if (typeof document === "undefined") return "";
-    return document.cookie.split("; ").find(r => r.startsWith("cchsmt_csrf_token="))?.split("=")[1] || "";
+    if (typeof window === "undefined") return "";
+    return localStorage.getItem("csrfToken") || "";
   };
   
   // URL status states
