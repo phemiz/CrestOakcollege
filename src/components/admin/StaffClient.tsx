@@ -74,11 +74,17 @@ interface StaffClientProps {
   departments: DropdownItem[];
 }
 
-export const resolveDepartment = (dept: string = "", staffId: string = "") => {
+const NON_ACADEMIC_ROLES = ["BURSAR", "REGISTRAR", "ADMIN", "STAFF", "SUPER_ADMIN"];
+
+export const resolveDepartment = (dept: string = "", staffId: string = "", role: string = "") => {
   if (dept && dept !== "Selected Department" && dept.trim() !== "") {
     return dept;
   }
-  
+
+  if (NON_ACADEMIC_ROLES.includes((role || "").toUpperCase())) {
+    return "Institution-wide";
+  }
+
   const codeMatch = staffId ? staffId.match(/(?:STAFF|STF|ADM)\/([A-Z]{3})\//i) : null;
   const code = codeMatch ? codeMatch[1].toUpperCase() : '';
   
@@ -151,7 +157,8 @@ export default function StaffClient({ staffList: initialStaff, departments: rawD
 
   const normalizeStaffItem = (item: any, idx?: number): StaffItem => {
     const sNo = item?.staffNo || item?.staff_id || item?.staffId || item?.sin || 'N/A';
-    const dName = resolveDepartment(item?.department?.name || item?.department || '', sNo);
+    const itemRole = item?.user?.role?.name || item?.user?.roleName || item?.roleName || item?.role || 'LECTURER';
+    const dName = resolveDepartment(item?.department?.name || item?.department || '', sNo, itemRole);
     return {
       id: item?.id || item?.staff_id || item?.staffNo || item?.sin || `staff-fallback-${idx ?? Math.random()}`,
       staffNo: sNo,
@@ -768,7 +775,7 @@ export default function StaffClient({ staffList: initialStaff, departments: rawD
                       <div className="text-[11px] text-slate-400">{staff.user?.email || staff.email || "No Email"}</div>
                     </td>
                     <td className="py-3.5 px-4 font-mono font-bold text-slate-800">{staff.staffNo}</td>
-                    <td className="py-3.5 px-4 font-semibold text-slate-700">{resolveDepartment(staff.department?.name, staff.staffNo)}</td>
+                    <td className="py-3.5 px-4 font-semibold text-slate-700">{resolveDepartment(staff.department?.name, staff.staffNo, staff.user?.role?.name)}</td>
                     <td className="py-3.5 px-4">
                       <div className="flex items-center gap-1.5 mb-0.5">
                         <span
