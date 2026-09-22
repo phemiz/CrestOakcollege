@@ -287,7 +287,116 @@ if ($method === 'POST') {
         echo json_encode(['success' => true, 'status' => $psStatus]);
         exit();
     }
+    if ($action === 'submit_manual_payment') {
+        $studentFeeId = (int)($input['student_fee_id'] ?? 0);
+        $studentReference = trim((string)($input['student_reference'] ?? ''));
+        $proofUrl = trim((string)($input['proof_url'] ?? ''));
+        $payAmount = isset($input['amount']) ? (float)$input['amount'] : null;
 
+        if (!$studentFeeId) {
+            http_response_code(400);
+            echo json_encode(['success' => false, 'message' => 'student_fee_id is required.']);
+            exit();
+        }
+        if ($studentReference === '') {
+            http_response_code(400);
+            echo json_encode(['success' => false, 'message' => 'A bank transfer reference is required.']);
+            exit();
+        }
+        if ($proofUrl === '') {
+            http_response_code(400);
+            echo json_encode(['success' => false, 'message' => 'Proof of payment (screenshot/receipt) is required.']);
+            exit();
+        }
+
+        $conn = getDbConnection();
+        if (!$conn) {
+            http_response_code(500);
+            echo json_encode(['success' => false, 'message' => 'Database connection failed.']);
+            exit();
+        }
+
+        $stmt = $conn->prepare(
+            "SELECT sf.id, sf.student_id, sf.amount_due, sf.amount_paid, sf.balance, sf.status,
+                    fs.fee_type, fs.allow_installment, fs.min_installment_amount
+             FROM student_fees sf
+             JOIN fee_structures fs ON sf.fee_structure_id = fs.id
+             WHERE sf.id = ? LIMIT 1"
+        );
+        $stmt->bind_param('i', $studentFeeId);
+        $stmt->execute();
+        $fee = $stmt->get_result()->fetch_assoc();
+        $stmt->close();
+
+        if (!$fee) {
+            $conn->close();
+            http_response_code(404);
+            echo json_encode(['success' => false, 'message' => 'Fee record not found.']);
+            exit();
+        }
+
+        if ($session['role'] === 'STUDENT' && (int)$fee['student_id'] !== (int)$session['user_id']) {
+            $conn->close();
+            http_response_code(403);
+            echo json_encode(['success' => false, 'message' => 'You may only pay your own fees.']);
+            exit();
+        }
+
+        if ($fee['status'] === 'paid' || (float)$fee['balance'] <= 0) {
+            $conn->close();
+            http_response_code(400);
+            echo json_encode(['success' => false, 'message' => 'This fee has already been paid in full.']);
+            exit();
+        }
+
+        $balance = (float)$fee['balance'];
+        $amount = $payAmount ?? $balance;
+
+        if ($amount <= 0 || $amount > $balance) {
+            $conn->close();
+            http_response_code(400);
+            echo json_encode(['success' => false, 'message' => 'Invalid payment amount.']);
+            exit();
+        }
+
+        if ($amount < $balance && !$fee['allow_installment']) {
+            $conn->close();
+            http_response_code(400);
+            echo json_encode(['success' => false, 'message' => 'This fee does not allow partial/installment payment.']);
+            exit();
+        }
+
+        if ($amount < $balance && $fee['min_installment_amount'] && $amount < (float)$fee['min_installment_amount']) {
+            $conn->close();
+            http_response_code(400);
+            echo json_encode([
+                'success' => false,
+                'message' => 'Minimum installment amount is ' . number_format((float)$fee['min_installment_amount'], 2)
+            ]);
+            exit();
+        }
+
+        $reference = 'MAN-' . strtoupper(bin2hex(random_bytes(6)));
+
+        $insStmt = $conn->prepare(
+            "INSERT INTO fee_payments
+                (student_fee_id, student_id, amount, payment_reference, channel, student_reference, proof_url, status)
+             VALUES (?, ?, ?, ?, 'manual_transfer', ?, ?, 'pending')"
+        );
+        $insStmt->bind_param('iidsss', $studentFeeId, $fee['student_id'], $amount, $reference, $studentReference, $proofUrl);
+        $insStmt->execute();
+        $newId = $insStmt->insert_id;
+        $insStmt->close();
+        $conn->close();
+
+        echo json_encode([
+            'success' => true,
+            'message' => 'Your payment claim has been submitted and is awaiting confirmation by the bursar.',
+            'reference' => $reference,
+            'paymentId' => $newId,
+        ]);
+        exit();
+    }
     http_response_code(400);
     echo json_encode(['success' => false, 'message' => 'Unknown action.']);
     exit();
