@@ -397,6 +397,152 @@ if ($method === 'POST') {
         ]);
         exit();
     }
+    if ($action === 'confirm_manual_payment') {
+        if (!in_array($session['role'], ['BURSAR', 'BURSARY', 'ADMIN'], true)) {
+            http_response_code(403);
+            echo json_encode(['success' => false, 'message' => 'You are not authorized to confirm payments.']);
+            exit();
+        }
+
+        $paymentId = (int)($input['id'] ?? 0);
+        if (!$paymentId) {
+            http_response_code(400);
+            echo json_encode(['success' => false, 'message' => 'id is required.']);
+            exit();
+        }
+
+        $conn = getDbConnection();
+        if (!$conn) {
+            http_response_code(500);
+            echo json_encode(['success' => false, 'message' => 'Database connection failed.']);
+            exit();
+        }
+
+        $stmt = $conn->prepare("SELECT * FROM fee_payments WHERE id = ? AND channel = 'manual_transfer' LIMIT 1");
+        $stmt->bind_param('i', $paymentId);
+        $stmt->execute();
+        $payment = $stmt->get_result()->fetch_assoc();
+        $stmt->close();
+
+        if (!$payment) {
+            $conn->close();
+            http_response_code(404);
+            echo json_encode(['success' => false, 'message' => 'Manual payment record not found.']);
+            exit();
+        }
+
+        if ($payment['status'] !== 'pending') {
+            $conn->close();
+            http_response_code(400);
+            echo json_encode(['success' => false, 'message' => 'This payment has already been ' . $payment['status'] . '.']);
+            exit();
+        }
+
+        $conn->begin_transaction();
+        try {
+            $confirmedBy = (int)$session['user_id'];
+
+            $upd = $conn->prepare(
+                "UPDATE fee_payments SET status = 'success', paid_at = NOW(), confirmed_by = ? WHERE id = ?"
+            );
+            $upd->bind_param('ii', $confirmedBy, $paymentId);
+            $upd->execute();
+            $upd->close();
+
+            $sfStmt = $conn->prepare("SELECT id, amount_paid, amount_due FROM student_fees WHERE id = ? FOR UPDATE");
+            $sfStmt->bind_param('i', $payment['student_fee_id']);
+            $sfStmt->execute();
+            $sf = $sfStmt->get_result()->fetch_assoc();
+            $sfStmt->close();
+
+            if ($sf) {
+                $newPaid = (float)$sf['amount_paid'] + (float)$payment['amount'];
+                $newStatus = $newPaid >= (float)$sf['amount_due'] ? 'paid' : 'partial';
+
+                $sfUpd = $conn->prepare("UPDATE student_fees SET amount_paid = ?, status = ? WHERE id = ?");
+                $sfUpd->bind_param('dsi', $newPaid, $newStatus, $sf['id']);
+                $sfUpd->execute();
+                $sfUpd->close();
+            } else {
+                throw new Exception('student_fees record not found for id ' . $payment['student_fee_id']);
+            }
+
+            $conn->commit();
+        } catch (Throwable $e) {
+            $conn->rollback();
+            $conn->close();
+            error_log('confirm_manual_payment transaction failed: ' . $e->getMessage());
+            http_response_code(500);
+            echo json_encode(['success' => false, 'message' => 'Failed to confirm payment.']);
+            exit();
+        }
+
+        $conn->close();
+        echo json_encode(['success' => true, 'message' => 'Payment confirmed.']);
+        exit();
+    }
+    if ($action === 'reject_manual_payment') {
+        if (!in_array($session['role'], ['BURSAR', 'BURSARY', 'ADMIN'], true)) {
+            http_response_code(403);
+            echo json_encode(['success' => false, 'message' => 'You are not authorized to reject payments.']);
+            exit();
+        }
+
+        $paymentId = (int)($input['id'] ?? 0);
+        $reason = trim((string)($input['reason'] ?? ''));
+
+        if (!$paymentId) {
+            http_response_code(400);
+            echo json_encode(['success' => false, 'message' => 'id is required.']);
+            exit();
+        }
+        if ($reason === '') {
+            http_response_code(400);
+            echo json_encode(['success' => false, 'message' => 'A rejection reason is required.']);
+            exit();
+        }
+
+        $conn = getDbConnection();
+        if (!$conn) {
+            http_response_code(500);
+            echo json_encode(['success' => false, 'message' => 'Database connection failed.']);
+            exit();
+        }
+
+        $stmt = $conn->prepare("SELECT * FROM fee_payments WHERE id = ? AND channel = 'manual_transfer' LIMIT 1");
+        $stmt->bind_param('i', $paymentId);
+        $stmt->execute();
+        $payment = $stmt->get_result()->fetch_assoc();
+        $stmt->close();
+
+        if (!$payment) {
+            $conn->close();
+            http_response_code(404);
+            echo json_encode(['success' => false, 'message' => 'Manual payment record not found.']);
+            exit();
+        }
+
+        if ($payment['status'] !== 'pending') {
+            $conn->close();
+            http_response_code(400);
+            echo json_encode(['success' => false, 'message' => 'This payment has already been ' . $payment['status'] . '.']);
+            exit();
+        }
+
+        $confirmedBy = (int)$session['user_id'];
+
+        $upd = $conn->prepare(
+            "UPDATE fee_payments SET status = 'failed', confirmed_by = ?, rejection_reason = ? WHERE id = ?"
+        );
+        $upd->bind_param('isi', $confirmedBy, $reason, $paymentId);
+        $upd->execute();
+        $upd->close();
+        $conn->close();
+
+        echo json_encode(['success' => true, 'message' => 'Payment rejected.']);
+        exit();
+    }
+
     http_response_code(400);
     echo json_encode(['success' => false, 'message' => 'Unknown action.']);
     exit();
