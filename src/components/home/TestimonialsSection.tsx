@@ -1,8 +1,8 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { MessageSquare } from "lucide-react";
+import { MessageSquare, ChevronLeft, ChevronRight } from "lucide-react";
 
 type Review = {
   id: number;
@@ -17,6 +17,14 @@ type Review = {
 
 export const TestimonialsSection = () => {
   const [reviews, setReviews] = useState<Review[]>([]);
+  const scrollRef = useRef<HTMLDivElement>(null);
+
+  const scrollByAmount = (direction: "left" | "right") => {
+    const el = scrollRef.current;
+    if (!el) return;
+    const cardWidth = 404;
+    el.scrollBy({ left: direction === "left" ? -cardWidth : cardWidth, behavior: "smooth" });
+  };
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -50,7 +58,27 @@ export const TestimonialsSection = () => {
           </p>
         </div>
 
-        <div className="flex overflow-x-auto no-scrollbar gap-6 pb-4 snap-x snap-mandatory">
+        <div className="relative">
+          <div className="pointer-events-none absolute right-0 top-0 bottom-4 w-16 bg-gradient-to-l from-white to-transparent z-10 sm:hidden" />
+
+          <button
+            type="button"
+            aria-label="Scroll testimonials left"
+            onClick={() => scrollByAmount("left")}
+            className="hidden sm:flex items-center justify-center absolute -left-4 top-1/2 -translate-y-1/2 z-20 w-10 h-10 rounded-full bg-white border border-slate-200 shadow-md text-brand-blue-dark hover:bg-brand-bg-light cursor-pointer"
+          >
+            <ChevronLeft size={20} />
+          </button>
+          <button
+            type="button"
+            aria-label="Scroll testimonials right"
+            onClick={() => scrollByAmount("right")}
+            className="hidden sm:flex items-center justify-center absolute -right-4 top-1/2 -translate-y-1/2 z-20 w-10 h-10 rounded-full bg-white border border-slate-200 shadow-md text-brand-blue-dark hover:bg-brand-bg-light cursor-pointer"
+          >
+            <ChevronRight size={20} />
+          </button>
+
+          <div ref={scrollRef} className="flex overflow-x-auto no-scrollbar gap-6 pb-4 snap-x snap-mandatory">
           <AnimatePresence>
             {reviews.map((item) => (
               <motion.div
@@ -97,7 +125,11 @@ export const TestimonialsSection = () => {
             ))}
           </AnimatePresence>
         </div>
+        </div>
       </div>
     </section>
   );
 };
+
+
+

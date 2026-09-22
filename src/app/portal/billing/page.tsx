@@ -34,6 +34,7 @@ export default function StudentBillingPage() {
   const [payments, setPayments] = useState<Payment[]>([]);
   const [studentName, setStudentName] = useState("Student");
   const [matricNo, setMatricNo] = useState("");
+  const [status, setStatus] = useState<string | undefined>(undefined);
 
   useEffect(() => {
     const fetchBilling = async () => {
@@ -48,6 +49,7 @@ export default function StudentBillingPage() {
           setPayments(data.payments || []);
           setStudentName(data.studentName || "Student");
           setMatricNo(data.matricNo || "");
+          setStatus(data.status);
         } else {
           setError(data.message || "Could not load billing information.");
         }
@@ -89,8 +91,11 @@ export default function StudentBillingPage() {
           payments={payments}
           studentName={studentName}
           matricNo={matricNo}
+          status={status}
         />
       )}
     </div>
   );
 }
+
+
