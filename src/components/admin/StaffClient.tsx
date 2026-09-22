@@ -77,12 +77,12 @@ interface StaffClientProps {
 const NON_ACADEMIC_ROLES = ["BURSAR", "REGISTRAR", "ADMIN", "STAFF", "SUPER_ADMIN"];
 
 export const resolveDepartment = (dept: string = "", staffId: string = "", role: string = "") => {
-  if (dept && dept !== "Selected Department" && dept.trim() !== "") {
-    return dept;
-  }
-
   if (NON_ACADEMIC_ROLES.includes((role || "").toUpperCase())) {
     return "Institution-wide";
+  }
+
+  if (dept && dept !== "Selected Department" && dept.trim() !== "") {
+    return dept;
   }
 
   const codeMatch = staffId ? staffId.match(/(?:STAFF|STF|ADM)\/([A-Z]{3})\//i) : null;
@@ -446,6 +446,7 @@ export default function StaffClient({ staffList: initialStaff, departments: rawD
         ...formData,
         staffNo: computedStaffNo,
         departmentName: deptName,
+        departmentId: NON_ACADEMIC_ROLES.includes(formData.roleName) ? "" : formData.departmentId,
         id: editingStaff?.id
       };
 
