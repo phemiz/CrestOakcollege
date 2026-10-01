@@ -246,10 +246,10 @@ if ($method === 'POST') {
 
             $upd = $conn->prepare(
                 "UPDATE fee_payments SET status = ?, channel = ?, gateway_response = ?, paid_at = ?, paystack_transaction_id = ?
-                 WHERE payment_reference = ?"
+                 WHERE payment_reference = ? AND status <> 'success'"
             );
             $upd->bind_param('ssssss', $psStatus, $channel, $gwResp, $paidAt, $txId, $reference);
-            $upd->execute();
+            $upd->execute(); if ($psStatus === "success") { if ($upd->affected_rows !== 1) { $upd->close(); $conn->rollback(); $conn->close(); echo json_encode(["success" => true, "message" => "Payment already verified.", "status" => "success"]); exit(); } }
             $upd->close();
 
             if ($psStatus === 'success') {
