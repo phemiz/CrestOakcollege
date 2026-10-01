@@ -461,10 +461,10 @@ if ($method === 'POST') {
             $confirmedBy = (int)$session['user_id'];
 
             $upd = $conn->prepare(
-                "UPDATE fee_payments SET status = 'success', paid_at = NOW(), confirmed_by = ? WHERE id = ?"
+                "UPDATE fee_payments SET status = 'success', paid_at = NOW(), confirmed_at = NOW(), confirmed_by = ? WHERE id = ? AND status = 'pending'"
             );
             $upd->bind_param('ii', $confirmedBy, $paymentId);
-            $upd->execute();
+            $upd->execute(); if ($upd->affected_rows !== 1) { throw new Exception("Payment already processed."); }
             $upd->close();
 
             $sfStmt = $conn->prepare("SELECT id, amount_paid, amount_due FROM student_fees WHERE id = ? FOR UPDATE");
