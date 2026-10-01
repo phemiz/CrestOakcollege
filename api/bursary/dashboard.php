@@ -341,8 +341,14 @@ if ($method === 'POST') {
             echo json_encode(['success' => false, 'message' => 'You may only pay your own fees.']);
             exit();
         }
+        if (!preg_match('#^/uploads/payment-proofs/proof_' . (int)$fee['student_id'] . '_[a-f0-9]{32}\.(pdf|jpg|jpeg|png)$#', $proofUrl)) {
+            $conn->close();
+            http_response_code(400);
+            echo json_encode(['success' => false, 'message' => 'Invalid proof file. Please upload it again.']);
+            exit();
+        }
 
-        if ($fee['status'] === 'paid' || (float)$fee['balance'] <= 0) {
+        if (in_array($fee['status'], ['paid','waived'], true) || (float)$fee['balance'] <= 0) {
             $conn->close();
             http_response_code(400);
             echo json_encode(['success' => false, 'message' => 'This fee has already been paid in full.']);
@@ -376,6 +382,18 @@ if ($method === 'POST') {
             exit();
         }
 
+        $dupStmt = $conn->prepare("SELECT id FROM fee_payments WHERE channel = 'manual_transfer' AND ((student_fee_id = ? AND status = 'pending') OR (student_reference = ? AND status IN ('pending','success'))) LIMIT 1");
+        $dupStmt->bind_param('is', $studentFeeId, $studentReference);
+        $dupStmt->execute();
+        $dupRow = $dupStmt->get_result()->fetch_assoc();
+        $dupStmt->close();
+        if ($dupRow) {
+            $conn->close();
+            http_response_code(409);
+            echo json_encode(['success' => false, 'message' => 'A pending transfer already exists for this invoice, or this bank reference was already submitted.']);
+            exit();
+        }
+
         $reference = 'MAN-' . strtoupper(bin2hex(random_bytes(6)));
 
         $insStmt = $conn->prepare(
@@ -384,7 +402,7 @@ if ($method === 'POST') {
              VALUES (?, ?, ?, ?, 'manual_transfer', ?, ?, 'pending')"
         );
         $insStmt->bind_param('iidsss', $studentFeeId, $fee['student_id'], $amount, $reference, $studentReference, $proofUrl);
-        $insStmt->execute();
+        if (!$insStmt->execute()) { $conn->close(); http_response_code(500); echo json_encode(['success' => false, 'message' => 'Could not record the transfer. Please try again.']); exit(); }
         $newId = $insStmt->insert_id;
         $insStmt->close();
         $conn->close();
