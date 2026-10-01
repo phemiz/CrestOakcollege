@@ -270,7 +270,7 @@ if ($method === 'POST') {
                     $sfUpd->bind_param('dsi', $newPaid, $newStatus, $sf['id']);
                     $sfUpd->execute();
                     $sfUpd->close();
-                }
+                } else { throw new RuntimeException("student_fees row missing for payment " . $reference); }
             }
 
             $conn->commit();
