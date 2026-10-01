@@ -550,10 +550,10 @@ if ($method === 'POST') {
         $confirmedBy = (int)$session['user_id'];
 
         $upd = $conn->prepare(
-            "UPDATE fee_payments SET status = 'failed', confirmed_by = ?, rejection_reason = ? WHERE id = ?"
+            "UPDATE fee_payments SET status = 'failed', confirmed_by = ?, rejection_reason = ?, confirmed_at = NOW() WHERE id = ? AND status = 'pending'"
         );
         $upd->bind_param('isi', $confirmedBy, $reason, $paymentId);
-        $upd->execute();
+        $upd->execute(); if ($upd->affected_rows !== 1) { $upd->close(); $conn->close(); http_response_code(409); echo json_encode(["success" => false, "message" => "This payment has already been processed."]); exit(); }
         $upd->close();
         $conn->close();
 
