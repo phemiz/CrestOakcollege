@@ -40,6 +40,10 @@ if ($method === 'GET') {
     if ($res) {
         while ($row = $res->fetch_assoc()) {
             $fullName = trim(($row['first_name'] ?? '') . ' ' . ($row['last_name'] ?? '')) ?: ($row['username'] ?? 'Staff Member');
+            $roleUpper = strtoupper($row['role_name'] ?? $row['role'] ?? 'LECTURER');
+            $nonAcademicRoles = ['BURSAR', 'REGISTRAR', 'ADMIN', 'STAFF', 'SUPER_ADMIN'];
+            $isNonAcademic = in_array($roleUpper, $nonAcademicRoles, true);
+            $deptName = $row['department_name'] ?? ($isNonAcademic ? '' : 'General Studies');
             $staffList[] = [
                 'id' => (string)$row['id'],
                 'staffId' => $row['staff_no'] ?? (string)$row['id'],
@@ -52,9 +56,9 @@ if ($method === 'GET') {
                 'email' => $row['email'] ?? '',
                 'phoneNumber' => $row['phone_number'] ?? '',
                 'username' => $row['username'] ?? '',
-                'role' => strtoupper($row['role_name'] ?? $row['role'] ?? 'LECTURER'),
-                'department' => $row['department_name'] ?? 'General Studies',
-                'departmentId' => $deptNameToId[$row['department_name'] ?? 'General Studies'] ?? ''
+                'role' => $roleUpper,
+                'department' => $deptName,
+                'departmentId' => $deptNameToId[$deptName] ?? ''
             ];
         }
     }
