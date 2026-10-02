@@ -14,7 +14,7 @@ $data = json_decode($rawInput, true) ?? $_POST ?? [];
 
 require_once __DIR__ . '/_student_session.php';
 $matricNo = current_student_matric();
-$isPaidDemo = isset($_GET['demo_paid']) || isset($_GET['paid']);
+$isPaidDemo = false;
 
 // Bursar Fee Engine Configuration (Total ₦770,000 breakdown)
 if ($isPaidDemo) {
