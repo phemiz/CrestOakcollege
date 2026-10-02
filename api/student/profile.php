@@ -41,7 +41,9 @@ $studentProfile = null;
 // 1. Search MySQL DB
 if ($conn && !empty($cleanMatric)) {
     try {
-        $res = @$conn->query("SELECT * FROM students WHERE REPLACE(LOWER(matric_no), '\\\\', '') = '$cleanMatric' OR REPLACE(LOWER(id), '\\\\', '') = '$cleanMatric' LIMIT 1");
+        $qs = $conn->prepare("SELECT * FROM students WHERE REPLACE(LOWER(matric_no), '\\\\', '') = ? OR REPLACE(LOWER(id), '\\\\', '') = ? LIMIT 1");
+        $res = false;
+        if ($qs) { $qs->bind_param('ss', $cleanMatric, $cleanMatric); $qs->execute(); $res = $qs->get_result(); }
         if ($res && $row = $res->fetch_assoc()) {
             $studentProfile = [
                 "id" => $row['id'],
