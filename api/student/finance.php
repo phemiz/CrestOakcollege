@@ -12,7 +12,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
 $rawInput = file_get_contents('php://input');
 $data = json_decode($rawInput, true) ?? $_POST ?? [];
 
-$matricNo = trim($_GET['matricNo'] ?? $_GET['username'] ?? $data['matricNo'] ?? '');
+require_once __DIR__ . '/_student_session.php';
+$matricNo = current_student_matric();
 $isPaidDemo = isset($_GET['demo_paid']) || isset($_GET['paid']);
 
 // Bursar Fee Engine Configuration (Total ₦770,000 breakdown)

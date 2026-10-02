@@ -28,7 +28,8 @@ function getGradePoint($score) {
     return ["grade" => "F", "point" => 0.0];
 }
 
-$matricNo = trim($_GET['matricNo'] ?? $_GET['username'] ?? '');
+require_once __DIR__ . '/_student_session.php';
+$matricNo = current_student_matric();
 
 // Check if dynamic grades exist in grades_store.json
 $dynamicGrades = [];

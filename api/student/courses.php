@@ -12,7 +12,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
 $rawInput = file_get_contents('php://input');
 $data = json_decode($rawInput, true) ?? $_POST ?? [];
 
-$matricNo = trim($_GET['matricNo'] ?? $data['matricNo'] ?? '');
+require_once __DIR__ . '/_student_session.php';
+$matricNo = current_student_matric();
 
 $timetableStoreFile = __DIR__ . '/../admin/timetable_store.json';
 $timetable = [];

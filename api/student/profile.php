@@ -33,7 +33,8 @@ function cleanId($id) {
 $rawInput = file_get_contents('php://input');
 $data = json_decode($rawInput, true) ?? $_POST ?? [];
 
-$matricNo = trim($_GET['matricNo'] ?? $_GET['username'] ?? $data['matricNo'] ?? '');
+require_once __DIR__ . '/_student_session.php';
+$matricNo = current_student_matric();
 $cleanMatric = cleanId($matricNo);
 
 $studentProfile = null;

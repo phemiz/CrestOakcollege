@@ -9,7 +9,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
     exit();
 }
 
-$matricNo = trim($_GET['matricNo'] ?? $_GET['username'] ?? '');
+require_once __DIR__ . '/_student_session.php';
+$matricNo = current_student_matric();
 
 $clearanceData = [
     "overallStatus" => "IN_PROGRESS",
