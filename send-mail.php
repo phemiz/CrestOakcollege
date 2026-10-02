@@ -66,6 +66,7 @@ try {
     $emailSubject = '[Website Enquiry] ' . filter_var($subject, FILTER_SANITIZE_SPECIAL_CHARS);
 
     $cleanName = filter_var($name, FILTER_SANITIZE_SPECIAL_CHARS);
+    $cleanSubject = htmlspecialchars($subject, ENT_QUOTES, "UTF-8");
     $cleanEmail = filter_var($email, FILTER_SANITIZE_EMAIL);
     $cleanMessage = nl2br(htmlspecialchars($message, ENT_QUOTES, 'UTF-8'));
 
@@ -81,7 +82,7 @@ try {
             <h2 style='color: #1e3a8a; border-bottom: 2px solid #dc2626; padding-bottom: 10px; margin-top: 0;'>New Website Enquiry</h2>
             <p><strong>Full Name:</strong> {$cleanName}</p>
             <p><strong>Sender Email:</strong> <a href='mailto:{$cleanEmail}'>{$cleanEmail}</a></p>
-            <p><strong>Subject:</strong> {$cleanName} - {$subject}</p>
+            <p><strong>Subject:</strong> {$cleanName} - {$cleanSubject}</p>
             <hr style='border: 0; border-top: 1px solid #e2e8f0; margin: 20px 0;' />
             <p><strong>Message Content:</strong></p>
             <div style='background: #f8fafc; padding: 15px; border-left: 4px solid #1e3a8a; border-radius: 6px; line-height: 1.6;'>

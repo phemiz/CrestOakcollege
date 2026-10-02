@@ -16,6 +16,23 @@ if (!$event || !isset($event['event'])) {
     exit;
 }
 
+// Verify the request really came from Paystack (HMAC-SHA512 of the raw body).
+$cfgFile = __DIR__ . '/../config.php';
+if (file_exists($cfgFile)) { require_once $cfgFile; }
+$psKey = defined('PAYSTACK_SECRET_KEY') ? PAYSTACK_SECRET_KEY : (string)getenv('PAYSTACK_SECRET_KEY');
+$psSig = $_SERVER['HTTP_X_PAYSTACK_SIGNATURE'] ?? '';
+if ($psKey === '') {
+    error_log('webhook: PAYSTACK_SECRET_KEY not configured');
+    http_response_code(500);
+    echo json_encode(['success' => false, 'message' => 'Webhook not configured.']);
+    exit;
+}
+if ($psSig === '' || !hash_equals(hash_hmac('sha512', $input, $psKey), $psSig)) {
+    http_response_code(401);
+    echo json_encode(['success' => false, 'message' => 'Invalid signature.']);
+    exit;
+}
+
 $conn = getDbConnection();
 if (!$conn) { exit; }
 $conn->set_charset('utf8mb4');
