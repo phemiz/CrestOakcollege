@@ -32,7 +32,7 @@ if ($res) {
 
 // 3. Pending Admissions Count
 $pendingCount = 0;
-$res = $conn->query("SELECT COUNT(*) as cnt FROM admissions WHERE status = 'PENDING'");
+$res = $conn->query("SELECT COUNT(*) as cnt FROM Application WHERE LOWER(status) = 'pending'");
 if ($res) {
     $row = $res->fetch_assoc();
     $pendingCount = (int)($row['cnt'] ?? 0);
