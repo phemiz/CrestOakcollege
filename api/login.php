@@ -174,9 +174,9 @@ try {
     if ($matchedUser) {
         // Clear failed attempts on successful login
         try {
-            $clearStmt = $conn->prepare("DELETE FROM login_attempts WHERE identifier = ? OR ip_address = ?");
+            $clearStmt = $conn->prepare("DELETE FROM login_attempts WHERE identifier = ?");
             if ($clearStmt) {
-                $clearStmt->bind_param("ss", $cleanIdentifier, $clientIp);
+                $clearStmt->bind_param("s", $cleanIdentifier);
                 $clearStmt->execute();
                 $clearStmt->close();
             }
