@@ -45,9 +45,6 @@ if ($res) {
     $row = $res->fetch_assoc();
     $coursesCount = (int)($row['cnt'] ?? 0);
 }
-if ($coursesCount === 0) {
-    $coursesCount = 6; // default baseline programmes if empty
-}
 
 // 5. Total Settled Revenue
 $totalRevenue = 0.00;
