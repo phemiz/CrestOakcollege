@@ -177,6 +177,37 @@ try {
         $matchedUser = null;
     }
 
+    // Student accounts cannot sign in through the staff-type login pages.
+    if ($matchedUser && in_array($loginGateway, ['staff', 'admin', 'superadmin', 'bursary', 'registrar'], true) && ($matchedUser['role'] ?? '') === 'STUDENT') {
+        $matchedUser = null;
+    }
+
+    // Students cannot sign in until login credentials have been issued
+    // (sent after the first approved tuition payment). Checked after the
+    // password is verified, and exits before the failed-attempt logger.
+    if ($matchedUser && ($matchedUser['role'] ?? '') === 'STUDENT') {
+        $credSent = false;
+        $credStmt = $conn->prepare("SELECT credentials_sent_at FROM students WHERE id = ? LIMIT 1");
+        if ($credStmt) {
+            $credStudentId = (int)$matchedUser['id'];
+            $credStmt->bind_param("i", $credStudentId);
+            $credStmt->execute();
+            $credRow = $credStmt->get_result()->fetch_assoc();
+            $credSent = !empty($credRow['credentials_sent_at']);
+            $credStmt->close();
+        }
+        if (!$credSent) {
+            $conn->close();
+            http_response_code(403);
+            echo json_encode([
+                'success' => false,
+                'code'    => 'ACCESS_NOT_ACTIVE',
+                'message' => 'Your portal access is not active yet. Your login details will be sent to you after your tuition payment is approved.'
+            ]);
+            exit();
+        }
+    }
+
     if ($matchedUser) {
         // Clear failed attempts on successful login
         try {
