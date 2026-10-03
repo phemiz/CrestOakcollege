@@ -237,6 +237,20 @@ if ($method === 'POST') {
             exit();
         }
 
+        // Amount check: never credit a payment whose charged amount differs
+        // from the amount recorded when it was initialised.
+        if ($psStatus === 'success') {
+            $chargedAmount = round((float)($psData['amount'] ?? 0) / 100, 2);
+            $recordedAmount = round((float)($payment['amount'] ?? 0), 2);
+            if (abs($chargedAmount - $recordedAmount) > 0.01) {
+                error_log("verify_payment amount mismatch: ref={$reference} charged={$chargedAmount} recorded={$recordedAmount}");
+                $conn->close();
+                http_response_code(409);
+                echo json_encode(['success' => false, 'status' => 'pending', 'message' => 'The amount paid does not match this invoice. Please contact the bursary.']);
+                exit();
+            }
+        }
+
         $conn->begin_transaction();
         try {
             $channel = $psData['channel'] ?? null;
