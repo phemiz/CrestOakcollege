@@ -31,7 +31,7 @@ DirectoryIndex index.html index.php
   RewriteCond %{REQUEST_FILENAME} !-f
   RewriteCond %{REQUEST_FILENAME} !-d
   RewriteCond %{DOCUMENT_ROOT}/404.html -f
-  RewriteRule ^ 404.html [L]
+  RewriteRule ^ - [R=404,L]
 </IfModule>
 
 <IfModule mod_headers.c>
@@ -52,3 +52,13 @@ DirectoryIndex index.html index.php
     Header set Cache-Control "max-age=31536000, public"
   </FilesMatch>
 </IfModule>
+
+ErrorDocument 404 /404.html
+
+# Block backup, archive, log and SQL files
+<FilesMatch "\.(bak|save|old|orig|sql|log|zip|tar|tgz|gz|swp)([._-].*)?$|~$|^\.env">
+  <IfModule mod_authz_core.c>
+    Require all denied
+  </IfModule>
+</FilesMatch>
+Options -Indexes
