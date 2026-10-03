@@ -6,7 +6,7 @@ error_reporting(E_ALL);
 if (session_status() === PHP_SESSION_NONE) {
     $secure = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off');
     session_set_cookie_params([
-        'lifetime' => 86400 * 3, // 3 days
+        'lifetime' => 3600 * 12, // 12 hours
         'path'     => '/',
         'domain'   => '',
         'secure'   => $secure,
@@ -124,6 +124,32 @@ if ($isDirectRequest && $method === 'POST') {
         exit();
     }
 
+    // Brute-force lockout: 5 failed attempts per username per 15 minutes
+    $__regKey = 'reg:' . strtolower(str_replace(['\\', '/'], '', $identifier));
+    $__regIp = $_SERVER['REMOTE_ADDR'] ?? '0.0.0.0';
+    try {
+        $__lc = function_exists('getDbConnection') ? getDbConnection() : null;
+        if ($__lc) {
+            @$__lc->query("DELETE FROM login_attempts WHERE attempted_at < NOW() - INTERVAL 15 MINUTE");
+            $__ls = $__lc->prepare("SELECT COUNT(*) AS n FROM login_attempts WHERE identifier = ? AND attempted_at >= NOW() - INTERVAL 15 MINUTE");
+            $__ln = 0;
+            if ($__ls) {
+                $__ls->bind_param('s', $__regKey);
+                $__ls->execute();
+                $__lr = $__ls->get_result();
+                if ($__lr) { $__lrow = $__lr->fetch_assoc(); $__ln = (int)($__lrow['n'] ?? 0); }
+                $__ls->close();
+            }
+            if ($__ln >= 5) {
+                http_response_code(429);
+                echo json_encode(['success' => false, 'authenticated' => false, 'message' => 'Too many failed login attempts. Please wait 15 minutes before trying again.']);
+                exit();
+            }
+            $__li = $__lc->prepare("INSERT INTO login_attempts (identifier, ip_address) VALUES (?, ?)");
+            if ($__li) { $__li->bind_param('ss', $__regKey, $__regIp); $__li->execute(); $__li->close(); }
+        }
+    } catch (Throwable $__e) { error_log('Registrar rate limit error: ' . $__e->getMessage()); }
+
     $matchedUser = null;
 
     // Database lookup if connection available
@@ -195,6 +221,7 @@ if ($isDirectRequest && $method === 'POST') {
 
 
     if ($matchedUser) {
+        try { $__dc = function_exists('getDbConnection') ? getDbConnection() : null; if ($__dc && isset($__regKey)) { $__ds = $__dc->prepare("DELETE FROM login_attempts WHERE identifier = ?"); if ($__ds) { $__ds->bind_param('s', $__regKey); $__ds->execute(); $__ds->close(); } } } catch (Throwable $__e2) { }
         // Save native PHP session
         $_SESSION['registrar_authenticated'] = true;
         $_SESSION['user'] = $matchedUser;
