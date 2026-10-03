@@ -10,9 +10,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
 }
 
 require_once __DIR__ . '/../admin/db.php';
+require_once __DIR__ . '/_student_session.php';
 $conn = getDbConnection();
 
-$regNumber = $_GET['regNumber'] ?? $_GET['username'] ?? '';
+$regNumber = current_student_matric(); // from the login session, not the URL
 
 $student = null;
 $courses = [];
