@@ -38,7 +38,11 @@ function ensure_sessions_table($conn): void {
 /**
  * Create a new server-side session for a user.
  */
-function create_session(int $userId, string $role, int $ttlHours = 720): string {
+function create_session(int $userId, string $role, int $ttlHours = 0): string {
+    if ($ttlHours <= 0) {
+        // Privileged roles get short sessions; everyone else 3 days
+        $ttlHours = in_array(strtoupper(trim($role)), ['ADMIN','SUPERADMIN','SUPER_ADMIN','BURSAR','BURSARY','REGISTRAR'], true) ? 12 : 72;
+    }
     $conn = getDbConnection();
     if (!$conn) {
         throw new RuntimeException('Database connection unavailable while creating session.');
