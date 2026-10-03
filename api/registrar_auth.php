@@ -142,7 +142,7 @@ if ($isDirectRequest && $method === 'POST') {
                     if ($res && $res->num_rows > 0) {
                         $row = $res->fetch_assoc();
                         $storedPass = $row['password_hash'] ?? $row['password'] ?? '';
-                        if (password_verify($password, $storedPass) || $password === $storedPass) {
+                        if (password_verify($password, $storedPass)) {
                             $fullName = trim(($row['first_name'] ?? '') . ' ' . ($row['last_name'] ?? '')) ?: 'University Registrar';
                             $staffIdVal = $row['staff_no'] ?? $row['staff_id'] ?? 'REG/2026/001';
                             $matchedUser = [
@@ -172,7 +172,7 @@ if ($isDirectRequest && $method === 'POST') {
                         if ($res && $res->num_rows > 0) {
                             $row = $res->fetch_assoc();
                             $storedPass = $row['password_hash'] ?? $row['password'] ?? '';
-                            if (password_verify($password, $storedPass) || $password === $storedPass) {
+                            if (password_verify($password, $storedPass)) {
                                 $matchedUser = [
                                     'id'       => (string)$row['id'],
                                     'username' => $row['username'] ?? $row['email'],
@@ -193,20 +193,6 @@ if ($isDirectRequest && $method === 'POST') {
         }
     }
 
-    // Default institutional credential fallback for test/development environments
-    if (!$matchedUser) {
-        $cleanIdent = strtolower($identifier);
-        if (($cleanIdent === 'registrar' || str_contains($cleanIdent, 'reg')) && strlen($password) >= 4) {
-            $matchedUser = [
-                'id'       => 'REG-2026-001',
-                'staffId'  => $identifier,
-                'username' => $identifier,
-                'email'    => 'registrar@crestoakcollege.com.ng',
-                'name'     => 'University Registrar',
-                'role'     => 'REGISTRAR'
-            ];
-        }
-    }
 
     if ($matchedUser) {
         // Save native PHP session
