@@ -10,6 +10,14 @@ DirectoryIndex index.html index.php
   RewriteEngine On
   RewriteBase /
 
+  # Registrar address lands on the registrar login page
+  RewriteCond %{HTTP_HOST} ^registrar\.crestoakcollege\.com\.ng$ [NC]
+  RewriteRule ^$ /registrar/login/ [R=302,L]
+
+  # Staff addresses land on the staff login page
+  RewriteCond %{HTTP_HOST} ^staff\.crestoakcollege\.com\.ng$ [NC]
+  RewriteRule ^(staff(/login)?/?)?$ /login/?gateway=staff [R=302,L]
+
   # 1. Serve existing files directly (images, js, css, php, _next assets)
   RewriteCond %{REQUEST_FILENAME} -f
   RewriteRule ^ - [L]
