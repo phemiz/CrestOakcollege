@@ -28,6 +28,21 @@ if (!in_array($ext, $allowed)) {
     exit();
 }
 
+$maxBytes = 8 * 1024 * 1024; // 8 MB per document
+if (($file['error'] ?? UPLOAD_ERR_NO_FILE) !== UPLOAD_ERR_OK) {
+    echo json_encode(['success' => false, 'message' => 'Upload failed. Please try again.']);
+    exit();
+}
+if (($file['size'] ?? 0) > $maxBytes) {
+    echo json_encode(['success' => false, 'message' => 'File is too large. Maximum size is 8 MB.']);
+    exit();
+}
+$typeMap = ['pdf' => 'application/pdf', 'jpg' => 'image/jpeg', 'jpeg' => 'image/jpeg', 'png' => 'image/png'];
+$mime = function_exists('finfo_open') ? finfo_file(finfo_open(FILEINFO_MIME_TYPE), $file['tmp_name']) : '';
+if ($mime !== $typeMap[$ext]) {
+    echo json_encode(['success' => false, 'message' => 'File content does not match its type. Only PDF, JPG, and PNG are allowed.']);
+    exit();
+}
 $filename = 'doc_' . bin2hex(random_bytes(16)) . '.' . $ext;
 $targetPath = $uploadDir . $filename;
 
