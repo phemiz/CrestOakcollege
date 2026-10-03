@@ -171,6 +171,12 @@ try {
         }
     }
 
+    // The student login page accepts student accounts only.
+    $loginGateway = strtolower(trim($_GET['gateway'] ?? ''));
+    if ($matchedUser && $loginGateway === 'student' && ($matchedUser['role'] ?? '') !== 'STUDENT') {
+        $matchedUser = null;
+    }
+
     if ($matchedUser) {
         // Clear failed attempts on successful login
         try {
