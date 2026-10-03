@@ -158,8 +158,9 @@ function create_or_activate_student_account(mysqli $conn, int $applicationId, ar
 
     $matricNo = get_next_matric_number($conn, $deptCode);
 
-    $tempPassword = generate_temp_password();
-    $passwordHash = password_hash($tempPassword, PASSWORD_BCRYPT);
+    // No usable password at approval: credentials are issued later, after the
+    // first approved tuition payment. This hash is of a random value nobody knows.
+    $passwordHash = password_hash(bin2hex(random_bytes(32)), PASSWORD_BCRYPT);
 
     $stmt = $conn->prepare(
         "INSERT INTO students (first_name, last_name, email, phone_number, matric_no, password_hash, department_name, level, isDeleted, force_password_change, application_id, payment_status)
@@ -190,12 +191,7 @@ function create_or_activate_student_account(mysqli $conn, int $applicationId, ar
     }
     $stmt->close();
 
-    $mailSent = sendWelcomeEmail($applicant['email'], $applicant['applicant_name'], $matricNo, 'STUDENT', $tempPassword);
-    if (!$mailSent) {
-        error_log('Approval welcome email failed to send for: ' . $applicant['email']);
-    }
-
-    return ['matricNo' => $matricNo, 'tempPassword' => $tempPassword];
+    return ['matricNo' => $matricNo];
 }
 
 function generate_temp_password(): string {
@@ -211,7 +207,7 @@ function send_admission_decision_email(string $toEmail, string $name, string $re
         $body = "Dear {$name},\n\n"
               . "Congratulations! We are pleased to inform you that your application to CrestOak College of Health Sciences, Management and Technology has been APPROVED.\n\n"
               . "Application Reference: {$ref}\n\n"
-              . "You will receive a separate email shortly with your Student Portal login details.\n\n"
+              . "Further instructions on fee payment and your Student Portal access will be sent to you by email.\n\n"
               . "We look forward to welcoming you to CrestOak College.\n\n"
               . "Regards,\nCrestOak College Admissions Office";
     } else {
