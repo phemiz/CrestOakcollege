@@ -62,6 +62,27 @@ export default function PortalDashboard({ initialUser }: { initialUser?: any }) 
 
   // Authentication Mock
   const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [acceptanceDeadline, setAcceptanceDeadline] = useState<{ date: string; days: number } | null>(null);
+  useEffect(() => {
+    if (!isLoggedIn) return;
+    fetch("/api/bursary/fee-deadlines.php", { credentials: "include" })
+      .then((r) => r.json())
+      .then((d) => {
+        const hit = (d?.deadlines || []).find((x: any) => x.fee_type === "ACCEPTANCE_FEE");
+        setAcceptanceDeadline(hit ? { date: hit.deadline_date, days: Number(hit.days_remaining) } : null);
+      })
+      .catch(() => setAcceptanceDeadline(null));
+  }, [isLoggedIn]);
+  const [academicCalendar, setAcademicCalendar] = useState<any>(null);
+  useEffect(() => {
+    if (!isLoggedIn) return;
+    fetch("/api/registrar/calendar-settings.php", { credentials: "include" })
+      .then((r) => r.json())
+      .then((d) => setAcademicCalendar(d?.success && d?.settings ? d.settings : null))
+      .catch(() => setAcademicCalendar(null));
+  }, [isLoggedIn]);
+  const fmtCalDate = (s?: string) =>
+    s ? new Date(s + "T00:00:00").toLocaleDateString("en-GB", { day: "numeric", month: "long", year: "numeric" }) : "";
   const [studentId, setStudentId] = useState("");
   const [studentPass, setStudentPass] = useState("");
   const [studentError, setStudentError] = useState("");
@@ -580,11 +601,40 @@ export default function PortalDashboard({ initialUser }: { initialUser?: any }) 
                         <Calendar className="text-emerald-600" size={18} />
                       </div>
                       <div>
-                        <p className="text-sm font-bold text-brand-blue-dark leading-snug">Acceptance Fee Deadline is June 21</p>
-                        <p className="text-[10px] text-slate-400 font-bold mt-1 uppercase">2 Weeks remaining</p>
+                        <p className="text-sm font-bold text-brand-blue-dark leading-snug">{acceptanceDeadline ? "Acceptance Fee Deadline is " + new Date(acceptanceDeadline.date + "T00:00:00").toLocaleDateString("en-GB", { day: "numeric", month: "long", year: "numeric" }) : "No acceptance fee deadline set yet"}</p>
+                        <p className="text-[10px] text-slate-400 font-bold mt-1 uppercase">{acceptanceDeadline ? (acceptanceDeadline.days > 1 ? acceptanceDeadline.days + " days remaining" : acceptanceDeadline.days === 1 ? "1 day remaining" : acceptanceDeadline.days === 0 ? "Due today" : "Deadline passed") : "Check back later"}</p>
                       </div>
                     </div>
                   </div>
+
+                  {/* Academic Calendar (live from registrar calendar settings) */}
+                  {academicCalendar && (
+                    <div className="bg-white border border-slate-200 rounded-3xl p-6 shadow-sm mb-6">
+                      <h4 className="font-display font-extrabold text-brand-blue-dark text-xs uppercase tracking-wider border-b border-slate-100 pb-3 mb-4">
+                        Academic Calendar{academicCalendar.session ? " - " + academicCalendar.session : ""}{academicCalendar.semester ? ", " + academicCalendar.semester : ""}
+                      </h4>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs font-semibold text-slate-600">
+                        <div>
+                          <p className="text-[10px] text-slate-400 font-bold uppercase">Registration Opens</p>
+                          <p className="font-bold text-brand-blue-dark mt-0.5">{fmtCalDate(academicCalendar.regStartDate)}</p>
+                        </div>
+                        <div>
+                          <p className="text-[10px] text-slate-400 font-bold uppercase">Registration Deadline</p>
+                          <p className="font-bold text-brand-blue-dark mt-0.5">{fmtCalDate(academicCalendar.regEndDate)}</p>
+                        </div>
+                        <div>
+                          <p className="text-[10px] text-slate-400 font-bold uppercase">Late Registration Cut-off</p>
+                          <p className="font-bold text-brand-blue-dark mt-0.5">{fmtCalDate(academicCalendar.lateRegEndDate)}</p>
+                        </div>
+                        {academicCalendar.examPublishStatus === "Published" && (
+                          <div>
+                            <p className="text-[10px] text-slate-400 font-bold uppercase">Examinations</p>
+                            <p className="font-bold text-brand-blue-dark mt-0.5">{fmtCalDate(academicCalendar.examStartDate)} - {fmtCalDate(academicCalendar.examEndDate)}</p>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  )}
 
                   {/* Academic Notices Box */}
                   <div className="bg-white border border-slate-200 rounded-3xl p-6 shadow-sm">

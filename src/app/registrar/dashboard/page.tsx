@@ -2,6 +2,8 @@
 
 import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import FeeDeadlineCard from "@/components/shared/FeeDeadlineCard";
+import CalendarSettingsCard from "@/components/shared/CalendarSettingsCard";
 import { Header } from "@/components/layout/header";
 import { Footer } from "@/components/layout/footer";
 import { Logo } from "@/components/ui/logo";
@@ -252,6 +254,7 @@ export default function RegistrarDashboardPage() {
 
   // LOGOUT HANDLER
   const handleLogout = () => {
+    fetch("/api/auth/logout.php", { method: "POST", credentials: "include", keepalive: true }).catch(() => {});
     if (typeof window !== "undefined") {
       localStorage.removeItem("user");
       localStorage.removeItem("isAuthenticated");
@@ -563,52 +566,7 @@ export default function RegistrarDashboardPage() {
             </div>
           )}
 
-          {/* TOP OVERVIEW STATS BANNER */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-            <div className="p-5 rounded-2xl bg-white border border-slate-200 space-y-2">
-              <div className="flex items-center justify-between text-slate-500">
-                <span className="text-xs font-bold uppercase tracking-wider">Pending Transcripts</span>
-                <FileSpreadsheet className="w-4 h-4 text-indigo-600" />
-              </div>
-              <p className="text-2xl font-extrabold text-slate-800">
-                {students.filter(s => s.transcriptStatus === "Pending").length}
-              </p>
-              <p className="text-xs text-indigo-600 font-medium">Awaiting Registrar Seal</p>
-            </div>
-
-            <div className="p-5 rounded-2xl bg-white border border-slate-200 space-y-2">
-              <div className="flex items-center justify-between text-slate-500">
-                <span className="text-xs font-bold uppercase tracking-wider">Course Offerings</span>
-                <BookOpenCheck className="w-4 h-4 text-blue-400" />
-              </div>
-              <p className="text-2xl font-extrabold text-slate-800">
-                {courses.length} <span className="text-xs text-slate-500 font-normal">({courses.filter(c => c.status === "Pending Review").length} pending)</span>
-              </p>
-              <p className="text-xs text-blue-400 font-medium">Approved Catalog Cap: 120</p>
-            </div>
-
-            <div className="p-5 rounded-2xl bg-white border border-slate-200 space-y-2">
-              <div className="flex items-center justify-between text-slate-500">
-                <span className="text-xs font-bold uppercase tracking-wider">Degree Clearance</span>
-                <Award className="w-4 h-4 text-emerald-400" />
-              </div>
-              <p className="text-2xl font-extrabold text-slate-800">
-                {degreeAudits.filter(a => a.approvedForGraduation).length} / {degreeAudits.length}
-              </p>
-              <p className="text-xs text-emerald-400 font-medium">Cleared for Convocation</p>
-            </div>
-
-            <div className="p-5 rounded-2xl bg-white border border-slate-200 space-y-2">
-              <div className="flex items-center justify-between text-slate-500">
-                <span className="text-xs font-bold uppercase tracking-wider">Grade Submission Window</span>
-                <Lock className="w-4 h-4 text-amber-400" />
-              </div>
-              <p className="text-xl font-extrabold text-amber-400">
-                {gradeLocks.filter(g => g.gradeSubmissionLocked).length} Locked
-              </p>
-              <p className="text-xs text-slate-500">Out of {gradeLocks.length} Faculties</p>
-            </div>
-          </div>
+          {/* Static demo summary cards hidden until backed by real data */}
 
           {/* TAB MODULE 0: ADMISSIONS REVIEW */}
           {activeTab === "admissions" && (
@@ -1163,6 +1121,8 @@ export default function RegistrarDashboardPage() {
           {/* TAB MODULE 4: ACADEMIC CALENDAR & EXAMINATIONS */}
           {activeTab === "calendar" && (
             <div className="space-y-6">
+              <FeeDeadlineCard />
+              <CalendarSettingsCard initial={calendarSettings} onChange={(s) => setCalendarSettings(s)} />
               
               {/* SECTION HEADER */}
               <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 bg-white p-6 rounded-2xl border border-slate-200">
@@ -1226,46 +1186,6 @@ export default function RegistrarDashboardPage() {
                   </button>
                 </div>
 
-                {/* GRADE SUBMISSION LOCKS GRID */}
-                <div className="bg-white border border-slate-200 rounded-2xl p-6 space-y-4">
-                  <h4 className="text-sm font-bold text-white flex items-center justify-between border-b border-slate-200 pb-3">
-                    <span>Lecturer Grade Submission Portal Locks</span>
-                    <span className="text-xs text-amber-400 font-semibold">Faculty Controls</span>
-                  </h4>
-
-                  <div className="space-y-3">
-                    {gradeLocks.map((g) => (
-                      <div key={g.departmentId} className="p-3.5 rounded-xl bg-slate-50 border border-slate-200 flex items-center justify-between gap-3 text-xs">
-                        <div>
-                          <p className="font-bold text-white">{g.departmentName}</p>
-                          <p className="text-[11px] text-slate-500">{g.faculty}</p>
-                          <p className="text-[10px] text-slate-500 mt-0.5">Grades Submitted: {g.submittedCourses}/{g.totalCourses} courses</p>
-                        </div>
-
-                        <button
-                          onClick={() => handleToggleGradeLock(g.departmentId)}
-                          className={`px-3 py-1.5 rounded-lg text-xs font-bold flex items-center gap-1.5 transition-all ${
-                            g.gradeSubmissionLocked
-                              ? "bg-red-950/60 border border-red-500/40 text-red-300 hover:bg-red-900/60"
-                              : "bg-emerald-950/60 border border-emerald-500/40 text-emerald-300 hover:bg-emerald-900/60"
-                          }`}
-                        >
-                          {g.gradeSubmissionLocked ? (
-                            <>
-                              <Lock className="w-3.5 h-3.5 text-red-400" />
-                              <span>LOCKED</span>
-                            </>
-                          ) : (
-                            <>
-                              <Unlock className="w-3.5 h-3.5 text-emerald-400" />
-                              <span>OPEN</span>
-                            </>
-                          )}
-                        </button>
-                      </div>
-                    ))}
-                  </div>
-                </div>
 
               </div>
             </div>
