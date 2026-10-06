@@ -20,10 +20,11 @@ import {
   ShieldCheck,
   Shield,
   CreditCard,
-  Briefcase
+  Briefcase,
+  CalendarDays
 } from "lucide-react";
 
-type RoleType = "Student" | "Lecturer" | "Staff" | "Bursary" | "Admin" | "Super Admin";
+type RoleType = "Student" | "Lecturer" | "Staff" | "Bursary" | "Admin" | "Super Admin" | "Planner" | "Registrar";
 
 function LoginForm() {
   const router = useRouter();
@@ -77,8 +78,30 @@ function LoginForm() {
     urlGateway === "staff" ||
     urlGateway === "lecturer";
 
+  const isPlannerGateway =
+    hostname.startsWith("plan.") ||
+    currentPath.includes("/planner") ||
+    urlGateway === "planner";
+
   // Strict Single-Role Access Configuration
   const gatewayConfig = (() => {
+    if (isPlannerGateway) {
+      return {
+        role: "Planner" as RoleType,
+        title: "Timetable Planner Portal",
+        subtitle: "Enter your Planner credentials to build and manage lecture and examination timetables.",
+        badge: "Official CrestOak Timetable Planner Gateway",
+        usernameLabel: "Planner Username / ID",
+        placeholder: "e.g., planner1",
+        redirectUrl: "/planner/dashboard/",
+        icon: CalendarDays,
+        securityNotice: "Restricted to authorized timetable planning personnel. Registrar and Admin have read-only access.",
+        themeColor: "from-teal-950 via-slate-900 to-slate-950",
+        badgeBg: "bg-teal-500/10 border-teal-500/30 text-teal-400",
+        btnGradient: "from-teal-700 to-slate-900 hover:from-teal-600 hover:to-slate-800",
+      };
+    }
+
     if (isSuperAdminGateway) {
       return {
         role: "Super Admin" as RoleType,
@@ -207,6 +230,7 @@ function LoginForm() {
           (targetRoleUpper.includes("ADMIN") && roleUpper.includes("ADMIN")) ||
           (targetRoleUpper.includes("BURSARY") && (roleUpper.includes("BURSARY") || roleUpper.includes("ADMIN"))) ||
           (targetRoleUpper.includes("STAFF") && (roleUpper.includes("STAFF") || roleUpper.includes("LECTURER") || roleUpper.includes("ADMIN"))) ||
+          (targetRoleUpper.includes("PLANNER") && (roleUpper.includes("PLANNER") || roleUpper.includes("REGISTRAR") || roleUpper.includes("ADMIN"))) ||
           (targetRoleUpper.includes("STUDENT") && roleUpper.includes("STUDENT"));
 
         if (isMatch) {
@@ -225,7 +249,8 @@ function LoginForm() {
         (targetRoleUpper.includes("ADMIN") && roleUpper.includes("ADMIN")) ||
         (targetRoleUpper.includes("BURSARY") && (roleUpper.includes("BURSARY") || roleUpper.includes("ADMIN"))) ||
         (targetRoleUpper.includes("STAFF") && (roleUpper.includes("STAFF") || roleUpper.includes("LECTURER") || roleUpper.includes("ADMIN"))) ||
-        (targetRoleUpper.includes("STUDENT") && roleUpper.includes("STUDENT"));
+        (targetRoleUpper.includes("PLANNER") && (roleUpper.includes("PLANNER") || roleUpper.includes("REGISTRAR") || roleUpper.includes("ADMIN"))) ||
+          (targetRoleUpper.includes("STUDENT") && roleUpper.includes("STUDENT"));
 
       if (isMatch) {
         redirectBasedOnRole(storedRole);
@@ -235,6 +260,12 @@ function LoginForm() {
 
   const redirectBasedOnRole = (role: string) => {
     const rUpper = role.toUpperCase();
+    if (isPlannerGateway || rUpper.includes("PLANNER")) {
+      if (!window.location.pathname.startsWith("/planner")) {
+        window.location.replace("/planner/dashboard/");
+      }
+      return;
+    }
     if (rUpper.includes("ADMIN") || rUpper.includes("SUPER")) {
       if (!window.location.pathname.startsWith("/admin")) {
         window.location.replace("/admin/dashboard/");
@@ -270,7 +301,9 @@ function LoginForm() {
       const searchGateway = (searchParams.get("gateway") || searchParams.get("role") || "").toLowerCase();
 
       let roleContext = "student";
-      if (currentHost.startsWith("superadmin.") || searchGateway === "superadmin" || currentHost.includes("superadmin")) {
+      if (currentHost.startsWith("plan.") || searchGateway === "planner") {
+        roleContext = "planner";
+      } else if (currentHost.startsWith("superadmin.") || searchGateway === "superadmin" || currentHost.includes("superadmin")) {
         roleContext = "superadmin";
       } else if (currentHost.startsWith("admin.") || searchGateway === "admin" || currentHost.includes("admin")) {
         roleContext = "admin";
