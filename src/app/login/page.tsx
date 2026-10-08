@@ -345,8 +345,11 @@ function LoginForm() {
           }
         }
 
-        const targetUrl = data.redirectUrl || data.redirect || gatewayConfig.redirectUrl || "/portal/dashboard";
-        window.location.href = targetUrl;
+           const mustChange = data.user?.mustChangePassword === true;
+           const targetUrl = mustChange
+             ? "/portal/change-password/"
+             : (data.redirectUrl || data.redirect || gatewayConfig.redirectUrl || "/portal/dashboard");
+           window.location.href = targetUrl;
       } else {
         setErrorMsg(data.message || "Invalid portal credentials.");
       }

@@ -75,6 +75,7 @@ export default function ClientPortalShell({ children, user, announcements }: Cli
   const department = currentUser?.department?.name || currentUser?.department || currentUser?.user?.department || user?.department || "Department Student";
 
   const handleSignOut = () => {
+    fetch("/api/auth/logout.php", { method: "POST", credentials: "include", keepalive: true }).catch(() => {});
     if (typeof window !== "undefined") {
       localStorage.removeItem("user");
       localStorage.removeItem("crestoak_session");

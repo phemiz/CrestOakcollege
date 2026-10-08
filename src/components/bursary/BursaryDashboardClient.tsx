@@ -1,7 +1,9 @@
-﻿"use client";
+"use client";
 
 import React, { useState, useEffect, useTransition } from "react";
 import { useRouter } from "next/navigation";
+import { useAuth } from "@/components/providers/session-provider";
+import FeeDeadlineCard from "@/components/shared/FeeDeadlineCard";
 
 import { 
   DollarSign, 
@@ -129,6 +131,7 @@ export default function BursaryDashboardClient({
   bursarEmail
 }: BursaryDashboardClientProps) {
   const router = useRouter();
+  const { logout } = useAuth();
   const [activeTab, setActiveTab] = useState<"ledger" | "invoices" | "simulator" | "audit" | "structures">("ledger");
   
   // Search and Filter States
@@ -556,6 +559,13 @@ export default function BursaryDashboardClient({
           >
             <Printer size={14} />
             <span>Collections Print Report</span>
+          </button>
+          <button
+            onClick={() => logout()}
+            className="border border-red-200 hover:bg-red-50 text-red-600 text-xs font-bold py-2.5 px-4 rounded-xl flex items-center gap-2 transition-all cursor-pointer shadow-sm"
+          >
+            <LogOut size={14} />
+            <span>Sign Out</span>
           </button>
         </div>
       </div>
@@ -1036,6 +1046,7 @@ export default function BursaryDashboardClient({
 
       {activeTab === "structures" && (
         <div className="flex flex-col gap-4">
+          <FeeDeadlineCard />
           <div className="flex flex-col sm:flex-row gap-3 justify-between items-center bg-white border border-slate-200 p-4 rounded-2xl shadow-sm">
             <div>
               <h4 className="font-display font-black text-brand-blue-dark text-sm sm:text-base">Fee Structures</h4>

@@ -251,6 +251,7 @@ export default function StaffDashboard() {
   };
 
   const handleLogout = () => {
+    fetch("/api/auth/logout.php", { method: "POST", credentials: "include", keepalive: true }).catch(() => {});
     if (typeof window !== "undefined") {
       localStorage.removeItem("isAuthenticated");
       localStorage.removeItem("user");

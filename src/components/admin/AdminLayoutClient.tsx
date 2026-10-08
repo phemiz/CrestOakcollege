@@ -83,6 +83,7 @@ export default function AdminLayoutClient({ children, user }: AdminLayoutClientP
   });
 
   const handleSignOut = () => {
+    fetch("/api/auth/logout.php", { method: "POST", credentials: "include", keepalive: true }).catch(() => {});
     if (typeof window !== "undefined") {
       localStorage.removeItem("user");
       localStorage.removeItem("isAuthenticated");
