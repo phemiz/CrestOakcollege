@@ -10,9 +10,13 @@ interface Version { id: number; name: string; sessionLabel: string; semester: st
 interface Slot { id: number; courseId: number; day: number; period: number; locked: boolean; code: string; title: string; level: number; lecturerName: string | null; }
 interface Period { period: number; label: string; }
 interface Course { id: number; code: string; title: string; level: number; lecturerName: string | null; sessionsPerWeek: number; }
+interface Lecturer { id: number; fullName: string; email: string | null; phone: string | null; isPermanent: boolean; availability: { day: number; start: string; end: string }[]; }
 type Pending = { type: "course" | "slot"; id: number } | null;
 
 const DAYS = ["Mon", "Tue", "Wed", "Thu", "Fri"];
+const INPUT = "border border-slate-300 rounded-lg px-3 py-2 text-sm bg-white";
+const EMPTY_LECTURER = { fullName: "", email: "", phone: "", isPermanent: false, days: [] as number[], start: "08:00", end: "16:00" };
+const EMPTY_COURSE = { code: "", title: "", programmeCode: "", department: "", level: "100", sessionsPerWeek: "1", lecturerId: "" };
 
 async function api(url: string, method = "GET", body?: unknown): Promise<any> {
   try {
@@ -39,11 +43,14 @@ export default function PlannerDashboard() {
   const [slots, setSlots] = useState<Slot[]>([]);
   const [periods, setPeriods] = useState<Period[]>([]);
   const [courses, setCourses] = useState<Course[]>([]);
+  const [lecturers, setLecturers] = useState<Lecturer[]>([]);
   const [pending, setPending] = useState<Pending>(null);
   const [msg, setMsg] = useState<string>("");
   const [busy, setBusy] = useState(false);
   const [loading, setLoading] = useState(true);
   const [form, setForm] = useState({ name: "", sessionLabel: "", semester: "" });
+  const [lecForm, setLecForm] = useState(EMPTY_LECTURER);
+  const [courseForm, setCourseForm] = useState(EMPTY_COURSE);
 
   const version = versions.find((v) => v.id === vid);
   const canEdit = isPlanner && version?.status === "DRAFT";
@@ -66,7 +73,13 @@ export default function PlannerDashboard() {
     if (c.success) setCourses(c.courses); else setMsg(c.message || "Could not load courses.");
   }, []);
 
+  const loadLecturers = useCallback(async () => {
+    const d = await api("/api/planner/lecturers.php");
+    if (d.success) setLecturers(d.lecturers); else setMsg(d.message || "Could not load lecturers.");
+  }, []);
+
   useEffect(() => { loadVersions(); }, [loadVersions]);
+  useEffect(() => { loadLecturers(); }, [loadLecturers]);
   useEffect(() => { loadVersion(vid); setPending(null); }, [vid, loadVersion]);
 
   const placedCount = useMemo(() => {
@@ -109,6 +122,37 @@ export default function PlannerDashboard() {
       await loadVersions(action === "delete" ? 0 : version.id);
     });
   };
+
+  const addLecturer = async () => {
+    const availability = lecForm.days.map((day) => ({ day, start: lecForm.start, end: lecForm.end }));
+    const d = await run("/api/planner/lecturers.php", {
+      action: "save",
+      fullName: lecForm.fullName,
+      email: lecForm.email,
+      phone: lecForm.phone,
+      isPermanent: lecForm.isPermanent,
+      availability,
+    }, async () => {});
+    if (d.success) { setLecForm(EMPTY_LECTURER); await loadLecturers(); }
+  };
+
+  const addCourse = async () => {
+    const d = await run("/api/planner/courses.php", {
+      action: "save",
+      versionId: vid,
+      code: courseForm.code,
+      title: courseForm.title,
+      programmeCode: courseForm.programmeCode,
+      department: courseForm.department,
+      level: Number(courseForm.level),
+      sessionsPerWeek: Number(courseForm.sessionsPerWeek),
+      lecturerId: Number(courseForm.lecturerId) || 0,
+    }, async () => {});
+    if (d.success) { setCourseForm(EMPTY_COURSE); await loadVersion(vid); }
+  };
+
+  const toggleDay = (day: number) =>
+    setLecForm((f) => ({ ...f, days: f.days.includes(day) ? f.days.filter((x) => x !== day) : [...f.days, day].sort() }));
 
   if (loading) {
     return <div className="min-h-screen flex items-center justify-center"><Loader2 className="h-6 w-6 animate-spin" /></div>;
@@ -218,6 +262,87 @@ export default function PlannerDashboard() {
               })}
             </ul>
           </aside>
+        </div>
+      )}
+
+      {isPlanner && (
+        <div className="grid md:grid-cols-2 gap-6">
+          {canEdit && (
+            <section className="bg-white border border-slate-200 rounded-2xl p-4 space-y-3">
+              <h2 className="font-bold text-slate-900 text-sm">Add a course to this timetable</h2>
+              <div className="flex flex-wrap gap-2">
+                <input placeholder="Code e.g. CSC101" value={courseForm.code} onChange={(e) => setCourseForm({ ...courseForm, code: e.target.value })} className={`${INPUT} w-36`} />
+                <input placeholder="Course title" value={courseForm.title} onChange={(e) => setCourseForm({ ...courseForm, title: e.target.value })} className={`${INPUT} flex-1 min-w-[180px]`} />
+              </div>
+              <div className="flex flex-wrap gap-2">
+                <input placeholder="Programme code (optional)" value={courseForm.programmeCode} onChange={(e) => setCourseForm({ ...courseForm, programmeCode: e.target.value })} className={`${INPUT} w-48`} />
+                <input placeholder="Department (optional)" value={courseForm.department} onChange={(e) => setCourseForm({ ...courseForm, department: e.target.value })} className={`${INPUT} flex-1 min-w-[160px]`} />
+              </div>
+              <div className="flex flex-wrap gap-2 items-end">
+                <label className="text-xs text-slate-600">Level
+                  <select value={courseForm.level} onChange={(e) => setCourseForm({ ...courseForm, level: e.target.value })} className={`${INPUT} block mt-1`}>
+                    {[100, 200, 300, 400, 500, 600].map((l) => <option key={l} value={l}>{l}</option>)}
+                  </select>
+                </label>
+                <label className="text-xs text-slate-600">Sessions per week
+                  <select value={courseForm.sessionsPerWeek} onChange={(e) => setCourseForm({ ...courseForm, sessionsPerWeek: e.target.value })} className={`${INPUT} block mt-1`}>
+                    {[1, 2, 3, 4, 5].map((n) => <option key={n} value={n}>{n}</option>)}
+                  </select>
+                </label>
+                <label className="text-xs text-slate-600">Lecturer
+                  <select value={courseForm.lecturerId} onChange={(e) => setCourseForm({ ...courseForm, lecturerId: e.target.value })} className={`${INPUT} block mt-1`}>
+                    <option value="">No lecturer</option>
+                    {lecturers.map((l) => <option key={l.id} value={l.id}>{l.fullName}</option>)}
+                  </select>
+                </label>
+              </div>
+              <button onClick={addCourse} disabled={busy || !courseForm.code.trim() || !courseForm.title.trim()} className="flex items-center gap-1 bg-slate-900 text-white text-sm px-3 py-2 rounded-lg disabled:opacity-50"><Plus className="h-4 w-4" />Add course</button>
+            </section>
+          )}
+
+          <section className="bg-white border border-slate-200 rounded-2xl p-4 space-y-3">
+            <h2 className="font-bold text-slate-900 text-sm">Lecturers ({lecturers.length})</h2>
+            <div className="flex flex-wrap gap-2">
+              <input placeholder="Full name" value={lecForm.fullName} onChange={(e) => setLecForm({ ...lecForm, fullName: e.target.value })} className={`${INPUT} flex-1 min-w-[180px]`} />
+              <input placeholder="Email (optional)" value={lecForm.email} onChange={(e) => setLecForm({ ...lecForm, email: e.target.value })} className={`${INPUT} w-48`} />
+              <input placeholder="Phone (optional)" value={lecForm.phone} onChange={(e) => setLecForm({ ...lecForm, phone: e.target.value })} className={`${INPUT} w-40`} />
+            </div>
+            <label className="flex items-center gap-2 text-xs text-slate-600">
+              <input type="checkbox" checked={lecForm.isPermanent} onChange={(e) => setLecForm({ ...lecForm, isPermanent: e.target.checked })} />
+              Permanent staff
+            </label>
+            <div>
+              <p className="text-xs text-slate-600 mb-1">Available days (leave all unticked if available at any time)</p>
+              <div className="flex flex-wrap gap-3 items-end">
+                {DAYS.map((d, i) => (
+                  <label key={d} className="flex items-center gap-1 text-xs text-slate-700">
+                    <input type="checkbox" checked={lecForm.days.includes(i + 1)} onChange={() => toggleDay(i + 1)} />{d}
+                  </label>
+                ))}
+                <label className="text-xs text-slate-600">From
+                  <input type="time" min="08:00" max="16:00" value={lecForm.start} onChange={(e) => setLecForm({ ...lecForm, start: e.target.value })} className={`${INPUT} block mt-1`} />
+                </label>
+                <label className="text-xs text-slate-600">To
+                  <input type="time" min="08:00" max="16:00" value={lecForm.end} onChange={(e) => setLecForm({ ...lecForm, end: e.target.value })} className={`${INPUT} block mt-1`} />
+                </label>
+              </div>
+            </div>
+            <button onClick={addLecturer} disabled={busy || !lecForm.fullName.trim()} className="flex items-center gap-1 bg-slate-900 text-white text-sm px-3 py-2 rounded-lg disabled:opacity-50"><Plus className="h-4 w-4" />Add lecturer</button>
+            {lecturers.length > 0 && (
+              <ul className="divide-y divide-slate-100 border-t border-slate-100 text-xs">
+                {lecturers.map((l) => (
+                  <li key={l.id} className="py-2">
+                    <div className="font-semibold text-slate-900">{l.fullName} <span className="font-normal text-slate-500">{l.isPermanent ? "Permanent" : "Part-time"}</span></div>
+                    <div className="text-slate-500">
+                      {l.availability.length
+                        ? l.availability.map((a) => `${DAYS[a.day - 1]} ${a.start}-${a.end}`).join(", ")
+                        : "Available at any time"}
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </section>
         </div>
       )}
     </div>
