@@ -74,7 +74,7 @@ interface StaffClientProps {
   departments: DropdownItem[];
 }
 
-const NON_ACADEMIC_ROLES = ["BURSAR", "REGISTRAR", "ADMIN", "STAFF", "SUPER_ADMIN"];
+const NON_ACADEMIC_ROLES = ["BURSAR", "REGISTRAR", "ADMIN", "STAFF", "SUPER_ADMIN", "ACADEMIC_PLANNER"];
 
 export const resolveDepartment = (dept: string = "", staffId: string = "", role: string = "") => {
   if (NON_ACADEMIC_ROLES.includes((role || "").toUpperCase())) {
@@ -266,14 +266,14 @@ export default function StaffClient({ staffList: initialStaff, departments: rawD
     status: "ACTIVE" as "ACTIVE" | "SUSPENDED" | "ON_LEAVE",
     joiningDate: new Date().toISOString().split("T")[0],
     departmentId: "",
-    roleName: "LECTURER" as "LECTURER" | "HOD" | "DEAN" | "REGISTRAR" | "BURSAR" | "STAFF" | "ADMIN" | "SUPER_ADMIN",
+    roleName: "LECTURER" as "LECTURER" | "HOD" | "DEAN" | "REGISTRAR" | "BURSAR" | "STAFF" | "ADMIN" | "SUPER_ADMIN" | "ACADEMIC_PLANNER",
     rank: "LECTURER_II",
     specialization: "",
     sendEmail: true,
     forcePasswordChange: true
   });
 
-  const computeSIN = (deptId: string, roleName: string) => {
+  const computeSIN = (deptId: string, roleName: string) => { if (roleName === "ACADEMIC_PLANNER") { const used = staffList.map((s) => { const m = s.staffNo && s.staffNo.match(/\/PLN\/(\d+)$/); return m ? parseInt(m[1], 10) : 0; }); return `CCHSMT/PLN/${String(Math.max(0, ...used) + 1).padStart(4, "0")}`; }
     const selectedDept = departments.find((d) => d.id === deptId);
     const deptName = selectedDept?.name || "";
     const code = getStaffDeptCode(deptName);
@@ -325,7 +325,7 @@ export default function StaffClient({ staffList: initialStaff, departments: rawD
     }));
   };
 
-  const NON_ACADEMIC_ROLES = ["BURSAR", "REGISTRAR", "ADMIN", "STAFF", "SUPER_ADMIN"];
+  const NON_ACADEMIC_ROLES = ["BURSAR", "REGISTRAR", "ADMIN", "STAFF", "SUPER_ADMIN", "ACADEMIC_PLANNER"];
   const handleRoleChange = (role: any) => {
     const isNonAcademic = NON_ACADEMIC_ROLES.includes(role);
     setFormData((prev) => ({
@@ -1097,7 +1097,7 @@ export default function StaffClient({ staffList: initialStaff, departments: rawD
                     <option value="DEAN">DEAN (Faculty Dean)</option>
                     <option value="REGISTRAR">REGISTRAR (Chief Administrative Officer)</option>
                     <option value="BURSAR">BURSAR (Chief Financial Officer)</option>
-                    <option value="STAFF">STAFF (General Registry/Admin Officer)</option>
+                    <option value="STAFF">STAFF (General Registry/Admin Officer)</option><option value="ACADEMIC_PLANNER">ACADEMIC PLANNER (Timetable Officer)</option>
                     <option value="ADMIN">ADMIN (System Administrator)</option>
                     <option value="SUPER_ADMIN">SUPER ADMIN</option>
                   </select>

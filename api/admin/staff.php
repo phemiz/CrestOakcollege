@@ -87,7 +87,7 @@ if ($method === 'POST' || $method === 'PUT') {
     $input = json_decode($rawInput, true) ?? $_POST ?? [];
 
     $staffId = (int)($input['id'] ?? 0);
-    error_log('STAFF EDIT INPUT: ' . print_r($input, true));
+    
     $firstName = trim($input['firstName'] ?? $input['name'] ?? '');
     $middleName = trim($input['middleName'] ?? '');
     $lastName = trim($input['lastName'] ?? '');
@@ -150,7 +150,7 @@ if ($method === 'POST' || $method === 'PUT') {
         exit();
     }
 
-    $password = trim($input['password'] ?? 'Staff@2026');
+    $password = trim($input['password'] ?? '') ?: bin2hex(random_bytes(8));
     $passwordHash = password_hash($password, PASSWORD_BCRYPT);
 
     $stmt = $conn->prepare("INSERT INTO staff (first_name, middle_name, last_name, email, phone_number, username, staff_no, password_hash, role, role_name, department_name, isDeleted) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0)");
